@@ -1,62 +1,56 @@
-{{-- resources/views/auth/login.blade.php --}}
-<x-guest-layout>
-    <!-- Session Status -->
-    <x-auth-session-status class="mb-4" :status="session('status')" />
+@extends('layouts.auth')
 
-    <div class="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
-        <div class="text-center mb-8">
-            <h2 class="text-3xl font-bold text-gray-900">Welcome Back</h2>
-            <p class="text-gray-600 mt-2">Sign in to your RMS account</p>
-        </div>
+@section('title', 'Login')
 
-        <form method="POST" action="{{ route('login') }}">
-            @csrf
+@section('content')
+<h2 class="text-lg font-semibold text-gray-900 mb-1">Welcome back</h2>
+<p class="text-sm text-gray-500 mb-6">
+    Login to continue managing your rentals and services.
+</p>
 
-            <!-- Email Address -->
-            <div class="mb-4">
-                <x-input-label for="email" :value="__('Email')" />
-                <x-text-input id="email" class="block mt-1 w-full" type="email" name="email" :value="old('email')" required autofocus autocomplete="username" />
-                <x-input-error :messages="$errors->get('email')" class="mt-2" />
-            </div>
+<form method="POST" action="{{ route('login') }}" class="space-y-4">
+    @csrf
 
-            <!-- Password -->
-            <div class="mb-4">
-                <x-input-label for="password" :value="__('Password')" />
-                <x-text-input id="password" class="block mt-1 w-full"
-                                type="password"
-                                name="password"
-                                required autocomplete="current-password" />
-                <x-input-error :messages="$errors->get('password')" class="mt-2" />
-            </div>
-
-            <!-- Remember Me -->
-            <div class="block mb-4">
-                <label for="remember_me" class="inline-flex items-center">
-                    <input id="remember_me" type="checkbox" class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500" name="remember">
-                    <span class="ms-2 text-sm text-gray-600">{{ __('Remember me') }}</span>
-                </label>
-            </div>
-
-            <div class="flex items-center justify-between mb-6">
-                @if (Route::has('password.request'))
-                    <a class="text-sm text-indigo-600 hover:text-indigo-500" href="{{ route('password.request') }}">
-                        {{ __('Forgot your password?') }}
-                    </a>
-                @endif
-            </div>
-
-            <button type="submit" class="w-full bg-indigo-600 text-white py-3 px-4 rounded-md hover:bg-indigo-700 transition-colors duration-300 font-medium">
-                {{ __('Sign in') }}
-            </button>
-
-            <div class="mt-6 text-center">
-                <p class="text-gray-600">
-                    Don't have an account?
-                    <a href="{{ route('register') }}" class="text-indigo-600 hover:text-indigo-500 font-medium">
-                        Sign up
-                    </a>
-                </p>
-            </div>
-        </form>
+    <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+        <input type="email" name="email" required autofocus
+            class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 text-sm">
     </div>
-</x-guest-layout>
+
+    <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+        <div class="relative">
+            <input id="login-password" type="password" name="password" required
+                class="w-full rounded-lg border-gray-300 pr-10 focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+            <button type="button"
+                onclick="togglePassword('login-password', this)"
+                class="absolute inset-y-0 right-0 px-3 text-gray-400">
+                👁️
+            </button>
+        </div>
+    </div>
+
+    <div class="flex items-center justify-between text-sm">
+        <label class="flex items-center gap-2">
+            <input type="checkbox" name="remember" class="rounded border-gray-300">
+            Remember me
+        </label>
+
+        <a href="{{ route('password.request') }}"
+           class="text-indigo-600 hover:underline">
+            Forgot password?
+        </a>
+    </div>
+
+    <button class="w-full bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg py-2.5 text-sm font-medium">
+        Login
+    </button>
+</form>
+
+<div class="text-center mt-6 text-sm text-gray-600">
+    Don’t have an account?
+    <a href="{{ route('register') }}" class="text-indigo-600 hover:underline">
+        Create one
+    </a>
+</div>
+@endsection

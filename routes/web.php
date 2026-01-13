@@ -25,6 +25,11 @@ Route::post('/email/verification-notification', function (Request $request) {
 
 Route::middleware(['auth', 'verified'])->get('/dashboard', [DashboardController::class, 'index'])
     ->name('dashboard');
+Route::get('password/reset', [ForgotPasswordController::class, 'showLinkRequestForm'])->name('password.request');
+Route::post('password/email', [ForgotPasswordController::class, 'sendResetLinkEmail'])->name('password.email');
+Route::get('password/reset/{token}', [ResetPasswordController::class, 'showResetForm'])->name('password.reset');
+Route::post('password/reset', [ResetPasswordController::class, 'reset'])->name('password.update');
+
 
 Route::middleware(['auth', 'verified', 'role:ADMIN'])->get('/admin/dashboard', fn () => view('admin.dashboard'));
 Route::middleware(['auth', 'verified', 'role:OWNER'])->get('/owner/dashboard', fn () => view('owner.dashboard'));

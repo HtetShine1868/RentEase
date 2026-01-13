@@ -1,79 +1,63 @@
-<x-guest-layout>
-    <div class="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
-        <div class="text-center mb-8">
-            <h2 class="text-3xl font-bold text-gray-900">Create Account</h2>
-            <p class="text-gray-600 mt-2">Register to access RMS</p>
-        </div>
+@extends('layouts.auth')
 
-        <form method="POST" action="{{ route('register') }}">
-            @csrf
+@section('title', 'Register')
 
-            <!-- Name -->
-            <div class="mb-4">
-                <x-input-label for="name" value="Full Name" />
-                <x-text-input id="name"
-                              class="block mt-1 w-full"
-                              type="text"
-                              name="name"
-                              :value="old('name')"
-                              required
-                              autofocus
-                              autocomplete="name" />
-                <x-input-error :messages="$errors->get('name')" class="mt-2" />
-            </div>
+@section('content')
+<h2 class="text-lg font-semibold text-gray-900 mb-1">Create your account</h2>
+<p class="text-sm text-gray-500 mb-6">
+    Register once. Apply roles later if needed.
+</p>
 
-            <!-- Email -->
-            <div class="mb-4">
-                <x-input-label for="email" value="Email Address" />
-                <x-text-input id="email"
-                              class="block mt-1 w-full"
-                              type="email"
-                              name="email"
-                              :value="old('email')"
-                              required
-                              autocomplete="username" />
-                <x-input-error :messages="$errors->get('email')" class="mt-2" />
-            </div>
+<form method="POST" action="{{ route('register') }}" class="space-y-4">
+    @csrf
 
-            <!-- Password -->
-            <div class="mb-4">
-                <x-input-label for="password" value="Password" />
-                <x-text-input id="password"
-                              class="block mt-1 w-full"
-                              type="password"
-                              name="password"
-                              required
-                              autocomplete="new-password" />
-                <x-input-error :messages="$errors->get('password')" class="mt-2" />
-            </div>
-
-            <!-- Confirm Password -->
-            <div class="mb-6">
-                <x-input-label for="password_confirmation" value="Confirm Password" />
-                <x-text-input id="password_confirmation"
-                              class="block mt-1 w-full"
-                              type="password"
-                              name="password_confirmation"
-                              required
-                              autocomplete="new-password" />
-                <x-input-error :messages="$errors->get('password_confirmation')" class="mt-2" />
-            </div>
-
-            <!-- Submit -->
-            <button type="submit"
-                    class="w-full bg-indigo-600 text-white py-3 px-4 rounded-md hover:bg-indigo-700 transition duration-300 font-medium">
-                Create Account
-            </button>
-
-            <div class="mt-6 text-center">
-                <p class="text-gray-600">
-                    Already have an account?
-                    <a href="{{ route('login') }}"
-                       class="text-indigo-600 hover:text-indigo-500 font-medium">
-                        Sign in
-                    </a>
-                </p>
-            </div>
-        </form>
+    <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+        <input type="text" name="name" required
+            class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 text-sm">
     </div>
-</x-guest-layout>
+
+    <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+        <input type="email" name="email" required
+            class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+    </div>
+
+    <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+        <div class="relative">
+            <input id="reg-password" type="password" name="password" required
+                class="w-full rounded-lg border-gray-300 pr-10 focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+            <button type="button"
+                onclick="togglePassword('reg-password', this)"
+                class="absolute inset-y-0 right-0 px-3 text-gray-400">
+                👁️
+            </button>
+        </div>
+    </div>
+
+    <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Confirm Password</label>
+        <div class="relative">
+            <input id="reg-password-confirm" type="password" name="password_confirmation" required
+                class="w-full rounded-lg border-gray-300 pr-10 focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+            <button type="button"
+                onclick="togglePassword('reg-password-confirm', this)"
+                class="absolute inset-y-0 right-0 px-3 text-gray-400">
+                👁️
+            </button>
+        </div>
+    </div>
+
+    <button class="w-full bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg py-2.5 text-sm font-medium">
+        Create account
+    </button>
+</form>
+
+<div class="text-center mt-6 text-sm text-gray-600">
+    Already registered?
+    <a href="{{ route('login') }}" class="text-indigo-600 hover:underline">
+        Login
+    </a>
+</div>
+@endsection
