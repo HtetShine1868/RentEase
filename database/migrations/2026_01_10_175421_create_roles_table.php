@@ -1,17 +1,19 @@
 <?php
 
-use Illuminate\Support\Facades\DB;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
 
-return new class extends Migration {
+return new class extends Migration
+{
     public function up(): void
     {
         Schema::create('roles', function (Blueprint $table) {
             $table->id();
-            $table->enum('name', ['USER','OWNER','LAUNDRY','FOOD','SUPERADMIN'])->unique();
-            $table->string('description')->nullable();
+            $table->enum('name', ['USER', 'OWNER', 'LAUNDRY', 'FOOD', 'SUPERADMIN'])->unique();
+            $table->string('description', 255)->nullable();
+            $table->timestamps();
         });
 
         // Insert default roles

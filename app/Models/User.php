@@ -2,24 +2,23 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Illuminate\Support\Str;
-use Laravel\Fortify\TwoFactorAuthenticatable;
-use Spatie\Permission\Traits\HasRoles; 
+use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable implements MustVerifyEmail
 {
-    use HasFactory, Notifiable;
+    use HasApiTokens, HasFactory, Notifiable;
+
     protected $fillable = [
         'name',
         'email',
+        'phone',
         'password',
+        'gender',
         'status',
-        'gender'
     ];
 
     protected $hidden = [
@@ -27,30 +26,71 @@ class User extends Authenticatable implements MustVerifyEmail
         'remember_token',
     ];
 
-    protected function casts(): array
+    protected $casts = [
+        'email_verified_at' => 'datetime',
+        'password' => 'hashed',
+    ];
+
+    protected $attributes = [
+        'status' => 'ACTIVE',
+    ];
+
+    // Relationships
+    public function addresses()
     {
-        return [
-            'email_verified_at' => 'datetime',
-            'password' => 'hashed',
-        ];
+        return $this->hasMany(UserAddress::class);
     }
+
     public function roles()
     {
         return $this->belongsToMany(Role::class, 'user_roles');
     }
+
+    public function roleApplications()
+    {
+        return $this->hasMany(RoleApplication::class);
+    }
+
     public function hasRole($role)
     {
-        return $this->role === $role;
-    }
-        public function isOperational(): bool
-    {
-        return in_array($this->role, ['owner', 'food_provider', 'laundry_provider']);
+        return $this->roles()->where('name', $role)->exists();
     }
 
-    public function canApplyForRole(): bool
+    public function isSuperAdmin()
     {
-        return $this->role === 'user' && !$this->isOperational();
+        return $this->hasRole('SUPERADMIN');
     }
+
+    public function isOwner()
+    {
+        return $this->hasRole('OWNER');
+    }
+
+    public function isFoodProvider()
+    {
+        return $this->hasRole('FOOD');
+    }
+
+    public function isLaundryProvider()
+    {
+        return $this->hasRole('LAUNDRY');
+    }
+
+    public function getActiveRoleAttribute()
+    {
+        if ($this->isSuperAdmin()) {
+            return 'SUPERADMIN';
+        }
+
+        $operationalRoles = ['OWNER', 'FOOD', 'LAUNDRY'];
+        foreach ($operationalRoles as $role) {
+            if ($this->hasRole($role)) {
+                return $role;
+            }
+        }
+
+        return 'USER';
+    }
+
 
 }
-

@@ -1,56 +1,73 @@
-@extends('layouts.auth')
-
-@section('title', 'Login')
+@extends('layouts.app')
 
 @section('content')
-<h2 class="text-lg font-semibold text-gray-900 mb-1">Welcome back</h2>
-<p class="text-sm text-gray-500 mb-6">
-    Login to continue managing your rentals and services.
-</p>
-
-<form method="POST" action="{{ route('login') }}" class="space-y-4">
-    @csrf
-
-    <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
-        <input type="email" name="email" required autofocus
-            class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 text-sm">
-    </div>
-
-    <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
-        <div class="relative">
-            <input id="login-password" type="password" name="password" required
-                class="w-full rounded-lg border-gray-300 pr-10 focus:border-indigo-500 focus:ring-indigo-500 text-sm">
-            <button type="button"
-                onclick="togglePassword('login-password', this)"
-                class="absolute inset-y-0 right-0 px-3 text-gray-400">
-                👁️
-            </button>
+<div class="flex min-h-screen items-center justify-center bg-gray-50 px-4 py-12 sm:px-6 lg:px-8">
+    <div class="w-full max-w-md space-y-8">
+        <div>
+            <h2 class="mt-6 text-center text-3xl font-bold tracking-tight text-gray-900">
+                Sign in to RMS
+            </h2>
+            <p class="mt-2 text-center text-sm text-gray-600">
+                Rent & Service Management System
+            </p>
         </div>
+        
+        <form class="mt-8 space-y-6" method="POST" action="{{ route('login') }}">
+            @csrf
+            
+            <div class="space-y-4 rounded-md shadow-sm">
+                <div>
+                    <label for="email" class="sr-only">Email address</label>
+                    <input id="email" name="email" type="email" autocomplete="email" required
+                           class="relative block w-full rounded-md border-0 py-1.5 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:z-10 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                           placeholder="Email Address" value="{{ old('email') }}">
+                    @error('email')
+                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <div>
+                    <label for="password" class="sr-only">Password</label>
+                    <input id="password" name="password" type="password" autocomplete="current-password" required
+                           class="relative block w-full rounded-md border-0 py-1.5 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:z-10 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                           placeholder="Password">
+                    @error('password')
+                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                    @enderror
+                </div>
+            </div>
+
+            <div class="flex items-center justify-between">
+                <div class="flex items-center">
+                    <input id="remember-me" name="remember" type="checkbox"
+                           class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600">
+                    <label for="remember-me" class="ml-2 block text-sm text-gray-900">
+                        Remember me
+                    </label>
+                </div>
+
+                @if (Route::has('password.request'))
+                    <div class="text-sm">
+                        <a href="{{ route('password.request') }}" class="font-medium text-indigo-600 hover:text-indigo-500">
+                            Forgot your password?
+                        </a>
+                    </div>
+                @endif
+            </div>
+
+            <div>
+                <button type="submit"
+                        class="group relative flex w-full justify-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
+                    Sign in
+                </button>
+            </div>
+
+            <div class="text-sm text-center">
+                <a href="{{ route('register') }}" class="font-medium text-indigo-600 hover:text-indigo-500">
+                    Don't have an account? Sign up
+                </a>
+            </div>
+        </form>
     </div>
-
-    <div class="flex items-center justify-between text-sm">
-        <label class="flex items-center gap-2">
-            <input type="checkbox" name="remember" class="rounded border-gray-300">
-            Remember me
-        </label>
-
-        <a href="{{ route('password.request') }}"
-           class="text-indigo-600 hover:underline">
-            Forgot password?
-        </a>
-    </div>
-
-    <button class="w-full bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg py-2.5 text-sm font-medium">
-        Login
-    </button>
-</form>
-
-<div class="text-center mt-6 text-sm text-gray-600">
-    Don’t have an account?
-    <a href="{{ route('register') }}" class="text-indigo-600 hover:underline">
-        Create one
-    </a>
 </div>
 @endsection

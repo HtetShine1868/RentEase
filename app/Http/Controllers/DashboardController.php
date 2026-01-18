@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class DashboardController extends Controller
@@ -10,22 +11,24 @@ class DashboardController extends Controller
     {
         $user = Auth::user();
 
-        if ($user->hasRole('ADMIN')) {
-            return redirect('/admin/dashboard');
+        // Check if user is banned
+        if ($user->status === 'BANNED') {
+            Auth::logout();
+            return redirect()->route('login')->withErrors(['email' => 'Your account has been banned.']);
         }
 
-        if ($user->hasRole('OWNER')) {
-            return redirect('/owner/dashboard');
+        // Redirect based on primary role
+        switch ($user->primaryRole) {
+            case 'SUPERADMIN':
+                return redirect()->route('admin.dashboard');
+            case 'OWNER':
+                return redirect()->route('owner.dashboard');
+            case 'FOOD':
+                return redirect()->route('food.dashboard');
+            case 'LAUNDRY':
+                return redirect()->route('laundry.dashboard');
+            default:
+                return redirect()->route('user.dashboard');
         }
-
-        if ($user->hasRole('FOOD')) {
-            return redirect('/food/dashboard');
-        }
-
-        if ($user->hasRole('LAUNDRY')) {
-            return redirect('/laundry/dashboard');
-        }
-
-        return view('user.dashboard');
     }
 }

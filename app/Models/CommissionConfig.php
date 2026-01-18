@@ -2,9 +2,19 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class CommissionConfig extends Model
 {
-    //
+    use HasFactory;
+
+    protected $fillable = [
+        'service_type',
+        'rate'
+    ];
+
+    protected $casts = [
+        'rate' => 'decimal:2'
+    ];
 }
