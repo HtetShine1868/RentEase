@@ -160,16 +160,15 @@ class RoleApplicationController extends Controller
                 break;
         }
 
-        // Add additional_info to application data
+       
         $applicationData['additional_info'] = json_encode($additionalInfo);
 
-        // Create application
+   
         $application = RoleApplication::create($applicationData);
 
-        // If location provided for service providers, set dummy coordinates
         if (in_array($role, ['FOOD', 'LAUNDRY']) && $request->filled('business_address')) {
             $application->update([
-                'latitude' => 23.8103, // Dummy Dhaka coordinates
+                'latitude' => 23.8103, 
                 'longitude' => 90.4125,
             ]);
         }

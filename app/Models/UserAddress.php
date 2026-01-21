@@ -9,11 +9,6 @@ class UserAddress extends Model
 {
     use HasFactory;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array<int, string>
-     */
     protected $fillable = [
         'user_id',
         'address_type',
@@ -28,39 +23,14 @@ class UserAddress extends Model
         'is_default'
     ];
 
-    /**
-     * The attributes that should be cast.
-     *
-     * @var array<string, string>
-     */
     protected $casts = [
         'is_default' => 'boolean',
-        'latitude' => 'decimal:7',
-        'longitude' => 'decimal:7'
+        'latitude' => 'float',
+        'longitude' => 'float'
     ];
 
-    /**
-     * Get the user that owns the address
-     */
     public function user()
     {
         return $this->belongsTo(User::class);
-    }
-
-    /**
-     * Format full address
-     */
-    public function getFullAddressAttribute()
-    {
-        $parts = [
-            $this->address_line1,
-            $this->address_line2,
-            $this->city,
-            $this->state,
-            $this->postal_code,
-            $this->country
-        ];
-        
-        return implode(', ', array_filter($parts));
     }
 }

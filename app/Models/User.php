@@ -2,15 +2,14 @@
 
 namespace App\Models;
 
-use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Laravel\Sanctum\HasApiTokens;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
-class User extends Authenticatable implements MustVerifyEmail
+class User extends Authenticatable
 {
-    use HasApiTokens, HasFactory, Notifiable;
+    use HasFactory, Notifiable, SoftDeletes;
 
     protected $fillable = [
         'name',
@@ -18,7 +17,9 @@ class User extends Authenticatable implements MustVerifyEmail
         'phone',
         'password',
         'gender',
+        'avatar_url',
         'status',
+        'email_verified_at'
     ];
 
     protected $hidden = [
@@ -28,11 +29,14 @@ class User extends Authenticatable implements MustVerifyEmail
 
     protected $casts = [
         'email_verified_at' => 'datetime',
-        'password' => 'hashed',
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
+        'deleted_at' => 'datetime',
     ];
 
     protected $attributes = [
         'status' => 'ACTIVE',
+         'gender' => null,
     ];
 
     // Relationships
@@ -43,12 +47,43 @@ class User extends Authenticatable implements MustVerifyEmail
 
     public function roles()
     {
-        return $this->belongsToMany(Role::class, 'user_roles');
+        return $this->belongsToMany(Role::class, 'user_roles')
+                    ->withTimestamps();
     }
 
     public function roleApplications()
     {
         return $this->hasMany(RoleApplication::class);
+    }
+
+    public function properties()
+    {
+        return $this->hasMany(Property::class, 'owner_id');
+    }
+
+    public function serviceProvider()
+    {
+        return $this->hasOne(ServiceProvider::class);
+    }
+
+    public function bookings()
+    {
+        return $this->hasMany(Booking::class);
+    }
+
+    public function foodOrders()
+    {
+        return $this->hasMany(FoodOrder::class);
+    }
+
+    public function laundryOrders()
+    {
+        return $this->hasMany(LaundryOrder::class);
+    }
+
+    public function activeRole()
+    {
+        return $this->roles()->wherePivot('is_active', true)->first();
     }
 
     public function hasRole($role)
@@ -76,21 +111,18 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->hasRole('LAUNDRY');
     }
 
-    public function getActiveRoleAttribute()
+    public function getDefaultAddressAttribute()
     {
-        if ($this->isSuperAdmin()) {
-            return 'SUPERADMIN';
-        }
-
-        $operationalRoles = ['OWNER', 'FOOD', 'LAUNDRY'];
-        foreach ($operationalRoles as $role) {
-            if ($this->hasRole($role)) {
-                return $role;
-            }
-        }
-
-        return 'USER';
+        return $this->addresses()->where('is_default', true)->first();
     }
 
+    public function scopeActive($query)
+    {
+        return $query->where('status', 'ACTIVE');
+    }
 
+    public function scopeBanned($query)
+    {
+        return $query->where('status', 'BANNED');
+    }
 }

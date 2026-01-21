@@ -1,75 +1,62 @@
 <?php
 
+use App\Http\Controllers\Auth\AuthenticatedSessionController;
+use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 
-// Public routes
 Route::get('/', function () {
     return view('welcome');
+})->name('home');
+
+// Authentication Routes
+Route::middleware('guest')->group(function () {
+    Route::get('register', [RegisteredUserController::class, 'create'])
+                ->name('register');
+    Route::post('register', [RegisteredUserController::class, 'store']);
+    
+    Route::get('login', [AuthenticatedSessionController::class, 'create'])
+                ->name('login');
+    Route::post('login', [AuthenticatedSessionController::class, 'store']);
 });
 
-// Authentication routes (from Breeze)
-require __DIR__.'/auth.php';
+Route::middleware('auth')->group(function () {
+    // Email verification routes
+    Route::get('/email/verify', function () {
+        return view('auth.verify-email');
+    })->middleware('throttle:6,1')->name('verification.notice');
 
-// Email verification notice
-Route::get('/email/verify', function () {
-    return view('auth.verify-email');
-})->middleware('auth')->name('verification.notice');
+    // Logout
+    Route::post('logout', [AuthenticatedSessionController::class, 'destroy'])
+                ->name('logout');
 
-// Protected routes
-Route::middleware(['auth', 'verified'])->group(function () {
-    // Main dashboard redirector
-    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    // Dashboard (protected by auth and verified email)
+    Route::get('/dashboard', [DashboardController::class, 'index'])
+                ->middleware('verified')
+                ->name('dashboard');
 
-    // Role-specific dashboards
-    Route::middleware(['role:USER'])->group(function () {
-        Route::get('/user/dashboard', function () {
-            return view('dashboard.user');
-        })->name('user.dashboard');
-    });
-
+    // Protected routes with role-based access
     Route::middleware(['role:SUPERADMIN'])->group(function () {
-        Route::get('/admin/dashboard', function () {
-            return view('dashboard.admin');
+        Route::get('/admin', function () {
+            return view('admin.dashboard');
         })->name('admin.dashboard');
     });
 
     Route::middleware(['role:OWNER'])->group(function () {
-        Route::get('/owner/dashboard', function () {
-            return view('dashboard.owner');
+        Route::get('/owner', function () {
+            return view('owner.dashboard');
         })->name('owner.dashboard');
     });
 
     Route::middleware(['role:FOOD'])->group(function () {
-        Route::get('/food/dashboard', function () {
-            return view('dashboard.food');
+        Route::get('/food-provider', function () {
+            return view('food.dashboard');
         })->name('food.dashboard');
     });
 
     Route::middleware(['role:LAUNDRY'])->group(function () {
-        Route::get('/laundry/dashboard', function () {
-            return view('dashboard.laundry');
+        Route::get('/laundry-provider', function () {
+            return view('laundry.dashboard');
         })->name('laundry.dashboard');
-    });
-
-    // Profile routes (from Breeze)
-    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
-    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
-
-    // Role application routes (will create these later)
-    Route::prefix('role-application')->name('role-application.')->group(function () {
-        Route::get('/create', function () {
-            return view('role-application.create');
-        })->name('create');
-        
-        Route::post('/', function () {
-            // Will handle application submission
-        })->name('store');
-        
-        Route::get('/status', function () {
-            return view('role-application.status');
-        })->name('status');
     });
 });

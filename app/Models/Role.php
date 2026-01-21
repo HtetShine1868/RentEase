@@ -10,10 +10,7 @@ class Role extends Model
     use HasFactory;
 
     protected $fillable = ['name', 'description'];
-
-    protected $casts = [
-        'name' => 'string',
-    ];
+    public $timestamps = false;
 
     public function users()
     {

@@ -5,54 +5,58 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\Role;
-use App\Models\UserRole;
 use Illuminate\Auth\Events\Registered;
-use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules;
-use Illuminate\View\View;
+use Illuminate\Support\Facades\DB;
 
 class RegisteredUserController extends Controller
 {
-    public function create(): View
+    public function create()
     {
         return view('auth.register');
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request)
     {
         $request->validate([
             'name' => ['required', 'string', 'max:100'],
-            'email' => ['required', 'string', 'lowercase', 'email', 'max:150', 'unique:users'],
-            'phone' => ['nullable', 'string', 'max:20'],
+            'email' => ['required', 'string', 'email', 'max:150', 'unique:users'],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
-            'gender' => ['nullable', 'in:MALE,FEMALE,OTHER'],
+            'terms' => ['required', 'accepted'],
         ]);
 
-        $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'phone' => $request->phone,
-            'gender' => $request->gender,
-            'password' => Hash::make($request->password),
-        ]);
-
-        // Assign USER role to every new user
-        $userRole = Role::where('name', 'USER')->first();
-        if ($userRole) {
-            UserRole::create([
-                'user_id' => $user->id,
-                'role_id' => $userRole->id,
-                'assigned_at' => now(),
+        DB::beginTransaction();
+        try {
+            // Create user with minimal information
+            $user = User::create([
+                'name' => $request->name,
+                'email' => $request->email,
+                'password' => Hash::make($request->password),
+                'status' => 'ACTIVE',
+                // Default gender if needed
+                'gender' => 'OTHER',
             ]);
+
+            // Assign USER role
+            $userRole = Role::where('name', 'USER')->first();
+            if ($userRole) {
+                $user->roles()->attach($userRole->id);
+            }
+
+            DB::commit();
+
+            event(new Registered($user));
+
+            Auth::login($user);
+
+            return redirect(route('dashboard', absolute: false));
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->withErrors(['error' => 'Registration failed. Please try again.']);
         }
-
-        event(new Registered($user));
-
-        Auth::login($user);
-
-        return redirect()->route('verification.notice');
     }
 }
