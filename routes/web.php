@@ -3,6 +3,7 @@
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\RoleApplicationController; // ADD THIS LINE
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -34,6 +35,17 @@ Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])
                 ->middleware('verified')
                 ->name('dashboard');
+
+    // Role Application Routes - MOVED HERE, inside auth middleware
+    Route::middleware('verified')->group(function () {
+        Route::prefix('role/apply')->name('role.apply.')->group(function () {
+            Route::get('/', [RoleApplicationController::class, 'index'])->name('index');
+            Route::get('/{roleType}', [RoleApplicationController::class, 'create'])->name('create');
+            Route::post('/{roleType}', [RoleApplicationController::class, 'store'])->name('store');
+            Route::get('/show/{id}', [RoleApplicationController::class, 'show'])->name('show');
+            Route::delete('/{id}', [RoleApplicationController::class, 'destroy'])->name('destroy');
+        });
+    });
 
     // Protected routes with role-based access
     Route::middleware(['role:SUPERADMIN'])->group(function () {

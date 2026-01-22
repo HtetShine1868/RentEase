@@ -41,6 +41,12 @@
                                 <a href="{{ route('dashboard') }}" class="px-3 py-2 rounded-md text-sm font-medium {{ request()->routeIs('dashboard') ? 'bg-gray-900 text-white' : 'text-gray-700 hover:text-gray-900 hover:bg-gray-100' }}">
                                     Dashboard
                                 </a>
+                                    @if(auth()->user()->hasRole('USER') && !auth()->user()->isOwner() &&
+                                         !auth()->user()->isFoodProvider() && !auth()->user()->isLaundryProvider())
+                                        <a href="{{ route('role.apply.index') }}" class="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100">
+                                            Apply for Role
+                                        </a>
+                                    @endif
                                 
                                 @auth
                                     @if(auth()->user()->isOwner())
