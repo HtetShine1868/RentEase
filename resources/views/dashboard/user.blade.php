@@ -1,264 +1,228 @@
 @extends('dashboard')
 
+@section('title', 'Dashboard Overview')
+
 @section('content')
 <div class="space-y-6">
-    <!-- Welcome Message -->
-    <div class="bg-indigo-50 border-l-4 border-indigo-400 p-4 rounded">
-        <div class="flex">
-            <div class="flex-shrink-0">
-                <svg class="h-5 w-5 text-indigo-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
-                </svg>
+    <!-- Welcome Banner -->
+    <div class="bg-gradient-to-r from-indigo-500 to-purple-600 rounded-xl p-6 text-white">
+        <div class="flex items-center justify-between">
+            <div>
+                <h2 class="text-2xl font-bold">Welcome back, {{ Auth::user()->name }}!</h2>
+                <p class="mt-1 opacity-90">Here's what's happening with your account today.</p>
             </div>
-            <div class="ml-3">
-                <h3 class="text-sm font-medium text-indigo-800">Welcome, {{ Auth::user()->name }}!</h3>
-                <div class="mt-2 text-sm text-indigo-700">
-                    <p>You're logged in as a regular user. You can book properties and order services.</p>
+            <div class="hidden md:block">
+                <div class="h-16 w-16 rounded-full bg-white/20 flex items-center justify-center">
+                    <i class="fas fa-user text-2xl"></i>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Quick Stats -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div class="bg-white overflow-hidden shadow rounded-lg">
-            <div class="p-5">
-                <div class="flex items-center">
-                    <div class="flex-shrink-0">
-                        <svg class="h-6 w-6 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                        </svg>
+    <!-- Quick Stats Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <!-- Rental Status -->
+        <div class="bg-white rounded-lg shadow p-6 border-l-4 border-blue-500">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <div class="h-12 w-12 rounded-lg bg-blue-100 flex items-center justify-center">
+                        <i class="fas fa-home text-blue-600 text-xl"></i>
                     </div>
-                    <div class="ml-5 w-0 flex-1">
-                        <dl>
-                            <dt class="text-sm font-medium text-gray-500 truncate">Active Bookings</dt>
-                            <dd class="text-lg font-medium text-gray-900">0</dd>
-                        </dl>
+                </div>
+                <div class="ml-4">
+                    <h3 class="text-sm font-medium text-gray-900">Rental Status</h3>
+                    <div class="mt-1">
+                        <p class="text-2xl font-semibold text-gray-900">Not Active</p>
+                        <p class="text-sm text-gray-500">No current rental</p>
                     </div>
                 </div>
             </div>
-        </div>
-
-        <div class="bg-white overflow-hidden shadow rounded-lg">
-            <div class="p-5">
-                <div class="flex items-center">
-                    <div class="flex-shrink-0">
-                        <svg class="h-6 w-6 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                    </div>
-                    <div class="ml-5 w-0 flex-1">
-                        <dl>
-                            <dt class="text-sm font-medium text-gray-500 truncate">Pending Orders</dt>
-                            <dd class="text-lg font-medium text-gray-900">0</dd>
-                        </dl>
-                    </div>
-                </div>
+            <div class="mt-4">
+                <a href="{{ route('rental.search') }}" 
+                   class="inline-flex items-center text-sm font-medium text-blue-600 hover:text-blue-500">
+                    Search for rental
+                    <i class="fas fa-arrow-right ml-1"></i>
+                </a>
             </div>
         </div>
 
-        <div class="bg-white overflow-hidden shadow rounded-lg">
-            <div class="p-5">
-                <div class="flex items-center">
-                    <div class="flex-shrink-0">
-                        <svg class="h-6 w-6 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
-                        </svg>
-                    </div>
-                    <div class="ml-5 w-0 flex-1">
-                        <dl>
-                            <dt class="text-sm font-medium text-gray-500 truncate">Your Rating</dt>
-                            <dd class="text-lg font-medium text-gray-900">N/A</dd>
-                        </dl>
+        <!-- Food Orders -->
+        <div class="bg-white rounded-lg shadow p-6 border-l-4 border-green-500">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <div class="h-12 w-12 rounded-lg bg-green-100 flex items-center justify-center">
+                        <i class="fas fa-utensils text-green-600 text-xl"></i>
                     </div>
                 </div>
+                <div class="ml-4">
+                    <h3 class="text-sm font-medium text-gray-900">Food Orders</h3>
+                    <div class="mt-1">
+                        <p class="text-2xl font-semibold text-gray-900">0</p>
+                        <p class="text-sm text-gray-500">Active orders</p>
+                    </div>
+                </div>
+            </div>
+            <div class="mt-4">
+                <a href="{{ route('food.index') }}" 
+                   class="inline-flex items-center text-sm font-medium text-green-600 hover:text-green-500">
+                    View food orders
+                    <i class="fas fa-arrow-right ml-1"></i>
+                </a>
+            </div>
+        </div>
+
+        <!-- Laundry Orders -->
+        <div class="bg-white rounded-lg shadow p-6 border-l-4 border-purple-500">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <div class="h-12 w-12 rounded-lg bg-purple-100 flex items-center justify-center">
+                        <i class="fas fa-tshirt text-purple-600 text-xl"></i>
+                    </div>
+                </div>
+                <div class="ml-4">
+                    <h3 class="text-sm font-medium text-gray-900">Laundry Orders</h3>
+                    <div class="mt-1">
+                        <p class="text-2xl font-semibold text-gray-900">0</p>
+                        <p class="text-sm text-gray-500">In process</p>
+                    </div>
+                </div>
+            </div>
+            <div class="mt-4">
+                <a href="{{ route('laundry.index') }}" 
+                   class="inline-flex items-center text-sm font-medium text-purple-600 hover:text-purple-500">
+                    View laundry orders
+                    <i class="fas fa-arrow-right ml-1"></i>
+                </a>
+            </div>
+        </div>
+
+        <!-- Monthly Spending -->
+        <div class="bg-white rounded-lg shadow p-6 border-l-4 border-yellow-500">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <div class="h-12 w-12 rounded-lg bg-yellow-100 flex items-center justify-center">
+                        <i class="fas fa-credit-card text-yellow-600 text-xl"></i>
+                    </div>
+                </div>
+                <div class="ml-4">
+                    <h3 class="text-sm font-medium text-gray-900">Monthly Spending</h3>
+                    <div class="mt-1">
+                        <p class="text-2xl font-semibold text-gray-900">৳0</p>
+                        <p class="text-sm text-gray-500">This month</p>
+                    </div>
+                </div>
+            </div>
+            <div class="mt-4">
+                <a href="{{ route('payments.index') }}" 
+                   class="inline-flex items-center text-sm font-medium text-yellow-600 hover:text-yellow-500">
+                    View payments
+                    <i class="fas fa-arrow-right ml-1"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Activity -->
+    <div class="bg-white rounded-lg shadow">
+        <div class="px-6 py-4 border-b border-gray-200">
+            <h3 class="text-lg font-medium text-gray-900">Recent Activity</h3>
+        </div>
+        <div class="divide-y divide-gray-200">
+            <!-- Activity Item -->
+            <div class="px-6 py-4">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0 h-10 w-10 rounded-full bg-green-100 flex items-center justify-center">
+                        <i class="fas fa-check text-green-600"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-900">Account Verified</p>
+                        <p class="text-sm text-gray-500">Your email has been verified successfully</p>
+                    </div>
+                    <div class="ml-auto text-sm text-gray-500">
+                        {{ now()->format('M d, H:i') }}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Activity Item -->
+            <div class="px-6 py-4">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0 h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
+                        <i class="fas fa-user-plus text-blue-600"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-900">Account Created</p>
+                        <p class="text-sm text-gray-500">Welcome to RMS system</p>
+                    </div>
+                    <div class="ml-auto text-sm text-gray-500">
+                        {{ now()->format('M d, H:i') }}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- No Recent Activity -->
+            <div class="px-6 py-8 text-center">
+                <i class="fas fa-stream text-gray-300 text-3xl mb-3"></i>
+                <p class="text-gray-500">No recent activity</p>
+                <p class="text-sm text-gray-400 mt-1">Your recent activities will appear here</p>
             </div>
         </div>
     </div>
 
     <!-- Quick Actions -->
-    <div class="bg-white shadow overflow-hidden sm:rounded-md">
-        <ul class="divide-y divide-gray-200">
-            <li>
-                <a href="#" class="block hover:bg-gray-50">
-                    <div class="px-4 py-4 flex items-center sm:px-6">
-                        <div class="min-w-0 flex-1 sm:flex sm:items-center sm:justify-between">
-                            <div>
-                                <div class="flex text-sm">
-                                    <p class="font-medium text-indigo-600 truncate">Find Properties</p>
-                                </div>
-                                <div class="mt-2 flex">
-                                    <div class="flex items-center text-sm text-gray-500">
-                                        <svg class="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                                            <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd" />
-                                        </svg>
-                                        Browse hostels and apartments
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="mt-2 flex-shrink-0 sm:mt-0">
-                                <div class="flex">
-                                    <span class="inline-flex items-center px-3 py-0.5 rounded-full text-sm font-medium bg-green-100 text-green-800">
-                                        View
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="ml-5 flex-shrink-0">
-                            <svg class="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
-                            </svg>
-                        </div>
-                    </div>
-                </a>
-            </li>
-            
-            <li>
-                <a href="#" class="block hover:bg-gray-50">
-                    <div class="px-4 py-4 flex items-center sm:px-6">
-                        <div class="min-w-0 flex-1 sm:flex sm:items-center sm:justify-between">
-                            <div>
-                                <div class="flex text-sm">
-                                    <p class="font-medium text-indigo-600 truncate">Order Food</p>
-                                </div>
-                                <div class="mt-2 flex">
-                                    <div class="flex items-center text-sm text-gray-500">
-                                        <svg class="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                                            <path d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 015.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z" />
-                                        </svg>
-                                        Subscribe or order meals
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="mt-2 flex-shrink-0 sm:mt-0">
-                                <div class="flex">
-                                    <span class="inline-flex items-center px-3 py-0.5 rounded-full text-sm font-medium bg-green-100 text-green-800">
-                                        Order
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="ml-5 flex-shrink-0">
-                            <svg class="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
-                            </svg>
-                        </div>
-                    </div>
-                </a>
-            </li>
-                    
-            <li>
-                <a href="{{ route('role.apply.index') }}" class="block hover:bg-gray-50">
-                    <div class="px-4 py-4 flex items-center sm:px-6">
-                        <div class="min-w-0 flex-1 sm:flex sm:items-center sm:justify-between">
-                            <div>
-                                <div class="flex text-sm">
-                                    <p class="font-medium text-indigo-600 truncate">Apply for Service Provider Role</p>
-                                </div>
-                                <div class="mt-2 flex">
-                                    <div class="flex items-center text-sm text-gray-500">
-                                        <svg class="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                                            <path fill-rule="evenodd" d="M12.395 2.553a1 1 0 00-1.45-.385c-.345.23-.614.558-.822.88-.214.33-.403.713-.57 1.116-.334.804-.614 1.768-.84 2.734a31.365 31.365 0 00-.613 3.58 2.64 2.64 0 01-.945-1.067c-.328-.68-.398-1.534-.398-2.654A1 1 0 005.05 6.05 6.981 6.981 0 003 11a7 7 0 1011.95-4.95c-.592-.591-.98-.985-1.348-1.467-.363-.476-.724-1.063-1.207-2.03zM12.12 15.12A3 3 0 017 13s.879.5 2.5.5c0-1 .5-4 1.25-4.5.5 1 .786 1.293 1.371 1.879A2.99 2.99 0 0113 13a2.99 2.99 0 01-.879 2.121z" clip-rule="evenodd" />
-                                        </svg>
-                                        Become an Owner, Food or Laundry Provider
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="mt-2 flex-shrink-0 sm:mt-0">
-                                <div class="flex">
-                                    <span class="inline-flex items-center px-3 py-0.5 rounded-full text-sm font-medium bg-yellow-100 text-yellow-800">
-                                        Apply Now
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="ml-5 flex-shrink-0">
-                            <svg class="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
-                            </svg>
-                        </div>
-                    </div>
-                </a>
-            </li>
-            
-            <li>
-                <a href="#" class="block hover:bg-gray-50">
-                    <div class="px-4 py-4 flex items-center sm:px-6">
-                        <div class="min-w-0 flex-1 sm:flex sm:items-center sm:justify-between">
-                            <div>
-                                <div class="flex text-sm">
-                                    <p class="font-medium text-indigo-600 truncate">Apply for Service Provider Role</p>
-                                </div>
-                                <div class="mt-2 flex">
-                                    <div class="flex items-center text-sm text-gray-500">
-                                        <svg class="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                                            <path fill-rule="evenodd" d="M12.395 2.553a1 1 0 00-1.45-.385c-.345.23-.614.558-.822.88-.214.33-.403.713-.57 1.116-.334.804-.614 1.768-.84 2.734a31.365 31.365 0 00-.613 3.58 2.64 2.64 0 01-.945-1.067c-.328-.68-.398-1.534-.398-2.654A1 1 0 005.05 6.05 6.981 6.981 0 003 11a7 7 0 1011.95-4.95c-.592-.591-.98-.985-1.348-1.467-.363-.476-.724-1.063-1.207-2.03zM12.12 15.12A3 3 0 017 13s.879.5 2.5.5c0-1 .5-4 1.25-4.5.5 1 .786 1.293 1.371 1.879A2.99 2.99 0 0113 13a2.99 2.99 0 01-.879 2.121z" clip-rule="evenodd" />
-                                        </svg>
-                                        Become an Owner, Food or Laundry Provider
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="mt-2 flex-shrink-0 sm:mt-0">
-                                <div class="flex">
-                                    <span class="inline-flex items-center px-3 py-0.5 rounded-full text-sm font-medium bg-yellow-100 text-yellow-800">
-                                        Apply Now
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="ml-5 flex-shrink-0">
-                            <svg class="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
-                            </svg>
-                        </div>
-                    </div>
-                </a>
-            </li>
-        </ul>
-    </div>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <!-- Search Rental -->
+        <div class="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg p-6 border border-blue-100">
+            <div class="flex items-center mb-4">
+                <div class="h-10 w-10 rounded-lg bg-blue-100 flex items-center justify-center">
+                    <i class="fas fa-search text-blue-600"></i>
+                </div>
+                <h3 class="ml-3 text-lg font-medium text-gray-900">Find Your Perfect Place</h3>
+            </div>
+            <p class="text-gray-600 mb-4">
+                Browse hostels and apartments with transparent pricing and commission breakdown.
+            </p>
+            <a href="{{ route('rental.search') }}" 
+               class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                Search Rentals
+                <i class="fas fa-arrow-right ml-2"></i>
+            </a>
+        </div>
 
-    <!-- Recent Activity -->
-    <div>
-        <h3 class="text-lg font-medium text-gray-900 mb-4">Recent Activity</h3>
-        <div class="bg-white shadow overflow-hidden sm:rounded-md">
-            <ul class="divide-y divide-gray-200">
-                <li class="px-4 py-4">
-                    <div class="flex items-center justify-between">
-                        <div class="flex items-center">
-                            <div class="flex-shrink-0">
-                                <svg class="h-8 w-8 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
-                            </div>
-                            <div class="ml-4">
-                                <p class="text-sm font-medium text-gray-900">Account Verified</p>
-                                <p class="text-sm text-gray-500">Your email has been verified successfully</p>
-                            </div>
-                        </div>
-                        <div class="text-sm text-gray-500">
-                            {{ now()->format('M d, H:i') }}
-                        </div>
-                    </div>
-                </li>
-                <li class="px-4 py-4">
-                    <div class="flex items-center justify-between">
-                        <div class="flex items-center">
-                            <div class="flex-shrink-0">
-                                <svg class="h-8 w-8 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
-                                </svg>
-                            </div>
-                            <div class="ml-4">
-                                <p class="text-sm font-medium text-gray-900">Account Created</p>
-                                <p class="text-sm text-gray-500">Welcome to RMS system</p>
-                            </div>
-                        </div>
-                        <div class="text-sm text-gray-500">
-                            {{ now()->format('M d, H:i') }}
-                        </div>
-                    </div>
-                </li>
-            </ul>
+        <!-- Order Food -->
+        <div class="bg-gradient-to-br from-green-50 to-emerald-50 rounded-lg p-6 border border-green-100">
+            <div class="flex items-center mb-4">
+                <div class="h-10 w-10 rounded-lg bg-green-100 flex items-center justify-center">
+                    <i class="fas fa-utensils text-green-600"></i>
+                </div>
+                <h3 class="ml-3 text-lg font-medium text-gray-900">Order Delicious Meals</h3>
+            </div>
+            <p class="text-gray-600 mb-4">
+                Subscribe for regular meals or order pay-per-eat from nearby providers.
+            </p>
+            <a href="{{ route('food.index') }}" 
+               class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                Browse Food
+                <i class="fas fa-arrow-right ml-2"></i>
+            </a>
+        </div>
+
+        <!-- Laundry Service -->
+        <div class="bg-gradient-to-br from-purple-50 to-violet-50 rounded-lg p-6 border border-purple-100">
+            <div class="flex items-center mb-4">
+                <div class="h-10 w-10 rounded-lg bg-purple-100 flex items-center justify-center">
+                    <i class="fas fa-tshirt text-purple-600"></i>
+                </div>
+                <h3 class="ml-3 text-lg font-medium text-gray-900">Laundry Service</h3>
+            </div>
+            <p class="text-gray-600 mb-4">
+                Schedule laundry pickup with normal or rush turnaround options.
+            </p>
+            <a href="{{ route('laundry.index') }}" 
+               class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500">
+                Find Laundry
+                <i class="fas fa-arrow-right ml-2"></i>
+            </a>
         </div>
     </div>
 </div>

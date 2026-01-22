@@ -32,7 +32,7 @@ class DashboardController extends Controller
 
         // Regular user dashboard
         return view('dashboard.user', [
-            'title' => 'User Dashboard'
+            'title' => 'Dashboard Overview'
         ]);
     }
 }
