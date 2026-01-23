@@ -3,6 +3,7 @@
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RoleApplicationController;
 use App\Http\Controllers\PropertyController;
 use App\Http\Controllers\RoomController;
@@ -138,5 +139,23 @@ Route::prefix('rental')->name('rental.')->group(function () {
     Route::get('/property/{property}/room/{room}', [RentalSearchController::class, 'showRoom'])->name('room.details');
     Route::get('/property/{property}/rent', [RentalSearchController::class, 'rentApartment'])->name('apartment.rent');
     Route::get('/property/{property}/room/{room}/rent', [RentalSearchController::class, 'rentRoom'])->name('room.rent');
+});
+
+
+// Inside auth middleware group, add:
+Route::prefix('profile')->name('profile.')->group(function () {
+    Route::get('/', [ProfileController::class, 'show'])->name('show');
+    Route::get('/edit', [ProfileController::class, 'edit'])->name('edit');
+    Route::put('/update', [ProfileController::class, 'update'])->name('update');
+    
+    // Address routes
+    Route::get('/address/edit', [ProfileController::class, 'editAddress'])->name('address.edit');
+    Route::put('/address/update', [ProfileController::class, 'updateAddress'])->name('address.update');
+    Route::delete('/address/{id}', [ProfileController::class, 'deleteAddress'])->name('address.delete');
+    Route::post('/address/{id}/set-default', [ProfileController::class, 'setDefaultAddress'])->name('address.set-default');
+    
+    // Password routes
+    Route::get('/password/edit', [ProfileController::class, 'editPassword'])->name('password.edit');
+    Route::put('/password/update', [ProfileController::class, 'updatePassword'])->name('password.update');
 });
 });

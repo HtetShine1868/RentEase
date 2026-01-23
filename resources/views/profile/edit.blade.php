@@ -1,173 +1,166 @@
-{{-- resources/views/profile/edit.blade.php --}}
-<x-app-layout>
-    <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{ __('Profile') }}
-        </h2>
-    </x-slot>
+@extends('dashboard')
 
-    <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                <div class="p-6">
-                    <!-- Profile Information -->
-                    <div class="mb-8">
-                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Profile Information</h3>
-                        <p class="text-sm text-gray-600 mb-6">Update your account's profile information and email address.</p>
-
-                        <form method="post" action="{{ route('profile.update') }}" class="space-y-6">
-                            @csrf
-                            @method('patch')
-
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <!-- Name -->
-                                <div>
-                                    <x-input-label for="name" :value="__('Name')" />
-                                    <x-text-input id="name" name="name" type="text" class="mt-1 block w-full" 
-                                        :value="old('name', $user->name)" required autofocus autocomplete="name" />
-                                    <x-input-error class="mt-2" :messages="$errors->get('name')" />
-                                </div>
-
-                                <!-- Email -->
-                                <div>
-                                    <x-input-label for="email" :value="__('Email')" />
-                                    <x-text-input id="email" name="email" type="email" class="mt-1 block w-full" 
-                                        :value="old('email', $user->email)" required autocomplete="email" />
-                                    <x-input-error class="mt-2" :messages="$errors->get('email')" />
-                                </div>
-
-                                <!-- Phone -->
-                                <div>
-                                    <x-input-label for="phone" :value="__('Phone')" />
-                                    <x-text-input id="phone" name="phone" type="tel" class="mt-1 block w-full" 
-                                        :value="old('phone', $user->phone)" required autocomplete="tel" />
-                                    <x-input-error class="mt-2" :messages="$errors->get('phone')" />
-                                </div>
-
-                                <!-- Location (Optional) -->
-                                <div>
-                                    <x-input-label for="location" :value="__('Location (Optional)')" />
-                                    <div class="flex space-x-2 mt-1">
-                                        <x-text-input id="location_lat" name="location_lat" type="text" 
-                                            class="block w-full" placeholder="Latitude" 
-                                            :value="old('location_lat', $user->location['lat'] ?? '')" />
-                                        <x-text-input id="location_lng" name="location_lng" type="text" 
-                                            class="block w-full" placeholder="Longitude" 
-                                            :value="old('location_lng', $user->location['lng'] ?? '')" />
-                                    </div>
-                                    <p class="text-xs text-gray-500 mt-1">For location-based service recommendations</p>
-                                    <x-input-error class="mt-2" :messages="$errors->get('location_lat')" />
-                                    <x-input-error class="mt-2" :messages="$errors->get('location_lng')" />
-                                </div>
-                            </div>
-
-                            <div class="flex items-center gap-4">
-                                <x-primary-button>{{ __('Save') }}</x-primary-button>
-
-                                @if (session('status') === 'profile-updated')
-                                    <p
-                                        x-data="{ show: true }"
-                                        x-show="show"
-                                        x-transition
-                                        x-init="setTimeout(() => show = false, 2000)"
-                                        class="text-sm text-green-600"
-                                    >{{ __('Saved.') }}</p>
-                                @endif
-                            </div>
-                        </form>
-                    </div>
-
-                    <!-- Update Password -->
-                    <div class="border-t border-gray-200 pt-8">
-                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Update Password</h3>
-                        <p class="text-sm text-gray-600 mb-6">Ensure your account is using a long, random password to stay secure.</p>
-
-                        <form method="post" action="{{ route('password.update') }}" class="space-y-6">
-                            @csrf
-                            @method('put')
-
-                            <div class="space-y-4">
-                                <div>
-                                    <x-input-label for="current_password" :value="__('Current Password')" />
-                                    <x-text-input id="current_password" name="current_password" type="password" 
-                                        class="mt-1 block w-full" autocomplete="current-password" />
-                                    <x-input-error :messages="$errors->updatePassword->get('current_password')" class="mt-2" />
-                                </div>
-
-                                <div>
-                                    <x-input-label for="password" :value="__('New Password')" />
-                                    <x-text-input id="password" name="password" type="password" 
-                                        class="mt-1 block w-full" autocomplete="new-password" />
-                                    <x-input-error :messages="$errors->updatePassword->get('password')" class="mt-2" />
-                                </div>
-
-                                <div>
-                                    <x-input-label for="password_confirmation" :value="__('Confirm Password')" />
-                                    <x-text-input id="password_confirmation" name="password_confirmation" type="password" 
-                                        class="mt-1 block w-full" autocomplete="new-password" />
-                                    <x-input-error :messages="$errors->updatePassword->get('password_confirmation')" class="mt-2" />
-                                </div>
-                            </div>
-
-                            <div class="flex items-center gap-4">
-                                <x-primary-button>{{ __('Update Password') }}</x-primary-button>
-
-                                @if (session('status') === 'password-updated')
-                                    <p
-                                        x-data="{ show: true }"
-                                        x-show="show"
-                                        x-transition
-                                        x-init="setTimeout(() => show = false, 2000)"
-                                        class="text-sm text-green-600"
-                                    >{{ __('Saved.') }}</p>
-                                @endif
-                            </div>
-                        </form>
-                    </div>
-
-                    <!-- Account Status -->
-                    <div class="border-t border-gray-200 pt-8">
-                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Account Information</h3>
-                        <div class="space-y-4">
-                            <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                                <div>
-                                    <p class="font-medium text-gray-900">Account Role</p>
-                                    <p class="text-sm text-gray-600">Your current role in the system</p>
-                                </div>
-                                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium 
-                                    @switch($user->role)
-                                        @case('superadmin') bg-red-100 text-red-800 @break
-                                        @case('owner') bg-blue-100 text-blue-800 @break
-                                        @case('food_provider') bg-green-100 text-green-800 @break
-                                        @case('laundry_provider') bg-yellow-100 text-yellow-800 @break
-                                        @default bg-gray-100 text-gray-800
-                                    @endswitch">
-                                    {{ ucfirst(str_replace('_', ' ', $user->role)) }}
-                                </span>
-                            </div>
-
-                            <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                                <div>
-                                    <p class="font-medium text-gray-900">Member Since</p>
-                                    <p class="text-sm text-gray-600">When you joined RMS</p>
-                                </div>
-                                <span class="text-gray-600">{{ $user->created_at->format('M d, Y') }}</span>
-                            </div>
-
-                            <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                                <div>
-                                    <p class="font-medium text-gray-900">Account Status</p>
-                                    <p class="text-sm text-gray-600">Current status of your account</p>
-                                </div>
-                                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium 
-                                    {{ $user->is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
-                                    {{ $user->is_active ? 'Active' : 'Inactive' }}
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+@section('content')
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="bg-white shadow rounded-lg p-6">
+        <div class="flex items-center justify-between">
+            <div>
+                <h1 class="text-2xl font-bold text-gray-900">Edit Profile</h1>
+                <p class="mt-2 text-gray-600">Update your personal information</p>
+            </div>
+            <div>
+                <a href="{{ route('profile.show') }}" 
+                   class="inline-flex items-center px-3 py-1 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                    <i class="fas fa-arrow-left mr-1"></i> Back to Profile
+                </a>
             </div>
         </div>
     </div>
-</x-app-layout>
+
+    <!-- Edit Form -->
+    <div class="bg-white shadow rounded-lg overflow-hidden">
+        <form method="POST" action="{{ route('profile.update') }}" enctype="multipart/form-data">
+            @csrf
+            @method('PUT')
+            
+            <div class="p-6 space-y-6">
+                <!-- Avatar Section -->
+                <div class="flex items-center space-x-6">
+                    <div class="flex-shrink-0">
+                        <div class="relative">
+                            @if($user->avatar_url)
+                                <img src="{{ Storage::url($user->avatar_url) }}" 
+                                     alt="{{ $user->name }}" 
+                                     class="h-32 w-32 rounded-full object-cover border-4 border-white shadow-lg">
+                            @else
+                                <div class="h-32 w-32 rounded-full bg-gray-200 flex items-center justify-center border-4 border-white shadow-lg">
+                                    <i class="fas fa-user text-gray-400 text-5xl"></i>
+                                </div>
+                            @endif
+                            <label for="avatar" class="absolute bottom-0 right-0 h-10 w-10 bg-indigo-600 rounded-full flex items-center justify-center cursor-pointer hover:bg-indigo-700 transition-colors">
+                                <i class="fas fa-camera text-white"></i>
+                                <input type="file" id="avatar" name="avatar" class="sr-only" accept="image/*">
+                            </label>
+                        </div>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-medium text-gray-900">Profile Picture</h3>
+                        <p class="mt-1 text-sm text-gray-500">JPG, PNG or GIF (Max 2MB)</p>
+                        @error('avatar')
+                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
+                    </div>
+                </div>
+
+                <!-- Personal Information -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Name -->
+                    <div>
+                        <label for="name" class="block text-sm font-medium text-gray-700">
+                            Full Name <span class="text-red-500">*</span>
+                        </label>
+                        <div class="mt-1 relative rounded-md shadow-sm">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <i class="fas fa-user text-gray-400"></i>
+                            </div>
+                            <input type="text" id="name" name="name" value="{{ old('name', $user->name) }}" required
+                                   class="pl-10 block w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500">
+                        </div>
+                        @error('name')
+                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <!-- Email -->
+                    <div>
+                        <label for="email" class="block text-sm font-medium text-gray-700">
+                            Email Address <span class="text-red-500">*</span>
+                        </label>
+                        <div class="mt-1 relative rounded-md shadow-sm">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <i class="fas fa-envelope text-gray-400"></i>
+                            </div>
+                            <input type="email" id="email" name="email" value="{{ old('email', $user->email) }}" required
+                                   class="pl-10 block w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500">
+                        </div>
+                        @error('email')
+                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <!-- Phone -->
+                    <div>
+                        <label for="phone" class="block text-sm font-medium text-gray-700">
+                            Phone Number
+                        </label>
+                        <div class="mt-1 relative rounded-md shadow-sm">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <i class="fas fa-phone text-gray-400"></i>
+                            </div>
+                            <input type="text" id="phone" name="phone" value="{{ old('phone', $user->phone) }}"
+                                   class="pl-10 block w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500">
+                        </div>
+                        @error('phone')
+                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <!-- Gender -->
+                    <div>
+                        <label for="gender" class="block text-sm font-medium text-gray-700">
+                            Gender <span class="text-red-500">*</span>
+                        </label>
+                        <select id="gender" name="gender" required
+                                class="mt-1 block w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500">
+                            <option value="">Select Gender</option>
+                            <option value="MALE" {{ old('gender', $user->gender) == 'MALE' ? 'selected' : '' }}>Male</option>
+                            <option value="FEMALE" {{ old('gender', $user->gender) == 'FEMALE' ? 'selected' : '' }}>Female</option>
+                            <option value="OTHER" {{ old('gender', $user->gender) == 'OTHER' ? 'selected' : '' }}>Other</option>
+                        </select>
+                        @error('gender')
+                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
+                    </div>
+                </div>
+
+                <!-- Form Actions -->
+                <div class="flex items-center justify-between pt-6 border-t border-gray-200">
+                    <a href="{{ route('profile.show') }}" 
+                       class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                        <i class="fas fa-times mr-2"></i>
+                        Cancel
+                    </a>
+                    <button type="submit" 
+                            class="inline-flex items-center px-6 py-3 border border-transparent shadow-sm text-base font-medium rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                        <i class="fas fa-save mr-2"></i>
+                        Save Changes
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- JavaScript for avatar preview -->
+<script>
+document.getElementById('avatar').addEventListener('change', function(e) {
+    if (e.target.files && e.target.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            // Create a new image element
+            const img = document.createElement('img');
+            img.src = e.target.result;
+            img.className = 'h-32 w-32 rounded-full object-cover border-4 border-white shadow-lg';
+            
+            // Replace the current avatar
+            const avatarContainer = document.querySelector('.flex-shrink-0 .relative');
+            const currentAvatar = avatarContainer.querySelector('img, div');
+            avatarContainer.insertBefore(img, currentAvatar);
+            currentAvatar.remove();
+        }
+        reader.readAsDataURL(e.target.files[0]);
+    }
+});
+</script>
+@endsection
