@@ -6,6 +6,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\RoleApplicationController;
 use App\Http\Controllers\PropertyController;
 use App\Http\Controllers\RoomController;
+use App\Http\Controllers\RentalSearchController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -130,4 +131,12 @@ Route::middleware('auth')->group(function () {
             return view('dashboard.laundry', ['title' => 'Laundry Provider Dashboard']);
         })->name('laundry.dashboard');
     });
+    // Rental Search Routes
+Route::prefix('rental')->name('rental.')->group(function () {
+    Route::get('/search', [RentalSearchController::class, 'index'])->name('search');
+    Route::get('/property/{property}', [RentalSearchController::class, 'show'])->name('property.details');
+    Route::get('/property/{property}/room/{room}', [RentalSearchController::class, 'showRoom'])->name('room.details');
+    Route::get('/property/{property}/rent', [RentalSearchController::class, 'rentApartment'])->name('apartment.rent');
+    Route::get('/property/{property}/room/{room}/rent', [RentalSearchController::class, 'rentRoom'])->name('room.rent');
+});
 });

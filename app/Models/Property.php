@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Property extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory;
 
     protected $fillable = [
         'owner_id',
@@ -72,9 +72,33 @@ class Property extends Model
         return $this->hasMany(Booking::class);
     }
 
-    public function availableRooms()
+public function availableRooms()
+{
+    return $this->hasMany(Room::class)->where('status', 'AVAILABLE');
+}
+    public function images()
     {
-        return $this->rooms()->where('status', 'AVAILABLE');
+        return $this->hasMany(PropertyImage::class)->orderBy('display_order');
+    }
+
+    public function primaryImage()
+    {
+        return $this->hasOne(PropertyImage::class)->where('is_primary', true);
+    }
+
+    public function reviews()
+    {
+        return $this->hasMany(PropertyRating::class);
+    }
+
+    public function averageRating()
+    {
+        return $this->reviews()->avg('overall_rating');
+    }
+
+    public function totalReviews()
+    {
+        return $this->reviews()->count();
     }
 
     // Accessors
