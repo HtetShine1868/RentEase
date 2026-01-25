@@ -3,45 +3,67 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Auth\LoginRequest;
-use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\View\View; // Add this import
+use Illuminate\Validation\ValidationException;
 
 class AuthenticatedSessionController extends Controller
 {
-    /**
-     * Display the login view.
-     */
-    public function create(): View // Use Illuminate\View\View
+    public function create()
     {
         return view('auth.login');
     }
 
-    /**
-     * Handle an incoming authentication request.
-     */
-    public function store(LoginRequest $request): RedirectResponse
+    public function store(Request $request)
     {
-        $request->authenticate();
+        $request->validate([
+            'email' => ['required', 'email'],
+            'password' => ['required'],
+        ]);
 
-        $request->session()->regenerate();
+        // Try to login
+        if (!Auth::attempt($request->only('email', 'password'), $request->boolean('remember'))) {
+            throw ValidationException::withMessages([
+                'email' => 'Invalid credentials.',
+            ]);
+        }
 
-        return redirect()->intended(route('dashboard', absolute: false));
+        $user = Auth::user();
+
+        // Check if email is verified
+        if (!$user->isVerified()) {
+            // Send verification code
+            $user->sendVerificationCode();
+            // Go to verification page
+            return redirect()->route('verification.show');
+        }
+
+        // Already verified - go to appropriate dashboard
+        return $this->redirectToDashboard();
     }
 
-    /**
-     * Destroy an authenticated session.
-     */
-    public function destroy(Request $request): RedirectResponse
+    public function destroy(Request $request)
     {
-        Auth::guard('web')->logout();
-
+        Auth::logout();
         $request->session()->invalidate();
-
         $request->session()->regenerateToken();
-
         return redirect('/');
+    }
+
+    private function redirectToDashboard()
+    {
+        $user = Auth::user();
+
+        if ($user->isSuperAdmin()) {
+            return redirect()->route('dashboard.admin');
+        } elseif ($user->isOwner()) {
+            return redirect()->route('dashboard.owner');
+        } elseif ($user->isFoodProvider()) {
+            return redirect()->route('dashboard.food');
+        } elseif ($user->isLaundryProvider()) {
+            return redirect()->route('dashboard.laundry');
+        } else {
+            return redirect()->route('dashboard.user');
+        }
     }
 }

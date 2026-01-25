@@ -10,7 +10,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules;
-use Illuminate\Support\Facades\DB;
 
 class RegisteredUserController extends Controller
 {
@@ -28,35 +27,27 @@ class RegisteredUserController extends Controller
             'terms' => ['required', 'accepted'],
         ]);
 
-        DB::beginTransaction();
-        try {
-            // Create user with minimal information
-            $user = User::create([
-                'name' => $request->name,
-                'email' => $request->email,
-                'password' => Hash::make($request->password),
-                'status' => 'ACTIVE',
-                // Default gender if needed
-                'gender' => 'OTHER',
-            ]);
+        $user = User::create([
+            'name' => $request->name,
+            'email' => $request->email,
+            'password' => Hash::make($request->password),
+            'status' => 'ACTIVE',
+            'gender' => null,
+        ]);
 
-            // Assign USER role
-            $userRole = Role::where('name', 'USER')->first();
-            if ($userRole) {
-                $user->roles()->attach($userRole->id);
-            }
-
-            DB::commit();
-
-            event(new Registered($user));
-
-            Auth::login($user);
-
-            return redirect(route('dashboard', absolute: false));
-
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return back()->withErrors(['error' => 'Registration failed. Please try again.']);
+        // Assign USER role
+        $userRole = Role::where('name', 'USER')->first();
+        if ($userRole) {
+            $user->roles()->attach($userRole->id);
         }
+
+        // Send verification email
+        $code = $user->sendVerificationCode();
+
+        // Log the user in
+        Auth::login($user);
+
+        // Go directly to verification page
+        return redirect()->route('verification.show');
     }
 }

@@ -2,12 +2,13 @@
 
 namespace App\Models;
 
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class User extends Authenticatable
+class User extends Authenticatable implements MustVerifyEmail
 {
     use HasFactory, Notifiable, SoftDeletes;
 
@@ -19,16 +20,21 @@ class User extends Authenticatable
         'gender',
         'avatar_url',
         'status',
-        'email_verified_at'
+        'email_verified_at',
+        'verification_code', 
+        'verification_code_sent_at', 
+        'verification_attempts',
     ];
 
     protected $hidden = [
         'password',
         'remember_token',
+        'verification_code',
     ];
 
     protected $casts = [
         'email_verified_at' => 'datetime',
+        'verification_code_sent_at' => 'datetime',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
         'deleted_at' => 'datetime',
@@ -37,7 +43,95 @@ class User extends Authenticatable
     protected $attributes = [
         'status' => 'ACTIVE',
          'gender' => null,
+         'verification_attempts' => 0,
     ];
+        // Check if email is verified
+    public function isVerified()
+    {
+        return !is_null($this->email_verified_at);
+    }
+
+
+    // Generate verification code
+// In User model, update sendVerificationCode method:
+public function sendVerificationCode()
+{
+    // Generate 6-digit code
+    $this->verification_code = rand(100000, 999999);
+    $this->verification_code_sent_at = now();
+    $this->save();
+
+    // Debug: Always log the code
+    \Log::info("=== VERIFICATION CODE ===");
+    \Log::info("For: {$this->email}");
+    \Log::info("Code: {$this->verification_code}");
+    \Log::info("========================");
+
+    // Try to send email
+    try {
+        \Mail::raw("Your RMS verification code is: {$this->verification_code}", function($message) {
+            $message->to($this->email)
+                    ->subject('RMS Verification Code');
+        });
+        \Log::info("Email sent successfully to {$this->email}");
+    } catch (\Exception $e) {
+        \Log::error("Failed to send email to {$this->email}: " . $e->getMessage());
+    }
+
+    return $this->verification_code;
+}
+
+public function verifyCode($code)
+{
+    // Check if code matches
+    if ($this->verification_code === $code) {
+        // Check if code is not expired (10 minutes)
+            if ($this->verification_code_sent_at->addMinutes(10)->isFuture()) {
+                $this->email_verified_at = now();
+                $this->verification_code = null;
+                $this->verification_code_sent_at = null;
+                $this->save();
+                return true;
+            }
+        }
+        
+        // Increment attempts
+        $this->increment('verification_attempts');
+        
+        // Check if too many attempts
+        if ($this->verification_attempts >= 5) {
+            $this->verification_code = null;
+            $this->verification_code_sent_at = null;
+            $this->save();
+        }
+        
+        return false;
+    }
+
+    /**
+     * Check if verification code is expired
+     */
+    public function isVerificationCodeExpired()
+    {
+        if (!$this->verification_code_sent_at) {
+            return true;
+        }
+        
+        return $this->verification_code_sent_at->addMinutes(10)->isPast();
+    }
+
+    /**
+     * Check if user can request new code
+     */
+    public function canRequestNewCode()
+    {
+        if (!$this->verification_code_sent_at) {
+            return true;
+        }
+        
+        // Allow new code after 1 minute
+        return $this->verification_code_sent_at->addMinutes(1)->isPast();
+    }
 
     // Relationships
     public function addresses()
@@ -125,4 +219,5 @@ class User extends Authenticatable
     {
         return $query->where('status', 'BANNED');
     }
+
 }
