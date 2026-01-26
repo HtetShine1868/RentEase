@@ -1,0 +1,265 @@
+/* Menu Management Specific Styles */
+
+/* Category Card Hover Effects */
+.category-card {
+    transition: all 0.2s ease-in-out;
+}
+
+.category-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+.category-card:hover .category-icon {
+    transform: scale(1.1);
+}
+
+.category-icon {
+    transition: transform 0.2s ease-in-out;
+}
+
+/* Menu Item Card Styles */
+.menu-item-card {
+    position: relative;
+    overflow: hidden;
+}
+
+.menu-item-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #4f46e5, #7c3aed, #ec4899);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.menu-item-card:hover::before {
+    opacity: 1;
+}
+
+.menu-item-image {
+    transition: transform 0.5s ease;
+}
+
+.menu-item-card:hover .menu-item-image {
+    transform: scale(1.05);
+}
+
+/* Status Badge Animation */
+.status-badge {
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.7;
+    }
+}
+
+/* Price Display */
+.price-display {
+    position: relative;
+    font-feature-settings: "tnum";
+    font-variant-numeric: tabular-nums;
+}
+
+/* Commission Preview */
+.commission-preview {
+    background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+    border-left: 4px solid #4f46e5;
+}
+
+/* Form Field Focus Styles */
+.menu-form-input:focus {
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+
+/* Drag & Drop Styles */
+.drag-handle {
+    cursor: move;
+    transition: background-color 0.2s;
+}
+
+.drag-handle:hover {
+    background-color: #f3f4f6;
+}
+
+.sortable-ghost {
+    opacity: 0.4;
+    background-color: #dbeafe;
+}
+
+.sortable-chosen {
+    background-color: #eff6ff;
+    border-color: #3b82f6;
+}
+
+/* Loading States */
+.skeleton-loading {
+    background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%);
+    background-size: 200% 100%;
+    animation: loading 1.5s infinite;
+}
+
+@keyframes loading {
+    0% {
+        background-position: 200% 0;
+    }
+    100% {
+        background-position: -200% 0;
+    }
+}
+
+/* Empty State Animation */
+.empty-state-icon {
+    animation: bounce 2s infinite;
+}
+
+@keyframes bounce {
+    0%, 100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-10px);
+    }
+}
+
+/* Responsive Adjustments */
+@media (max-width: 640px) {
+    .menu-grid {
+        grid-template-columns: repeat(1, 1fr);
+    }
+    
+    .category-grid {
+        grid-template-columns: repeat(1, 1fr);
+    }
+}
+
+@media (min-width: 641px) and (max-width: 1024px) {
+    .menu-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .category-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* Print Styles */
+@media print {
+    .menu-item-card {
+        break-inside: avoid;
+        border: 1px solid #e5e7eb;
+        box-shadow: none;
+    }
+    
+    .no-print {
+        display: none;
+    }
+}
+
+/* Dark Mode Support (if needed) */
+@media (prefers-color-scheme: dark) {
+    .menu-item-card {
+        background-color: #1f2937;
+        border-color: #374151;
+    }
+    
+    .category-card {
+        background-color: #1f2937;
+        border-color: #374151;
+    }
+    
+    .commission-preview {
+        background: linear-gradient(135deg, #374151 0%, #4b5563 100%);
+    }
+}
+
+/* Scrollbar Styling */
+.menu-scrollable::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+.menu-scrollable::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+.menu-scrollable::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 4px;
+}
+
+.menu-scrollable::-webkit-scrollbar-thumb:hover {
+    background: #a1a1a1;
+}
+
+/* Image Upload Preview */
+.image-upload-preview {
+    background: linear-gradient(45deg, #f3f4f6 25%, transparent 25%),
+                linear-gradient(-45deg, #f3f4f6 25%, transparent 25%),
+                linear-gradient(45deg, transparent 75%, #f3f4f6 75%),
+                linear-gradient(-45deg, transparent 75%, #f3f4f6 75%);
+    background-size: 20px 20px;
+    background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+}
+
+/* Filter Panel Transitions */
+.filter-panel {
+    transition: max-height 0.3s ease-out;
+    overflow: hidden;
+}
+
+.filter-panel.collapsed {
+    max-height: 0;
+}
+
+/* Price Input Animation */
+.price-input:valid {
+    border-color: #10b981;
+}
+
+.price-input:invalid:not(:focus):not(:placeholder-shown) {
+    border-color: #ef4444;
+    animation: shake 0.5s;
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    75% { transform: translateX(5px); }
+}
+
+/* Tooltip Styles */
+.menu-tooltip {
+    position: relative;
+}
+
+.menu-tooltip::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 4px 8px;
+    background-color: #374151;
+    color: white;
+    font-size: 12px;
+    border-radius: 4px;
+    white-space: nowrap;
+    opacity: 0;
+    transition: opacity 0.2s;
+    pointer-events: none;
+    z-index: 10;
+}
+
+.menu-tooltip:hover::after {
+    opacity: 1;
+}
