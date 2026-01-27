@@ -61,6 +61,18 @@
                         <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                     @enderror
                 </div>
+                @if (session('status'))
+                <div class="mb-4 bg-green-50 border-l-4 border-green-400 p-4 rounded">
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-check-circle text-green-400"></i>
+                        </div>
+                        <div class="ml-3">
+                            <p class="text-sm text-green-700">{{ session('status') }}</p>
+                        </div>
+                    </div>
+                </div>
+                @endif
 
                 <!-- Password -->
                 <div>

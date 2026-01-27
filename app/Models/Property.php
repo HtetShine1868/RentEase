@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Property extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory;
 
     protected $fillable = [
         'owner_id',
@@ -29,20 +29,27 @@ class Property extends Model
         'min_stay_months',
         'deposit_months',
         'base_price',
-        'commission_rate'
+        'commission_rate',
     ];
 
     protected $casts = [
-        'latitude' => 'decimal:7',
-        'longitude' => 'decimal:7',
+        'latitude' => 'float',
+        'longitude' => 'float',
         'base_price' => 'decimal:2',
         'commission_rate' => 'decimal:2',
         'unit_size' => 'integer',
         'bedrooms' => 'integer',
-        'bathrooms' => 'integer'
+        'bathrooms' => 'integer',
+        'min_stay_months' => 'integer',
+        'deposit_months' => 'integer',
     ];
 
-    protected $appends = ['total_price'];
+    protected $appends = [
+        'total_price',
+        'formatted_price',
+        'status_badge',
+        'type_name',
+    ];
 
     // Relationships
     public function owner()
@@ -50,14 +57,14 @@ class Property extends Model
         return $this->belongsTo(User::class, 'owner_id');
     }
 
-    public function amenities()
-    {
-        return $this->hasMany(PropertyAmenity::class);
-    }
-
     public function rooms()
     {
         return $this->hasMany(Room::class);
+    }
+
+    public function amenities()
+    {
+        return $this->hasMany(PropertyAmenity::class);
     }
 
     public function bookings()
@@ -65,26 +72,92 @@ class Property extends Model
         return $this->hasMany(Booking::class);
     }
 
-    public function ratings()
+public function availableRooms()
+{
+    return $this->hasMany(Room::class)->where('status', 'AVAILABLE');
+}
+    public function images()
+    {
+        return $this->hasMany(PropertyImage::class)->orderBy('display_order');
+    }
+
+    public function primaryImage()
+    {
+        return $this->hasOne(PropertyImage::class)->where('is_primary', true);
+    }
+
+    public function reviews()
     {
         return $this->hasMany(PropertyRating::class);
     }
 
-    // Attributes
+    public function averageRating()
+    {
+        return $this->reviews()->avg('overall_rating');
+    }
+
+    public function totalReviews()
+    {
+        return $this->reviews()->count();
+    }
+
+    // Accessors
     public function getTotalPriceAttribute()
     {
         return $this->base_price + ($this->base_price * $this->commission_rate / 100);
     }
 
-    public function getAverageRatingAttribute()
+    public function getFormattedPriceAttribute()
     {
-        return $this->ratings()->avg('overall_rating');
+        return '৳' . number_format($this->total_price, 2);
+    }
+
+    public function getStatusBadgeAttribute()
+    {
+        $badges = [
+            'DRAFT' => 'bg-gray-100 text-gray-800',
+            'PENDING' => 'bg-yellow-100 text-yellow-800',
+            'ACTIVE' => 'bg-green-100 text-green-800',
+            'INACTIVE' => 'bg-red-100 text-red-800',
+        ];
+
+        return $badges[$this->status] ?? 'bg-gray-100 text-gray-800';
+    }
+
+    public function getTypeNameAttribute()
+    {
+        return $this->type === 'HOSTEL' ? 'Hostel' : 'Apartment';
+    }
+
+    public function getGenderPolicyNameAttribute()
+    {
+        return match($this->gender_policy) {
+            'MALE_ONLY' => 'Male Only',
+            'FEMALE_ONLY' => 'Female Only',
+            'MIXED' => 'Mixed',
+            default => 'Mixed',
+        };
+    }
+
+    public function getFurnishingStatusNameAttribute()
+    {
+        return match($this->furnishing_status) {
+            'FURNISHED' => 'Furnished',
+            'SEMI_FURNISHED' => 'Semi-Furnished',
+            'UNFURNISHED' => 'Unfurnished',
+            default => 'Not Specified',
+        };
     }
 
     // Scopes
     public function scopeActive($query)
     {
         return $query->where('status', 'ACTIVE');
+    }
+
+    public function scopeDraft($query)
+    {
+        return $query->where('status', 'DRAFT');
     }
 
     public function scopeHostel($query)
@@ -97,18 +170,31 @@ class Property extends Model
         return $query->where('type', 'APARTMENT');
     }
 
-    public function scopeAvailable($query)
+    public function scopeSearch($query, $search)
     {
-        return $query->where('status', 'ACTIVE');
+        return $query->where('name', 'like', "%{$search}%")
+                    ->orWhere('description', 'like', "%{$search}%")
+                    ->orWhere('address', 'like', "%{$search}%")
+                    ->orWhere('city', 'like', "%{$search}%")
+                    ->orWhere('area', 'like', "%{$search}%");
     }
 
-    public function scopeWithinRadius($query, $lat, $lng, $radius = 10)
+    // Business Logic
+    public function canBeBooked()
     {
-        return $query->selectRaw("
-            *,
-            (6371 * acos(cos(radians(?)) * cos(radians(latitude)) * cos(radians(longitude) - radians(?)) + sin(radians(?)) * sin(radians(latitude)))) AS distance
-        ", [$lat, $lng, $lat])
-        ->having('distance', '<=', $radius)
-        ->orderBy('distance');
+        return $this->status === 'ACTIVE' && 
+               ($this->type === 'APARTMENT' || $this->availableRooms()->exists());
+    }
+
+    public function updateStatus($status)
+    {
+        $allowedStatuses = ['DRAFT', 'PENDING', 'ACTIVE', 'INACTIVE'];
+        
+        if (in_array($status, $allowedStatuses)) {
+            $this->update(['status' => $status]);
+            return true;
+        }
+        
+        return false;
     }
 }

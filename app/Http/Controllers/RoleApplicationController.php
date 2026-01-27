@@ -3,232 +3,257 @@
 namespace App\Http\Controllers;
 
 use App\Models\RoleApplication;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
 class RoleApplicationController extends Controller
 {
     /**
-     * Show role application form
+     * Show the role selection page.
      */
-    public function create($role = null)
+    public function index()
     {
         $user = Auth::user();
         
-        // Check if role is valid
-        if (!in_array($role, ['OWNER', 'FOOD', 'LAUNDRY'])) {
-            return redirect()->route('dashboard')
-                ->with('error', 'Invalid role selected.');
+        // Get existing applications
+        $applications = RoleApplication::where('user_id', $user->id)
+            ->orderBy('created_at', 'desc')
+            ->get();
+        
+        // Check which roles user can apply for
+        $availableRoles = [];
+        $roleTypes = ['OWNER', 'FOOD', 'LAUNDRY'];
+        
+        foreach ($roleTypes as $roleType) {
+            if (RoleApplication::canApply($user->id, $roleType)) {
+                $availableRoles[] = $roleType;
+            }
         }
-
-        if (!$user->canApplyForRole($role)) {
-            return redirect()->route('dashboard')
-                ->with('error', 'You cannot apply for this role at this time.');
-        }
-
-        $roleDetails = $this->getRoleDetails($role);
-
-        return view('user.role-application.create', [
-            'role' => $role,
-            'roleDetails' => $roleDetails
+        
+        return view('role-applications.index', [
+            'title' => 'Apply for Role',
+            'applications' => $applications,
+            'availableRoles' => $availableRoles,
+            'user' => $user
         ]);
     }
 
     /**
-     * Store role application
+     * Show the role application form based on role type.
      */
-    public function store(Request $request)
+    public function create($roleType)
     {
         $user = Auth::user();
-        $role = $request->input('role_type');
-
-        // Base validation for all roles
-        $baseValidation = [
-            'role_type' => 'required|in:OWNER,FOOD,LAUNDRY',
-            'business_name' => 'required|string|max:200',
-            'business_registration' => 'nullable|string|max:100',
-            'contact_person' => 'required|string|max:100',
-            'contact_email' => 'required|email|max:150',
-            'contact_phone' => 'required|string|max:20',
-            'document' => 'nullable|file|mimes:pdf,jpg,png|max:2048',
-        ];
-
-        // Role-specific validation rules
-        $roleSpecificRules = [];
-
-        switch ($role) {
-            case 'OWNER':
-                $roleSpecificRules = [
-                    'property_type' => 'required|in:HOSTEL,APARTMENT',
-                    'property_count' => 'nullable|integer|min:1',
-                    'years_experience' => 'nullable|integer|min:0',
-                ];
-                break;
-
-            case 'FOOD':
-                $roleSpecificRules = [
-                    'business_address' => 'required|string',
-                    'service_radius_km' => 'required|numeric|min:1|max:50',
-                    'food_license' => 'required|string|max:100',
-                    'service_types' => 'required|array',
-                    'service_types.*' => 'in:subscription,pay_per_eat',
-                    'opening_time' => 'required|date_format:H:i',
-                    'closing_time' => 'required|date_format:H:i|after:opening_time',
-                    'avg_preparation_time' => 'required|integer|min:15|max:120',
-                ];
-                break;
-
-            case 'LAUNDRY':
-                $roleSpecificRules = [
-                    'business_address' => 'required|string',
-                    'service_radius_km' => 'required|numeric|min:1|max:50',
-                    'service_license' => 'required|string|max:100',
-                    'provides_pickup' => 'required|boolean',
-                    'normal_turnaround_hours' => 'required|integer|min:24|max:168',
-                    'rush_turnaround_hours' => 'required|integer|min:12|max:48',
-                    'laundry_items' => 'required|array|min:1',
-                ];
-                break;
-        }
-
-        // Merge validation rules
-        $validationRules = array_merge($baseValidation, $roleSpecificRules);
-        $request->validate($validationRules);
-
-        // Check if user can apply
-        if (!$user->canApplyForRole($role)) {
-            return redirect()->route('dashboard')
-                ->with('error', 'You cannot apply for this role at this time.');
-        }
-
-        // Handle document upload
-        $documentPath = null;
-        if ($request->hasFile('document')) {
-            $documentPath = $request->file('document')->store('documents', 'public');
-        }
-
-        // Prepare application data
-        $applicationData = [
-            'user_id' => $user->id,
-            'role_type' => $role,
-            'status' => 'PENDING',
-            'business_name' => $request->business_name,
-            'business_registration' => $request->business_registration,
-            'document_path' => $documentPath,
-            'contact_person' => $request->contact_person,
-            'contact_email' => $request->contact_email,
-            'contact_phone' => $request->contact_phone,
-        ];
-
-        // Prepare additional_info JSON based on role
-        $additionalInfo = [];
-
-        switch ($role) {
-            case 'OWNER':
-                $additionalInfo = [
-                    'property_type' => $request->property_type,
-                    'property_count' => $request->property_count,
-                    'years_experience' => $request->years_experience,
-                ];
-                break;
-
-            case 'FOOD':
-                $applicationData['business_address'] = $request->business_address;
-                $applicationData['service_radius_km'] = $request->service_radius_km;
-                
-                $additionalInfo = [
-                    'food_license' => $request->food_license,
-                    'service_types' => $request->service_types,
-                    'opening_time' => $request->opening_time,
-                    'closing_time' => $request->closing_time,
-                    'avg_preparation_time' => $request->avg_preparation_time,
-                ];
-                break;
-
-            case 'LAUNDRY':
-                $applicationData['business_address'] = $request->business_address;
-                $applicationData['service_radius_km'] = $request->service_radius_km;
-                
-                $additionalInfo = [
-                    'service_license' => $request->service_license,
-                    'provides_pickup' => $request->provides_pickup,
-                    'normal_turnaround_hours' => $request->normal_turnaround_hours,
-                    'rush_turnaround_hours' => $request->rush_turnaround_hours,
-                    'laundry_items' => $request->laundry_items,
-                ];
-                break;
-        }
-
-       
-        $applicationData['additional_info'] = json_encode($additionalInfo);
-
-   
-        $application = RoleApplication::create($applicationData);
-
-        if (in_array($role, ['FOOD', 'LAUNDRY']) && $request->filled('business_address')) {
-            $application->update([
-                'latitude' => 23.8103, 
-                'longitude' => 90.4125,
-            ]);
-        }
-
-        return redirect()->route('dashboard')
-            ->with('success', 'Your application has been submitted successfully! It will be reviewed within 2-3 business days.');
-    }
-
-    /**
-     * Show user's applications
-     */
-    public function index()
-    {
-        $applications = Auth::user()->roleApplications()->latest()->get();
         
-        return view('user.role-application.index', compact('applications'));
+        // Validate role type
+        if (!in_array($roleType, ['OWNER', 'FOOD', 'LAUNDRY'])) {
+            return redirect()->route('role.apply.index')->withErrors(['Invalid role type']);
+        }
+        
+        // Check if user can apply for this role
+        if (!RoleApplication::canApply($user->id, $roleType)) {
+            return redirect()->route('role.apply.index')
+                ->withErrors(['You cannot apply for this role at this time.']);
+        }
+        
+        $roleName = match($roleType) {
+            'OWNER' => 'Property Owner',
+            'FOOD' => 'Food Provider',
+            'LAUNDRY' => 'Laundry Provider',
+            default => $roleType,
+        };
+        
+        return view("role-applications.create-{$roleType}", [
+            'title' => "Apply as {$roleName}",
+            'roleType' => $roleType,
+            'roleName' => $roleName,
+            'requirements' => RoleApplication::getRoleRequirements($roleType)
+        ]);
     }
 
     /**
-     * Show application details
+     * Store a new role application.
      */
-    public function show(RoleApplication $application)
+    public function store(Request $request, $roleType)
     {
+        $user = Auth::user();
+        
+        // Validate role type
+        if (!in_array($roleType, ['OWNER', 'FOOD', 'LAUNDRY'])) {
+            return redirect()->route('role.apply.index')->withErrors(['Invalid role type']);
+        }
+        
+        // Check if user can apply
+        if (!RoleApplication::canApply($user->id, $roleType)) {
+            return redirect()->route('role.apply.index')
+                ->withErrors(['You cannot apply for this role at this time.']);
+        }
+        
+        // Common validation for all roles
+        $commonRules = [
+            'business_name' => ['required', 'string', 'max:200'],
+            'contact_person' => ['required', 'string', 'max:100'],
+            'contact_email' => ['required', 'email', 'max:150'],
+            'contact_phone' => ['required', 'string', 'max:20'],
+            'business_address' => ['required', 'string'],
+            'latitude' => ['required', 'numeric', 'between:-90,90'],
+            'longitude' => ['required', 'numeric', 'between:-180,180'],
+            'document' => ['required', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:2048'],
+        ];
+        
+        // Role-specific validation
+        $roleSpecificRules = match($roleType) {
+            'OWNER' => [
+                'property_type' => ['required', 'in:HOSTEL,APARTMENT'],
+                'property_count' => ['required', 'integer', 'min:1'],
+                'years_experience' => ['required', 'integer', 'min:0'],
+            ],
+            'FOOD' => [
+                'service_radius_km' => ['required', 'numeric', 'min:1', 'max:50'],
+                'cuisine_type' => ['required', 'string'],
+                'meal_types' => ['required', 'array'],
+                'meal_types.*' => ['in:BREAKFAST,LUNCH,DINNER,SNACKS'],
+                'delivery_hours' => ['required', 'string'],
+                'max_daily_orders' => ['required', 'integer', 'min:1'],
+            ],
+            'LAUNDRY' => [
+                'service_radius_km' => ['required', 'numeric', 'min:1', 'max:50'],
+                'has_pickup_service' => ['required', 'boolean'],
+                'normal_turnaround_hours' => ['required', 'integer', 'min:24'],
+                'rush_turnaround_hours' => ['required', 'integer', 'min:12'],
+                'max_daily_orders' => ['required', 'integer', 'min:1'],
+            ],
+        };
+        
+        $validationRules = array_merge($commonRules, $roleSpecificRules);
+        
+        $validated = $request->validate($validationRules);
+        
+        DB::beginTransaction();
+        try {
+            // Handle document upload
+            $documentPath = null;
+            if ($request->hasFile('document')) {
+                $documentPath = $request->file('document')->store('documents/role-applications', 'public');
+            }
+            
+            // Prepare additional data based on role type
+            $additionalData = match($roleType) {
+                'OWNER' => [
+                    'owner' => [
+                        'property_type' => $validated['property_type'],
+                        'property_count' => $validated['property_count'],
+                        'years_experience' => $validated['years_experience'],
+                    ]
+                ],
+                'FOOD' => [
+                    'food_provider' => [
+                        'service_radius_km' => $validated['service_radius_km'],
+                        'cuisine_type' => $validated['cuisine_type'],
+                        'meal_types' => $validated['meal_types'],
+                        'delivery_hours' => $validated['delivery_hours'],
+                        'max_daily_orders' => $validated['max_daily_orders'],
+                    ]
+                ],
+                'LAUNDRY' => [
+                    'laundry_provider' => [
+                        'service_radius_km' => $validated['service_radius_km'],
+                        'has_pickup_service' => $validated['has_pickup_service'],
+                        'normal_turnaround_hours' => $validated['normal_turnaround_hours'],
+                        'rush_turnaround_hours' => $validated['rush_turnaround_hours'],
+                        'max_daily_orders' => $validated['max_daily_orders'],
+                    ]
+                ],
+            };
+            
+            // Create role application
+            $application = RoleApplication::create([
+                'user_id' => $user->id,
+                'role_type' => $roleType,
+                'business_name' => $validated['business_name'],
+                'contact_person' => $validated['contact_person'],
+                'contact_email' => $validated['contact_email'],
+                'contact_phone' => $validated['contact_phone'],
+                'business_address' => $validated['business_address'],
+                'latitude' => $validated['latitude'],
+                'longitude' => $validated['longitude'],
+                'service_radius_km' => $roleType !== 'OWNER' ? $validated['service_radius_km'] : null,
+                'document_path' => $documentPath,
+                'additional_data' => $additionalData,
+                'status' => 'PENDING',
+            ]);
+            
+            DB::commit();
+            
+            return redirect()->route('role.apply.index')
+                ->with('success', 'Your application has been submitted successfully! It will be reviewed by our admin team.');
+                
+        } catch (\Exception $e) {
+            DB::rollBack();
+            // Delete uploaded file if error occurs
+            if (isset($documentPath) && Storage::disk('public')->exists($documentPath)) {
+                Storage::disk('public')->delete($documentPath);
+            }
+            
+            return back()->withErrors(['error' => 'Failed to submit application. Please try again.']);
+        }
+    }
+
+    /**
+     * Show a specific application.
+     */
+    public function show($id)
+    {
+        $application = RoleApplication::findOrFail($id);
+        
+        // Check if user owns this application or is admin
+        if ($application->user_id !== Auth::id() && !Auth::user()->isSuperAdmin()) {
+            abort(403);
+        }
+        
+        return view('role-applications.show', [
+            'title' => 'Application Details',
+            'application' => $application
+        ]);
+    }
+
+    /**
+     * Cancel a pending application.
+     */
+    public function destroy($id)
+    {
+        $application = RoleApplication::findOrFail($id);
+        
         // Check if user owns this application
         if ($application->user_id !== Auth::id()) {
             abort(403);
         }
-
-        return view('user.role-application.show', compact('application'));
-    }
-
-    /**
-     * Get role details for display
-     */
-    private function getRoleDetails($role)
-    {
-        $roles = [
-            'OWNER' => [
-                'title' => 'Property Owner',
-                'description' => 'List and manage rental properties',
-                'commission' => '3-5%',
-                'requirements' => ['Property documents', 'Tax registration'],
-                'icon' => 'home',
-            ],
-            'FOOD' => [
-                'title' => 'Food Service Provider',
-                'description' => 'Provide food subscription and pay-per-eat services',
-                'commission' => '8%',
-                'requirements' => ['Business license', 'Food safety certificate'],
-                'icon' => 'utensils',
-            ],
-            'LAUNDRY' => [
-                'title' => 'Laundry Service Provider',
-                'description' => 'Provide laundry services with normal/rush options',
-                'commission' => '10%',
-                'requirements' => ['Business license', 'Service location'],
-                'icon' => 'tshirt',
-            ],
-        ];
-
-        return $roles[$role] ?? null;
+        
+        // Only allow cancellation of pending applications
+        if ($application->status !== 'PENDING') {
+            return back()->withErrors(['error' => 'Only pending applications can be cancelled.']);
+        }
+        
+        DB::beginTransaction();
+        try {
+            // Delete document file
+            if ($application->document_path && Storage::disk('public')->exists($application->document_path)) {
+                Storage::disk('public')->delete($application->document_path);
+            }
+            
+            $application->delete();
+            
+            DB::commit();
+            
+            return redirect()->route('role.apply.index')
+                ->with('success', 'Application cancelled successfully.');
+                
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->withErrors(['error' => 'Failed to cancel application. Please try again.']);
+        }
     }
 }
