@@ -16,6 +16,10 @@ Route::get('/', function () {
     return view('welcome');
 })->name('home');
 
+Route::get('/test-role-middleware', function () {
+    return 'Middleware is working!';
+})->middleware('role:FOOD');
+
 // ============ PUBLIC ROUTES ============
 Route::middleware('guest')->group(function () {
     Route::get('register', [RegisteredUserController::class, 'create'])->name('register');
@@ -190,7 +194,7 @@ Route::prefix('owner')->name('owner.')->group(function () {
     // Food Provider Routes
     Route::middleware(['role:FOOD'])->group(function () {
         Route::get('/food-provider/dashboard', function () {
-            return view('dashboard.food', ['title' => 'Food Provider Dashboard']);
+            return view('food-provider.dashboard.index', ['title' => 'Food Provider Dashboard']);
         })->name('food.dashboard');
     });
 

@@ -40,6 +40,10 @@ class UserRoleSeeder extends Seeder
 
         // Assign roles
         DB::table('user_roles')->insert([
+             [
+                'user_id' => DB::table('users')->where('email', 'userr@example.com')->value('id'),
+                'role_id' => DB::table('roles')->where('name', 'USER')->value('id'),
+            ],
             [
                 'user_id' => DB::table('users')->where('email', 'owner@example.com')->value('id'),
                 'role_id' => DB::table('roles')->where('name', 'OWNER')->value('id'),
