@@ -35,7 +35,7 @@ class AuthenticatedSessionController extends Controller
             // Send verification code
             $user->sendVerificationCode();
             // Go to verification page
-            return redirect()->route('verification.show');
+           return redirect()->route('verify.show');
         }
 
         // Already verified - go to appropriate dashboard
@@ -59,7 +59,7 @@ class AuthenticatedSessionController extends Controller
         } elseif ($user->isOwner()) {
             return redirect()->route('dashboard.owner');
         } elseif ($user->isFoodProvider()) {
-            return redirect()->route('dashboard.food');
+            return redirect()->route('food-provider.dashboard.index');
         } elseif ($user->isLaundryProvider()) {
             return redirect()->route('dashboard.laundry');
         } else {

@@ -9,8 +9,15 @@
         <!-- Page Title (Hidden on mobile when sidebar is open) -->
         <div>
             <h1 class="text-lg md:text-xl font-semibold text-gray-800">
-                @yield('header-title', @yield('page-title', 'Dashboard'))
+                @hasSection('header-title')
+                    @yield('header-title')
+                @elseif (View::hasSection('page-title'))
+                    @yield('page-title')
+                @else
+                    Dashboard
+                @endif
             </h1>
+
         </div>
     </div>
     

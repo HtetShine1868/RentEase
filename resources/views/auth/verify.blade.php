@@ -66,7 +66,7 @@
             <p>If you don't see it, check your spam folder.</p>
         </div>
         
-        <form method="POST" action="{{ url('/verify') }}">
+        <form method="POST" action="{{ url('/') }}">
             @csrf
             <input type="text" 
                    name="code" 
@@ -80,8 +80,8 @@
         </form>
         
         <p style="margin: 20px 0; color: #6b7280;">Didn't receive the code?</p>
-        
-        <form method="POST" action="{{ route('verification.resend') }}">
+
+        <form method="POST" action="{{ url('/resend') }}">
             @csrf
             <button type="submit" class="btn btn-resend">Resend Verification Code</button>
         </form>

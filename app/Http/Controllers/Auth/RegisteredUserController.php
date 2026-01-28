@@ -48,6 +48,7 @@ class RegisteredUserController extends Controller
         Auth::login($user);
 
         // Go directly to verification page
-        return redirect()->route('verification.show');
+       return redirect()->route('verify.show');
+
     }
 }

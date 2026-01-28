@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class DashboardController extends Controller
@@ -11,28 +10,23 @@ class DashboardController extends Controller
     {
         $user = Auth::user();
         
-        // Redirect based on primary role
-        if ($user->isSuperAdmin()) {
-            return view('dashboard.admin', [
-                'title' => 'SuperAdmin Dashboard'
-            ]);
-        } elseif ($user->isOwner()) {
-            return view('dashboard.owner', [
-                'title' => 'Property Owner Dashboard'
-            ]);
-        } elseif ($user->isFoodProvider()) {
-            return view('dashboard.food', [
-                'title' => 'Food Provider Dashboard'
-            ]);
-        } elseif ($user->isLaundryProvider()) {
-            return view('dashboard.laundry', [
-                'title' => 'Laundry Provider Dashboard'
-            ]);
+        // Check if user is verified
+        if (!$user->isVerified()) {
+            return redirect()->route('verify.show');
         }
-
-        // Regular user dashboard
-        return view('dashboard.user', [
-            'title' => 'Dashboard Overview'
-        ]);
+        
+        // Redirect based on role
+        if ($user->isSuperAdmin()) {
+            return redirect()->route('admin.dashboard');
+        } elseif ($user->isOwner()) {
+            return redirect()->route('owner.dashboard');
+        } elseif ($user->isFoodProvider()) {
+            return redirect()->route('food.dashboard');
+        } elseif ($user->isLaundryProvider()) {
+            return redirect()->route('laundry.dashboard');
+        } else {
+            // Regular user - go to user dashboard
+            return redirect()->route('dashboard.user');
+        }
     }
 }
