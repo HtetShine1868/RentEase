@@ -35,7 +35,7 @@ class AuthenticatedSessionController extends Controller
             // Send verification code
             $user->sendVerificationCode();
             // Go to verification page
-            return redirect()->route('verification.show');
+           return redirect()->route('verify.show');
         }
 
         // Already verified - go to appropriate dashboard

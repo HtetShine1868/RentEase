@@ -25,12 +25,14 @@ Route::middleware('guest')->group(function () {
     Route::post('login', [AuthenticatedSessionController::class, 'store']);
 });
 
-// ============ VERIFICATION ROUTES ============
+// ============ AUTHENTICATED ROUTES ============
 Route::middleware('auth')->group(function () {
-    // Verification routes
-    Route::get('/verify', [VerificationController::class, 'show'])->name('verification.show');
-    Route::post('/verify', [VerificationController::class, 'verify'])->name('verification.verify');
-    Route::post('/verify/resend', [VerificationController::class, 'resend'])->name('verification.resend');
+    // Custom Verification Routes (Unique names)
+    Route::prefix('verify-email')->name('verify.')->group(function () {
+        Route::get('/', [VerificationController::class, 'show'])->name('show');
+        Route::post('/', [VerificationController::class, 'verify'])->name('submit');
+        Route::post('/resend', [VerificationController::class, 'resend'])->name('resend');
+    });
     
     // Logout
     Route::post('logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
@@ -40,6 +42,9 @@ Route::middleware('auth')->group(function () {
 Route::middleware(['auth', 'verified'])->group(function () {
     // Dashboard
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+        Route::get('/user/dashboard', function () {
+        return view('dashboard.user', ['title' => 'User Dashboard']);
+    })->name('dashboard.user');
 
     // ============ USER SERVICE ROUTES ============
     
