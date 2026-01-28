@@ -13,12 +13,6 @@ class UserRoleSeeder extends Seeder
         // Insert users
         DB::table('users')->insert([
             [
-                'name' => 'Regular User',
-                'email' => 'user@example.com',
-                'password' => Hash::make('password123'),
-                'email_verified_at' => now(),
-            ],
-            [
                 'name' => 'Owner User',
                 'email' => 'owner@example.com',
                 'password' => Hash::make('password123'),
@@ -46,10 +40,6 @@ class UserRoleSeeder extends Seeder
 
         // Assign roles
         DB::table('user_roles')->insert([
-            [
-                    'user_id' => DB::table('users')->where('email', 'user@example.com')->value('id'),
-                    'role_id' => DB::table('roles')->where('name', 'USER')->value('id'),
-            ],
             [
                 'user_id' => DB::table('users')->where('email', 'owner@example.com')->value('id'),
                 'role_id' => DB::table('roles')->where('name', 'OWNER')->value('id'),
