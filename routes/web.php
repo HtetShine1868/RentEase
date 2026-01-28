@@ -9,8 +9,8 @@ use App\Http\Controllers\PropertyController;
 use App\Http\Controllers\RoomController;
 use App\Http\Controllers\RentalSearchController;
 use App\Http\Controllers\VerificationController;
+ use Illuminate\Support\Facades\Route;
 
-use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
     return view('welcome');
@@ -138,7 +138,46 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::put('/{room}', [RoomController::class, 'update'])->name('update');
             Route::delete('/{room}', [RoomController::class, 'destroy'])->name('destroy');
             Route::post('/{room}/status', [RoomController::class, 'updateStatus'])->name('status');
-        });
+        });   
+          }); 
+
+Route::prefix('owner')->name('owner.')->group(function () {
+    Route::get('/dashboard', function () {
+        return view('owner.pages.dashboard');
+    })->name('dashboard');
+    
+    Route::get('/properties', function () {
+        return view('owner.pages.properties.index');
+    })->name('properties.index');
+    
+    Route::get('/bookings', function () {
+        return view('owner.pages.bookings.index');
+    })->name('bookings.index');
+    
+    Route::get('/earnings', function () {
+        return view('owner.pages.earnings.index');
+    })->name('earnings.index');
+    
+    Route::get('/complaints', function () {
+        return view('owner.pages.complaints.index');
+    })->name('complaints.index');
+    
+    Route::get('/notifications', function () {
+        return view('owner.pages.notifications');
+    })->name('notifications');
+    
+    Route::get('/settings', function () {
+        return view('owner.pages.settings.index');
+    })->name('settings.index');
+    
+    Route::get('/profile', function () {
+        return view('owner.pages.profile');
+    })->name('profile');
+
+    Route::get('/owner/notifications', function () {
+    return view('owner.pages.notifications');
+})->name('owner.notifications');
+});
     });
 
     // SuperAdmin Routes
@@ -161,4 +200,4 @@ Route::middleware(['auth', 'verified'])->group(function () {
             return view('dashboard.laundry', ['title' => 'Laundry Provider Dashboard']);
         })->name('laundry.dashboard');
     });
-});
+  

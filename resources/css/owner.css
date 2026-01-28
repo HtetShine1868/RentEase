@@ -1,0 +1,155 @@
+/* Owner Dashboard - Layout Polish */
+
+/* 1. Smooth Transitions */
+.smooth-transition {
+    transition: all 0.3s ease-in-out;
+}
+
+/* 2. Card Hover Effects */
+.hover-lift {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.hover-lift:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+/* 3. Better Focus States */
+.focus-ring {
+    outline: 2px solid transparent;
+    outline-offset: 2px;
+}
+
+.focus-ring:focus {
+    outline-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.5);
+}
+
+/* 4. Custom Scrollbar */
+.custom-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: #9ca3af #f3f4f6;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: #f3f4f6;
+    border-radius: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background-color: #9ca3af;
+    border-radius: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background-color: #6b7280;
+}
+
+/* 5. Loading Animation */
+.loading-dots {
+    display: inline-flex;
+    align-items: center;
+}
+
+.loading-dots::after {
+    content: '';
+    animation: loading-dots 1.5s infinite;
+}
+
+@keyframes loading-dots {
+    0%, 20% { content: ''; }
+    40% { content: '.'; }
+    60% { content: '..'; }
+    80%, 100% { content: '...'; }
+}
+
+/* 6. Gradient Text */
+.gradient-text {
+    background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* 7. Status Indicators */
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.status-active {
+    background-color: #d1fae5;
+    color: #065f46;
+}
+
+.status-pending {
+    background-color: #fef3c7;
+    color: #92400e;
+}
+
+.status-inactive {
+    background-color: #f3f4f6;
+    color: #6b7280;
+}
+
+/* 8. Form Polish */
+.form-input-polished {
+    border: 1px solid #d1d5db;
+    border-radius: 0.5rem;
+    padding: 0.625rem 0.875rem;
+    transition: all 0.2s;
+}
+
+.form-input-polished:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* 9. Table Polish */
+.table-polished {
+    border-collapse: separate;
+    border-spacing: 0;
+    width: 100%;
+}
+
+.table-polished th {
+    background-color: #f9fafb;
+    font-weight: 600;
+    padding: 0.875rem 1rem;
+    border-bottom: 2px solid #e5e7eb;
+}
+
+.table-polished td {
+    padding: 1rem;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.table-polished tbody tr:hover {
+    background-color: #f9fafb;
+}
+
+/* 10. Mobile Optimizations */
+@media (max-width: 768px) {
+    .mobile-optimized {
+        padding: 1rem;
+    }
+    
+    .mobile-text-sm {
+        font-size: 0.875rem;
+    }
+    
+    .mobile-stack {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+}
