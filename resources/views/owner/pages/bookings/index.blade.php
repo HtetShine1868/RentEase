@@ -1,4 +1,4 @@
-@extends('layouts.owner-layout')
+@extends('owner.layout.owner-layout')
 
 @section('title', 'Bookings')
 @section('page-title', 'Bookings Management')
