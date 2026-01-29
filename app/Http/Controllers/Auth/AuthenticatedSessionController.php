@@ -65,7 +65,7 @@ class AuthenticatedSessionController extends Controller
             return redirect()->route('admin.dashboard');
         } elseif ($user->isOwner()) {
 
-            return redirect()->route('owner.pages.dashboard');
+            return redirect()->route('owner.dashboard');
 
         } elseif ($user->isFoodProvider()) {
             return redirect()->route('food.dashboard');
