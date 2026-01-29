@@ -16,17 +16,21 @@ class AuthenticatedSessionController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
+        // Validate credentials
+        $credentials = $request->validate([
             'email' => ['required', 'email'],
             'password' => ['required'],
         ]);
 
-        // Try to login
-        if (!Auth::attempt($request->only('email', 'password'), $request->boolean('remember'))) {
+        // Attempt to authenticate
+        if (!Auth::attempt($credentials, $request->boolean('remember'))) {
             throw ValidationException::withMessages([
-                'email' => 'Invalid credentials.',
+                'email' => __('auth.failed'),
             ]);
         }
+
+        // Regenerate session to prevent fixation
+        $request->session()->regenerate();
 
         $user = Auth::user();
 
@@ -34,11 +38,13 @@ class AuthenticatedSessionController extends Controller
         if (!$user->isVerified()) {
             // Send verification code
             $user->sendVerificationCode();
-            // Go to verification page
-           return redirect()->route('verify.show');
+            
+            // Redirect to verification page
+            return redirect()->route('verify.show')
+                ->with('info', 'Please verify your email address to continue.');
         }
 
-        // Already verified - go to appropriate dashboard
+        // Already verified - redirect to appropriate dashboard
         return $this->redirectToDashboard();
     }
 
@@ -54,14 +60,15 @@ class AuthenticatedSessionController extends Controller
     {
         $user = Auth::user();
 
+        // Check user roles and redirect accordingly
         if ($user->isSuperAdmin()) {
-            return redirect()->route('dashboard.admin');
+            return redirect()->route('admin.dashboard');
         } elseif ($user->isOwner()) {
-            return redirect()->route('dashboard.owner');
+            return redirect()->route('owner.dashboard');
         } elseif ($user->isFoodProvider()) {
-            return redirect()->route('food-provider.dashboard.index');
+            return redirect()->route('food.dashboard');
         } elseif ($user->isLaundryProvider()) {
-            return redirect()->route('dashboard.laundry');
+            return redirect()->route('laundry.dashboard');
         } else {
             return redirect()->route('dashboard.user');
         }
