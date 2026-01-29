@@ -231,7 +231,7 @@ Route::prefix('owner')->name('owner.')->group(function () {
     })->name('complaints.index');
     
     Route::get('/notifications', function () {
-        return view('owner.pages.notifications');
+        return view('owner.pages.notification');
     })->name('notifications');
     
     Route::get('/settings', function () {
