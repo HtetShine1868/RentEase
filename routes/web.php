@@ -15,72 +15,35 @@ use App\Http\Controllers\VerificationController;
 Route::get('/', function () {
     return view('welcome');
 })->name('home');
-
-// DEBUG ROUTES - REMOVE AFTER FIXING
-Route::get('/debug/session', function() {
+Route::get('/debug-middleware-issue', function() {
+    // Check if middleware file exists
+    $middlewarePath = app_path('Http/Middleware/EnsureFoodRole.php');
+    $fileExists = file_exists($middlewarePath);
+    
+    // Check if class is loaded
+    $classExists = class_exists(\App\Http\Middleware\EnsureFoodRole::class);
+    
+    // Try to get middleware from router
+    try {
+        $router = app('router');
+        $middleware = $router->getMiddleware();
+    } catch (\Exception $e) {
+        $middleware = ['error' => $e->getMessage()];
+    }
+    
+    // Check specific aliases
+    $hasFoodRole = isset($middleware['food.role']);
+    $hasFood_role = isset($middleware['food_role']);
+    $hasRole = isset($middleware['role']);
+    
     return response()->json([
-        'session_id' => session()->getId(),
-        'csrf_token' => csrf_token(),
-        'session_data' => session()->all(),
-        'cookies' => request()->cookies->all(),
-        'app_key' => config('app.key'),
-        'session_driver' => config('session.driver'),
-        'session_lifetime' => config('session.lifetime'),
-        'session_domain' => config('session.domain'),
-        'session_secure' => config('session.secure'),
-        'session_same_site' => config('session.same_site'),
-    ]);
-});
-
-Route::get('/debug/login-form', function() {
-    return '
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <title>Debug Login</title>
-        <meta name="csrf-token" content="'. csrf_token() .'">
-    </head>
-    <body>
-        <h2>Debug Login Form</h2>
-        <form method="POST" action="'. route('login') .'">
-            '. csrf_field() .'
-            <div>
-                <label>Email:</label>
-                <input type="email" name="email" required value="user@rms.com">
-            </div>
-            <div>
-                <label>Password:</label>
-                <input type="password" name="password" required value="password">
-            </div>
-            <button type="submit">Login</button>
-        </form>
-        <hr>
-        <p>CSRF Token: '. csrf_token() .'</p>
-        <p>Session ID: '. session()->getId() .'</p>
-        <p><a href="/debug/session">View Session Data</a></p>
-    </body>
-    </html>
-    ';
-});
-// Add to routes/web.php
-Route::get('/test-csrf-post', function() {
-    return '
-    <form action="/debug/test-login" method="POST">
-        '. csrf_field() .'
-        <input type="email" name="email" value="test@test.com">
-        <button type="submit">Test Submit</button>
-    </form>
-    ';
-});
-
-Route::post('/debug/test-login', function(Request $request) {
-    return response()->json([
-        'success' => 'Form submitted successfully!',
-        'received_csrf' => $request->input('_token'),
-        'expected_csrf' => csrf_token(),
-        'matches' => $request->input('_token') === csrf_token(),
-        'session_id' => session()->getId(),
-        'email' => $request->input('email'),
+        'middleware_file_exists' => $fileExists,
+        'middleware_class_exists' => $classExists,
+        'all_middleware_aliases' => array_keys($middleware),
+        'has_food.role_alias' => $hasFoodRole,
+        'has_food_role_alias' => $hasFood_role,
+        'has_role_alias' => $hasRole,
+        'middleware_array' => $middleware
     ]);
 });
 
@@ -248,22 +211,87 @@ Route::prefix('owner')->name('owner.')->group(function () {
 });
     });
 
-    // SuperAdmin Routes
-    Route::middleware(['role:SUPERADMIN'])->group(function () {
-        Route::get('/admin/dashboard', function () {
-            return view('dashboard.admin', ['title' => 'SuperAdmin Dashboard']);
-        })->name('admin.dashboard');
+Route::middleware(['auth'])->group(function () {
+    Route::prefix('food-provider')->name('food-provider.')->group(function () {
+        
+        // Helper closure for role checking
+        $checkFoodRole = function() {
+            $user = auth()->user();
+            if (!$user || !$user->hasRole('FOOD')) {
+                if ($user && $user->hasRole('OWNER')) {
+                    return redirect()->route('owner.dashboard');
+                }
+                abort(403, 'Unauthorized access. FOOD role required.');
+            }
+        };
+        Route::get('/dashboard', function () {
+            return view('food-provider.dashboard.index', ['title' => 'Food Provider Dashboard']);
+        })->name('dashboard');
+        
+        Route::get('/menu', function () {
+            return view('food-provider.menu.index');
+        })->name('menu.index');
+          Route::get('/menu/items', function () {
+            return view('food-provider.menu.items.index');
+        })->name('menu.items.index');
+
+         Route::get('/menu/items/create', function () {
+            return view('food-provider.menu.items.create');
+        })->name('menu.items.create');
+        
+        Route::get('/orders', function () {
+            return view('food-provider.orders.index');
+        })->name('orders.index');
+        
+        Route::get('/subscriptions', function () {
+            return view('food-provider.subscriptions.index');
+        })->name('subscriptions.index');
+        
+        Route::get('/earnings', function () {
+            return view('food-provider.earnings.index');
+        })->name('earnings.index');
+        
+        Route::get('/notifications', function () {
+            return view('food-provider.notifications.index');
+        })->name('notifications.index');
+        Route::get('/reviews', function () {
+            return view('food-provider.reviews.index');
+        })->name('reviews.index');
+        
+        Route::get('/settings', function () {
+            return view('food-provider.settings.index');
+        })->name('settings.index');
+        
+        Route::get('/profile', function () {
+            return view('food-provider.profile.index');
+        })->name('profile.index');
+         Route::get('/profile/edit', function () {
+            return view('food-provider.profile.edit');
+        })->name('profile.edit');
+
+        
+ 
     });
-
-Route::middleware(['auth', 'role:FOOD'])->group(function () {
-    Route::get('/food-provider/dashboard', function () {
-        return view('food-provider.dashboard.index', ['title' => 'Food Provider Dashboard']);
-    })->name('food.dashboard');
 });
 
+// LAUNDRY PROVIDER ROUTES (Same structure)
 Route::middleware(['auth', 'role:LAUNDRY'])->group(function () {
-    Route::get('/laundry-provider/dashboard', function () {
-        return view('dashboard.laundry', ['title' => 'Laundry Provider Dashboard']);
-    })->name('laundry.dashboard');
+    Route::prefix('laundry-provider')->name('laundry-provider.')->group(function () {
+        Route::get('/dashboard', function () {
+            return view('dashboard.laundry', ['title' => 'Laundry Provider Dashboard']);
+        })->name('dashboard');
+        
+        // Add more laundry provider routes as needed
+    });
 });
-  
+
+// SUPERADMIN ROUTES
+Route::middleware(['auth', 'role:SUPERADMIN'])->group(function () {
+    Route::prefix('admin')->name('admin.')->group(function () {
+        Route::get('/dashboard', function () {
+            return view('dashboard.admin', ['title' => 'SuperAdmin Dashboard']);
+        })->name('dashboard');
+        
+        // Add admin routes here
+    });
+});

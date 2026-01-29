@@ -25,7 +25,7 @@
             </a>
             
             <!-- Menu Management -->
-            <a href="{{ route('food-provider.menu.items.index') }}" 
+             <a href="{{ route('food-provider.menu.items.index') }}" 
                class="{{ request()->routeIs('food-provider.menu.*') ? 'bg-indigo-50 text-indigo-700' : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900' }} group flex items-center px-2 py-2 text-sm font-medium rounded-md">
                 <i class="fas fa-list-alt mr-3 text-gray-400 group-hover:text-gray-500 {{ request()->routeIs('food-provider.menu.*') ? 'text-indigo-500' : '' }}"></i>
                 Menu Management

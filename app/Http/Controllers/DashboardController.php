@@ -21,7 +21,7 @@ class DashboardController extends Controller
         } elseif ($user->isOwner()) {
             return redirect()->route('owner.dashboard');
         } elseif ($user->isFoodProvider()) {
-            return redirect()->route('food.dashboard');
+            return redirect()->route('food-provider.dashboard');
         } elseif ($user->isLaundryProvider()) {
             return redirect()->route('laundry.dashboard');
         } else {
