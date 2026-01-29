@@ -16,9 +16,73 @@ Route::get('/', function () {
     return view('welcome');
 })->name('home');
 
-Route::get('/test-role-middleware', function () {
-    return 'Middleware is working!';
-})->middleware('role:FOOD');
+// DEBUG ROUTES - REMOVE AFTER FIXING
+Route::get('/debug/session', function() {
+    return response()->json([
+        'session_id' => session()->getId(),
+        'csrf_token' => csrf_token(),
+        'session_data' => session()->all(),
+        'cookies' => request()->cookies->all(),
+        'app_key' => config('app.key'),
+        'session_driver' => config('session.driver'),
+        'session_lifetime' => config('session.lifetime'),
+        'session_domain' => config('session.domain'),
+        'session_secure' => config('session.secure'),
+        'session_same_site' => config('session.same_site'),
+    ]);
+});
+
+Route::get('/debug/login-form', function() {
+    return '
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Debug Login</title>
+        <meta name="csrf-token" content="'. csrf_token() .'">
+    </head>
+    <body>
+        <h2>Debug Login Form</h2>
+        <form method="POST" action="'. route('login') .'">
+            '. csrf_field() .'
+            <div>
+                <label>Email:</label>
+                <input type="email" name="email" required value="user@rms.com">
+            </div>
+            <div>
+                <label>Password:</label>
+                <input type="password" name="password" required value="password">
+            </div>
+            <button type="submit">Login</button>
+        </form>
+        <hr>
+        <p>CSRF Token: '. csrf_token() .'</p>
+        <p>Session ID: '. session()->getId() .'</p>
+        <p><a href="/debug/session">View Session Data</a></p>
+    </body>
+    </html>
+    ';
+});
+// Add to routes/web.php
+Route::get('/test-csrf-post', function() {
+    return '
+    <form action="/debug/test-login" method="POST">
+        '. csrf_field() .'
+        <input type="email" name="email" value="test@test.com">
+        <button type="submit">Test Submit</button>
+    </form>
+    ';
+});
+
+Route::post('/debug/test-login', function(Request $request) {
+    return response()->json([
+        'success' => 'Form submitted successfully!',
+        'received_csrf' => $request->input('_token'),
+        'expected_csrf' => csrf_token(),
+        'matches' => $request->input('_token') === csrf_token(),
+        'session_id' => session()->getId(),
+        'email' => $request->input('email'),
+    ]);
+});
 
 // ============ PUBLIC ROUTES ============
 Route::middleware('guest')->group(function () {
@@ -143,7 +207,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::delete('/{room}', [RoomController::class, 'destroy'])->name('destroy');
             Route::post('/{room}/status', [RoomController::class, 'updateStatus'])->name('status');
         });   
-          }); 
+         }); 
 
 Route::prefix('owner')->name('owner.')->group(function () {
     Route::get('/dashboard', function () {
@@ -191,17 +255,15 @@ Route::prefix('owner')->name('owner.')->group(function () {
         })->name('admin.dashboard');
     });
 
-    // Food Provider Routes
-    Route::middleware(['role:FOOD'])->group(function () {
-        Route::get('/food-provider/dashboard', function () {
-            return view('food-provider.dashboard.index', ['title' => 'Food Provider Dashboard']);
-        })->name('food.dashboard');
-    });
+Route::middleware(['auth', 'role:FOOD'])->group(function () {
+    Route::get('/food-provider/dashboard', function () {
+        return view('food-provider.dashboard.index', ['title' => 'Food Provider Dashboard']);
+    })->name('food.dashboard');
+});
 
-    // Laundry Provider Routes
-    Route::middleware(['role:LAUNDRY'])->group(function () {
-        Route::get('/laundry-provider/dashboard', function () {
-            return view('dashboard.laundry', ['title' => 'Laundry Provider Dashboard']);
-        })->name('laundry.dashboard');
-    });
+Route::middleware(['auth', 'role:LAUNDRY'])->group(function () {
+    Route::get('/laundry-provider/dashboard', function () {
+        return view('dashboard.laundry', ['title' => 'Laundry Provider Dashboard']);
+    })->name('laundry.dashboard');
+});
   
