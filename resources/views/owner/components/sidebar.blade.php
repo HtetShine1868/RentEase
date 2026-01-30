@@ -58,12 +58,7 @@
                 </a>
             </li>
             
-            <li class="pt-4 mt-4 border-t border-gray-800">
-                <a href="{{ route('owner.settings.index') }}" class="flex items-center p-3 rounded-lg hover:bg-gray-800 transition-colors {{ request()->routeIs('owner.settings.*') ? 'bg-gray-800 border-l-4 border-blue-500' : '' }}">
-                    <i class="fas fa-cog w-6 mr-3 text-gray-400"></i>
-                    <span>Settings</span>
-                </a>
-            </li>
+            
             
             <li>
                 <a href="#" onclick="event.preventDefault(); document.getElementById('logout-form').submit();" class="flex items-center p-3 rounded-lg hover:bg-gray-800 transition-colors text-red-400 hover:text-red-300">

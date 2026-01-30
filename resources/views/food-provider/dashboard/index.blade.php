@@ -466,7 +466,7 @@
                 Quick Links
             </h3>
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <a href="{{ route('food-provider.menu.items.create') }}" 
+                 <a href="{{ route('food-provider.menu.items.create') }}" 
                    class="flex flex-col items-center justify-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 hover:border-indigo-300 transition-colors">
                     <div class="h-12 w-12 rounded-full bg-indigo-100 flex items-center justify-center mb-3">
                         <i class="fas fa-plus text-indigo-600 text-xl"></i>
@@ -484,7 +484,7 @@
                     <span class="text-xs text-gray-500 mt-1">8 pending</span>
                 </a>
                 
-                <a href="{{ route('food-provider.profile.edit') }}" 
+                 <a href="{{ route('food-provider.profile.edit') }}" 
                    class="flex flex-col items-center justify-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 hover:border-blue-300 transition-colors">
                     <div class="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center mb-3">
                         <i class="fas fa-cog text-blue-600 text-xl"></i>

@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <title>RMS - @yield('title', 'Dashboard')</title>
+    <title>@yield('title', config('app.name', 'RMS'))</title>
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.bunny.net">
@@ -17,250 +17,664 @@
     <!-- Scripts -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 
-<style>
-    [x-cloak] {
-        display: none;
-    }
-    
-    /* Fix sidebar layout */
-    .sidebar-container {
-        display: flex;
-        flex-direction: column;
-        height: 100%;
-        overflow-y: auto;
-    }
-    
-    .sidebar-links {
-        display: flex;
-        flex-direction: column;
-        gap: 0.25rem; /* Space between links */
-        flex: 1;
-    }
-    
-    .sidebar-link {
-        display: flex;
-        align-items: center;
-        padding: 0.75rem 1rem;
-        color: #374151; /* text-gray-700 */
-        border-radius: 0.5rem;
-        transition: all 0.15s ease-in-out;
-        text-decoration: none;
-        white-space: nowrap;
-    }
-    
-    .sidebar-link:hover {
-        background-color: #f3f4f6; /* hover:bg-gray-100 */
-        color: #111827; /* hover:text-gray-900 */
-    }
-    
-    .sidebar-link.active {
-        background-color: #e0e7ff; /* bg-indigo-50 */
-        color: #4338ca; /* text-indigo-700 */
-        font-weight: 500;
-    }
-    
-    .sidebar-link i {
-        width: 1.25rem;
-        margin-right: 0.75rem;
-        text-align: center;
-        font-size: 1rem;
-    }
-    
-    .sidebar-section {
-        margin-top: 1rem;
-        padding-top: 1rem;
-        border-top: 1px solid #e5e7eb; /* border-gray-200 */
-    }
-    
-    .sidebar-section-title {
-        padding-left: 0.75rem;
-        padding-right: 0.75rem;
-        font-size: 0.75rem;
-        font-weight: 600;
-        color: #6b7280; /* text-gray-500 */
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        margin-bottom: 0.5rem;
-    }
-</style>
+    <!-- Alpine.js -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+    <style>
+        [x-cloak] { display: none !important; }
+        
+        /* Super smooth transitions */
+        .sidebar-transition {
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        /* Page transition */
+        .page-enter {
+            animation: pageFadeIn 0.3s ease-out;
+        }
+        
+        @keyframes pageFadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(8px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        /* Sidebar styling - ALWAYS ICON-ONLY */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+            width: 5rem; /* Icon-only width */
+            background-color: #111827; /* gray-900 */
+            color: white;
+            border-right: 1px solid #374151;
+            z-index: 40;
+            overflow-y: auto;
+            overflow-x: hidden;
+            transform: translateX(-5rem);
+        }
+        
+        /* Sidebar when open */
+        .sidebar-open {
+            transform: translateX(0);
+        }
+        
+        /* Sidebar hover effect - expands on hover */
+        .sidebar:hover {
+            width: 16rem !important;
+        }
+        
+        .sidebar:hover .sidebar-text,
+        .sidebar:hover .user-name,
+        .sidebar:hover .user-email,
+        .sidebar:hover .user-role,
+        .sidebar:hover .logo-text {
+            opacity: 1;
+            max-width: 200px;
+        }
+        
+        .sidebar:hover .logo-full {
+            display: flex;
+        }
+        
+        .sidebar:hover .logo-icon {
+            display: none;
+        }
+        
+        /* Hide text by default in icon-only mode */
+        .sidebar-text,
+        .user-name,
+        .user-email,
+        .user-role,
+        .logo-text {
+            opacity: 0;
+            max-width: 0;
+            overflow: hidden;
+            white-space: nowrap;
+            transition: all 0.25s ease;
+        }
+        
+        /* Show only icons by default */
+        .logo-icon {
+            display: flex;
+        }
+        
+        .logo-full {
+            display: none;
+        }
+        
+        /* Main content adjustment */
+        .main-content {
+            margin-left: 0;
+            transition: margin-left 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .main-content-sidebar-open {
+            margin-left: 5rem;
+        }
+        
+        /* Mobile overlay */
+        .sidebar-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 30;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.25s ease;
+        }
+        
+        .sidebar-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        /* For mobile, sidebar is full width */
+        @media (max-width: 1023px) {
+            .sidebar {
+                width: 16rem;
+                transform: translateX(-16rem);
+            }
+            
+            .sidebar-open {
+                transform: translateX(0);
+            }
+            
+            .sidebar:hover {
+                width: 16rem !important;
+            }
+            
+            .main-content-sidebar-open {
+                margin-left: 0;
+            }
+            
+            .sidebar-text,
+            .user-name,
+            .user-email,
+            .user-role,
+            .logo-text {
+                opacity: 1;
+                max-width: 200px;
+            }
+            
+            .logo-icon {
+                display: none;
+            }
+            
+            .logo-full {
+                display: flex;
+            }
+        }
+        
+        /* Smooth link hover */
+        a {
+            transition: all 0.2s ease;
+        }
+        
+        /* Loading animation */
+        .loading-spinner {
+            animation: spin 0.8s linear infinite;
+        }
+        
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+    </style>
 </head>
-<body class="font-sans antialiased bg-gray-50" x-data="{ sidebarOpen: false }">
-    <!-- Mobile sidebar backdrop -->
-    <div x-show="sidebarOpen" 
-         x-transition:enter="transition-opacity ease-linear duration-300"
-         x-transition:enter-start="opacity-0"
-         x-transition:enter-end="opacity-100"
-         x-transition:leave="transition-opacity ease-linear duration-300"
-         x-transition:leave-start="opacity-100"
-         x-transition:leave-end="opacity-0"
-         class="fixed inset-0 z-40 flex md:hidden" 
-         @click="sidebarOpen = false">
-        <div class="fixed inset-0 bg-gray-600 bg-opacity-75"></div>
-    </div>
-
-    <!-- Sidebar for Mobile -->
-    <div class="md:hidden">
-        <div x-show="sidebarOpen" 
-             x-transition:enter="transition ease-in-out duration-300 transform"
-             x-transition:enter-start="-translate-x-full"
-             x-transition:enter-end="translate-x-0"
-             x-transition:leave="transition ease-in-out duration-300 transform"
-             x-transition:leave-start="translate-x-0"
-             x-transition:leave-end="-translate-x-full"
-             class="fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg">
-            @include('partials.sidebar')
+<body class="font-sans antialiased bg-gray-100">
+    <div x-data="{
+        sidebarOpen: false,
+        isPageLoading: false,
+        currentPage: 'dashboard',
+        
+        init() {
+            // On desktop, sidebar is always visible (icon-only)
+            if (window.innerWidth >= 1024) {
+                this.sidebarOpen = true;
+            }
+            
+            // Set current page based on route
+            this.setCurrentPage();
+            
+            // Listen for page changes
+            window.addEventListener('popstate', () => {
+                this.setCurrentPage();
+            });
+        },
+        
+        setCurrentPage() {
+            const path = window.location.pathname;
+            if (path.includes('dashboard')) this.currentPage = 'dashboard';
+            else if (path.includes('profile')) this.currentPage = 'profile';
+            else if (path.includes('owner')) this.currentPage = 'owner';
+            else if (path.includes('food')) this.currentPage = 'food';
+            else if (path.includes('laundry')) this.currentPage = 'laundry';
+            else if (path.includes('rental')) this.currentPage = 'rental';
+            else if (path.includes('role.apply')) this.currentPage = 'role';
+            else this.currentPage = 'dashboard';
+        },
+        
+        navigate(url) {
+            this.isPageLoading = true;
+            
+            // Add page transition class to content
+            const content = document.querySelector('.page-content');
+            if (content) {
+                content.classList.remove('page-enter');
+                void content.offsetWidth; // Trigger reflow
+                content.classList.add('page-enter');
+            }
+            
+            // Navigate after a short delay for smooth transition
+            setTimeout(() => {
+                window.location.href = url;
+            }, 150);
+        },
+        
+        toggleSidebar() {
+            this.sidebarOpen = !this.sidebarOpen;
+        }
+    }">
+        
+        <!-- Mobile Overlay -->
+        <div x-show="sidebarOpen && window.innerWidth < 1024" 
+             @click="sidebarOpen = false"
+             class="sidebar-overlay"
+             :class="{ 'active': sidebarOpen && window.innerWidth < 1024 }"
+             x-cloak>
         </div>
-    </div>
 
-    <!-- Top Navigation -->
-    <nav class="bg-white shadow-sm border-b border-gray-200 fixed w-full z-30">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between h-16">
-                <!-- Left: Logo and Mobile Menu Button -->
-                <div class="flex items-center">
-                    <button @click="sidebarOpen = true" 
-                            class="md:hidden inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500">
-                        <span class="sr-only">Open sidebar</span>
-                        <i class="fas fa-bars h-6 w-6"></i>
-                    </button>
-                    
-                    <div class="flex-shrink-0 ml-4 md:ml-0">
-                        <a href="{{ route('dashboard') }}" class="flex items-center">
-                            <div class="h-8 w-8 bg-indigo-600 rounded-lg flex items-center justify-center">
-                                <i class="fas fa-home text-white"></i>
-                            </div>
-                            <span class="ml-2 text-xl font-bold text-gray-900">RMS</span>
-                        </a>
+        <!-- Loading Overlay -->
+        <div x-show="isPageLoading" 
+             class="fixed inset-0 bg-white bg-opacity-80 z-50 flex items-center justify-center"
+             x-cloak>
+            <div class="flex flex-col items-center">
+                <div class="loading-spinner rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500 mb-3"></div>
+                <p class="text-gray-600">Loading...</p>
+            </div>
+        </div>
+
+        <!-- Sidebar - ALWAYS ICON-ONLY ON DESKTOP -->
+        <aside :class="{ 'sidebar-open': sidebarOpen }"
+               class="sidebar sidebar-transition"
+               x-cloak>
+            
+            <!-- Sidebar Header -->
+            <div class="flex items-center justify-between h-16 px-4 border-b border-gray-800">
+                <!-- Icon-only logo -->
+                <div class="logo-icon">
+                    <div class="h-8 w-8 rounded-lg bg-indigo-600 flex items-center justify-center">
+                        <i class="fas fa-home text-white"></i>
                     </div>
-                    
-                    <!-- Global Search (Desktop) -->
-                    <div class="hidden md:block ml-8">
-                        <div class="relative">
+                </div>
+                
+                <!-- Full logo (shown on hover/expand) -->
+                <div class="logo-full items-center">
+                    <div class="h-8 w-8 rounded-lg bg-indigo-600 flex items-center justify-center">
+                        <i class="fas fa-home text-white"></i>
+                    </div>
+                    <div class="ml-3">
+                        <h1 class="text-lg font-bold logo-text">RMS System</h1>
+                        <p class="text-xs text-gray-400">Dashboard</p>
+                    </div>
+                </div>
+                
+                <!-- Close button for mobile -->
+                <button @click="sidebarOpen = false" 
+                        class="lg:hidden text-gray-400 hover:text-white">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <!-- User Profile -->
+            <div class="px-4 py-6 border-b border-gray-800">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        @if(Auth::user()->avatar_url)
+                            <img src="{{ Storage::url(Auth::user()->avatar_url) }}" 
+                                 alt="{{ Auth::user()->name }}"
+                                 class="h-10 w-10 rounded-full border-2 border-indigo-500 object-cover">
+                        @else
+                            <div class="h-10 w-10 rounded-full bg-gray-700 border-2 border-indigo-500 flex items-center justify-center">
+                                <i class="fas fa-user text-gray-300"></i>
+                            </div>
+                        @endif
+                    </div>
+                    <div class="ml-3 overflow-hidden">
+                        <p class="text-sm font-medium truncate user-name">{{ Auth::user()->name }}</p>
+                        <p class="text-xs text-gray-400 truncate user-email">{{ Auth::user()->email }}</p>
+                        <div class="mt-1">
+                            @foreach(Auth::user()->roles as $role)
+                                <span class="inline-block px-2 py-0.5 rounded text-xs font-medium bg-indigo-500 text-white truncate user-role">
+                                    {{ ucfirst(strtolower($role->name)) }}
+                                </span>
+                            @endforeach
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Navigation -->
+            <nav class="flex-1 px-3 py-4 space-y-1">
+                <!-- Dashboard -->
+                <a href="{{ route('dashboard') }}" 
+                   @click.prevent="navigate('{{ route('dashboard') }}')"
+                   :class="currentPage === 'dashboard' ? 'bg-gray-800 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white'"
+                   class="group flex items-center px-3 py-3 rounded-md sidebar-transition">
+                    <i class="fas fa-tachometer-alt text-lg w-6 text-center"></i>
+                    <span class="ml-3 truncate sidebar-text">Dashboard</span>
+                </a>
+
+                <!-- Profile -->
+                <a href="{{ route('profile.show') }}" 
+                   @click.prevent="navigate('{{ route('profile.show') }}')"
+                   :class="currentPage === 'profile' ? 'bg-gray-800 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white'"
+                   class="group flex items-center px-3 py-3 rounded-md sidebar-transition">
+                    <i class="fas fa-user text-lg w-6 text-center"></i>
+                    <span class="ml-3 truncate sidebar-text">Profile</span>
+                </a>
+
+                <!-- Properties (for Owners) -->
+                @if(auth()->user()->isOwner())
+                    <a href="{{ route('owner.properties.index') }}" 
+                       @click.prevent="navigate('{{ route('owner.properties.index') }}')"
+                       :class="currentPage === 'owner' ? 'bg-gray-800 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white'"
+                       class="group flex items-center px-3 py-3 rounded-md sidebar-transition">
+                        <i class="fas fa-home text-lg w-6 text-center"></i>
+                        <span class="ml-3 truncate sidebar-text">Properties</span>
+                    </a>
+                @endif
+
+                <!-- Food Orders (for Food Providers) -->
+                @if(auth()->user()->isFoodProvider())
+                    <a href="{{ route('food.orders') }}" 
+                       @click.prevent="navigate('{{ route('food.orders') }}')"
+                       :class="currentPage === 'food' ? 'bg-gray-800 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white'"
+                       class="group flex items-center px-3 py-3 rounded-md sidebar-transition">
+                        <i class="fas fa-utensils text-lg w-6 text-center"></i>
+                        <span class="ml-3 truncate sidebar-text">Food Orders</span>
+                    </a>
+                @endif
+
+                <!-- Laundry Orders (for Laundry Providers) -->
+                @if(auth()->user()->isLaundryProvider())
+                    <a href="{{ route('laundry.orders') }}" 
+                       @click.prevent="navigate('{{ route('laundry.orders') }}')"
+                       :class="currentPage === 'laundry' ? 'bg-gray-800 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white'"
+                       class="group flex items-center px-3 py-3 rounded-md sidebar-transition">
+                        <i class="fas fa-tshirt text-lg w-6 text-center"></i>
+                        <span class="ml-3 truncate sidebar-text">Laundry Orders</span>
+                    </a>
+                @endif
+
+                <!-- Find Properties -->
+                <a href="{{ route('rental.search') }}" 
+                   @click.prevent="navigate('{{ route('rental.search') }}')"
+                   :class="currentPage === 'rental' ? 'bg-gray-800 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white'"
+                   class="group flex items-center px-3 py-3 rounded-md sidebar-transition">
+                    <i class="fas fa-search text-lg w-6 text-center"></i>
+                    <span class="ml-3 truncate sidebar-text">Find Properties</span>
+                </a>
+
+                <!-- Food Services -->
+                <a href="{{ route('food.index') }}" 
+                   @click.prevent="navigate('{{ route('food.index') }}')"
+                   class="text-gray-300 hover:bg-gray-700 hover:text-white group flex items-center px-3 py-3 rounded-md sidebar-transition">
+                    <i class="fas fa-utensils text-lg w-6 text-center"></i>
+                    <span class="ml-3 truncate sidebar-text">Food Services</span>
+                </a>
+
+                <!-- Laundry Services -->
+                <a href="{{ route('laundry.index') }}" 
+                   @click.prevent="navigate('{{ route('laundry.index') }}')"
+                   class="text-gray-300 hover:bg-gray-700 hover:text-white group flex items-center px-3 py-3 rounded-md sidebar-transition">
+                    <i class="fas fa-tshirt text-lg w-6 text-center"></i>
+                    <span class="ml-3 truncate sidebar-text">Laundry Services</span>
+                </a>
+
+                <!-- My Bookings -->
+                <a href="{{ route('rental.index') }}" 
+                   @click.prevent="navigate('{{ route('rental.index') }}')"
+                   class="text-gray-300 hover:bg-gray-700 hover:text-white group flex items-center px-3 py-3 rounded-md sidebar-transition">
+                    <i class="fas fa-calendar-alt text-lg w-6 text-center"></i>
+                    <span class="ml-3 truncate sidebar-text">My Bookings</span>
+                </a>
+
+                <!-- My Orders -->
+                <a href="{{ route('food.orders') }}" 
+                   @click.prevent="navigate('{{ route('food.orders') }}')"
+                   class="text-gray-300 hover:bg-gray-700 hover:text-white group flex items-center px-3 py-3 rounded-md sidebar-transition">
+                    <i class="fas fa-shopping-bag text-lg w-6 text-center"></i>
+                    <span class="ml-3 truncate sidebar-text">My Orders</span>
+                </a>
+
+                <!-- Role Application (for regular users) -->
+                @if(auth()->user()->hasRole('USER') && !auth()->user()->isOwner() && !auth()->user()->isFoodProvider() && !auth()->user()->isLaundryProvider())
+                    <a href="{{ route('role.apply.index') }}" 
+                       @click.prevent="navigate('{{ route('role.apply.index') }}')"
+                       :class="currentPage === 'role' ? 'bg-gray-800 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white'"
+                       class="group flex items-center px-3 py-3 rounded-md sidebar-transition">
+                        <i class="fas fa-user-plus text-lg w-6 text-center"></i>
+                        <span class="ml-3 truncate sidebar-text">Apply for Role</span>
+                    </a>
+                @endif
+            </nav>
+
+            <!-- Sidebar Footer -->
+            <div class="border-t border-gray-800 mt-auto">
+                <form method="POST" action="{{ route('logout') }}" id="logout-form">
+                    @csrf
+                    <button type="submit" 
+                            class="w-full text-left text-gray-300 hover:bg-gray-700 hover:text-white group flex items-center px-4 py-3 sidebar-transition">
+                        <i class="fas fa-sign-out-alt text-lg w-6 text-center"></i>
+                        <span class="ml-3 truncate sidebar-text">Logout</span>
+                    </button>
+                </form>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <div :class="{ 'main-content-sidebar-open': sidebarOpen && window.innerWidth >= 1024 }" 
+             class="main-content min-h-screen">
+            
+            <!-- Top Navigation -->
+            <header class="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-30">
+                <div class="flex items-center justify-between px-4 py-3">
+                    <div class="flex items-center">
+                        <!-- Mobile menu button -->
+                        <button @click="toggleSidebar()" 
+                                class="lg:hidden text-gray-500 hover:text-gray-700 focus:outline-none">
+                            <i class="fas fa-bars text-xl"></i>
+                        </button>
+                        
+                        <!-- Desktop menu button -->
+                        <button @click="toggleSidebar()" 
+                                class="hidden lg:flex items-center text-gray-500 hover:text-gray-700 focus:outline-none">
+                            <i class="fas fa-bars text-xl"></i>
+                        </button>
+                        
+                        <!-- Breadcrumb -->
+                        <nav class="ml-4 flex" aria-label="Breadcrumb">
+                            <ol class="flex items-center space-x-2">
+                                <li>
+                                    <div>
+                                        <a href="{{ route('dashboard') }}" 
+                                           @click.prevent="navigate('{{ route('dashboard') }}')"
+                                           class="text-gray-400 hover:text-gray-500">
+                                            <i class="fas fa-home"></i>
+                                        </a>
+                                    </div>
+                                </li>
+                                @if(isset($breadcrumbs))
+                                    @foreach($breadcrumbs as $crumb)
+                                        <li>
+                                            <div class="flex items-center">
+                                                <i class="fas fa-chevron-right text-gray-400 mx-2"></i>
+                                                @if($loop->last)
+                                                    <span class="text-sm font-medium text-gray-500">{{ $crumb['title'] }}</span>
+                                                @else
+                                                    <a href="{{ $crumb['url'] }}" 
+                                                       @click.prevent="navigate('{{ $crumb['url'] }}')"
+                                                       class="text-sm font-medium text-gray-500 hover:text-gray-700">
+                                                        {{ $crumb['title'] }}
+                                                    </a>
+                                                @endif
+                                            </div>
+                                        </li>
+                                    @endforeach
+                                @endif
+                            </ol>
+                        </nav>
+                    </div>
+
+                    <!-- Right Side -->
+                    <div class="flex items-center space-x-4">
+                        <!-- Search -->
+                        <div class="hidden md:block relative">
                             <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                 <i class="fas fa-search text-gray-400"></i>
                             </div>
-                            <input type="search" 
-                                   class="block w-64 pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" 
-                                   placeholder="Search properties & services...">
+                            <input type="text" 
+                                   placeholder="Search..." 
+                                   class="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 w-64">
+                        </div>
+
+                        <!-- User Menu -->
+                        <div class="relative" x-data="{ userMenuOpen: false }">
+                            <button @click="userMenuOpen = !userMenuOpen" 
+                                    class="flex items-center space-x-2 focus:outline-none">
+                                @if(Auth::user()->avatar_url)
+                                    <img src="{{ Storage::url(Auth::user()->avatar_url) }}" 
+                                         alt="{{ Auth::user()->name }}"
+                                         class="h-8 w-8 rounded-full">
+                                @else
+                                    <div class="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center">
+                                        <i class="fas fa-user text-gray-600"></i>
+                                    </div>
+                                @endif
+                                <span class="hidden md:block text-sm font-medium text-gray-700 truncate max-w-[120px]">
+                                    {{ Auth::user()->name }}
+                                </span>
+                                <i class="fas fa-chevron-down text-gray-400"></i>
+                            </button>
+                            
+                            <!-- User Dropdown -->
+                            <div x-show="userMenuOpen" 
+                                 @click.away="userMenuOpen = false"
+                                 x-transition:enter="transition ease-out duration-100"
+                                 x-transition:enter-start="transform opacity-0 scale-95"
+                                 x-transition:enter-end="transform opacity-100 scale-100"
+                                 x-transition:leave="transition ease-in duration-75"
+                                 x-transition:leave-start="transform opacity-100 scale-100"
+                                 x-transition:leave-end="transform opacity-0 scale-95"
+                                 class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-50"
+                                 style="display: none;">
+                                <div class="py-1">
+                                    <a href="{{ route('profile.show') }}" 
+                                       @click.prevent="navigate('{{ route('profile.show') }}')"
+                                       class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                        <i class="fas fa-user mr-2"></i> Profile
+                                    </a>
+                                    <div class="border-t border-gray-100"></div>
+                                    <form method="POST" action="{{ route('logout') }}" id="logout-form-top">
+                                        @csrf
+                                        <button type="submit" 
+                                                class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                            <i class="fas fa-sign-out-alt mr-2"></i> Logout
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
+            </header>
 
-                <!-- Right: Notification and Profile -->
-                <div class="flex items-center space-x-4">
-                    <!-- Notification Bell -->
-                    <button class="relative p-2 text-gray-400 hover:text-gray-500 focus:outline-none">
-                        <i class="fas fa-bell h-6 w-6"></i>
-                        <span class="absolute top-0 right-0 block h-2 w-2 rounded-full bg-red-400"></span>
-                    </button>
-                    
-                    <!-- Profile Dropdown -->
-                    <div class="relative ml-3" x-data="{ open: false }" @click.outside="open = false">
-                        <button @click="open = !open" 
-                                class="flex items-center max-w-xs text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                            <div class="h-8 w-8 rounded-full bg-gray-300 flex items-center justify-center">
-                                <i class="fas fa-user text-gray-600"></i>
-                            </div>
-                            <span class="hidden md:block ml-2 text-sm font-medium text-gray-700">
-                                {{ Auth::user()->name }}
-                            </span>
-                            <i class="hidden md:block ml-1 fas fa-chevron-down text-gray-400"></i>
-                        </button>
-                        
-                        <!-- Dropdown Menu -->
-                        <div x-show="open" 
-                             x-transition:enter="transition ease-out duration-100"
-                             x-transition:enter-start="transform opacity-0 scale-95"
-                             x-transition:enter-end="transform opacity-100 scale-100"
-                             x-transition:leave="transition ease-in duration-75"
-                             x-transition:leave-start="transform opacity-100 scale-100"
-                             x-transition:leave-end="transform opacity-0 scale-95"
-                             class="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-50">
-                            <a href="{{ route('profile.edit') }}" 
-                               class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                <i class="fas fa-user mr-2"></i>My Profile
-                            </a>
-                            <form method="POST" action="{{ route('logout') }}">
-                                @csrf
-                                <button type="submit" 
-                                        class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                    <i class="fas fa-sign-out-alt mr-2"></i>Logout
-                                </button>
-                            </form>
-                        </div>
+            <!-- Main Content Area -->
+            <main class="bg-gray-50 min-h-[calc(100vh-64px)] page-content page-enter">
+                <div class="p-6">
+                    <!-- Page Header -->
+                    <div class="mb-6">
+                        <h1 class="text-2xl font-bold text-gray-900">@yield('title', 'Dashboard')</h1>
+                        <p class="mt-2 text-gray-600">@yield('subtitle', 'Welcome to your dashboard')</p>
                     </div>
-                </div>
-            </div>
-        </div>
-    </nav>
 
-    <!-- Main Content with Sidebar -->
-    <div class="flex pt-16">
-        <!-- Desktop Sidebar -->
-        <div class="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0 md:pt-16">
-            <div class="flex-1 flex flex-col min-h-0 border-r border-gray-200 bg-white">
-                @include('partials.sidebar')
-            </div>
-        </div>
-
-        <!-- Main Content Area -->
-        <div class="md:pl-64 flex flex-col flex-1">
-            <main class="flex-1">
-                <div class="py-6">
-                    <div class="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
-                        <!-- Page Title -->
-                        <h1 class="text-2xl font-semibold text-gray-900 mb-6">
-                            @yield('title', 'Dashboard')
-                        </h1>
-                        
-                        <!-- Page Content -->
-                        <div class="bg-white rounded-lg shadow">
-                            <div class="px-4 py-5 sm:p-6">
-                                @yield('content')
+                    <!-- Flash Messages -->
+                    @if(session('success'))
+                        <div class="mb-6 bg-green-50 border-l-4 border-green-400 p-4 rounded">
+                            <div class="flex">
+                                <div class="flex-shrink-0">
+                                    <i class="fas fa-check-circle text-green-400"></i>
+                                </div>
+                                <div class="ml-3">
+                                    <p class="text-sm text-green-700">{{ session('success') }}</p>
+                                </div>
                             </div>
                         </div>
+                    @endif
+
+                    @if(session('error'))
+                        <div class="mb-6 bg-red-50 border-l-4 border-red-400 p-4 rounded">
+                            <div class="flex">
+                                <div class="flex-shrink-0">
+                                    <i class="fas fa-exclamation-circle text-red-400"></i>
+                                </div>
+                                <div class="ml-3">
+                                    <p class="text-sm text-red-700">{{ session('error') }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    @endif
+
+                    <!-- Page Content -->
+                    <div class="bg-white rounded-lg shadow-sm border border-gray-200">
+                        @yield('content')
                     </div>
                 </div>
             </main>
-            
+
             <!-- Footer -->
-            <footer class="bg-white border-t border-gray-200">
-                <div class="max-w-7xl mx-auto py-4 px-4 sm:px-6 md:px-8">
-                    <p class="text-sm text-gray-500 text-center">
-                        &copy; {{ date('Y') }} Rent & Service Management System. All rights reserved.
-                    </p>
+            <footer class="bg-white border-t border-gray-200 py-4 px-6">
+                <div class="flex flex-col md:flex-row justify-between items-center">
+                    <div class="text-sm text-gray-600">
+                        &copy; {{ date('Y') }} RMS System. All rights reserved.
+                    </div>
+                    <div class="mt-2 md:mt-0">
+                        <span class="text-sm text-gray-600">Version 1.0.0</span>
+                    </div>
                 </div>
             </footer>
         </div>
     </div>
 
-    <!-- Alpine.js -->
-    <script src="//unpkg.com/alpinejs" defer></script>
-    
-    <!-- JavaScript for active link highlighting -->
     <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const currentPath = window.location.pathname;
-        const sidebarLinks = document.querySelectorAll('.sidebar-link');
-        
-        sidebarLinks.forEach(link => {
-            const linkPath = link.getAttribute('href');
-            if (currentPath === linkPath || 
-                (currentPath.startsWith(linkPath) && linkPath !== '/dashboard')) {
-                link.classList.add('active');
+        // Handle page transitions
+        document.addEventListener('DOMContentLoaded', function() {
+            // Add page enter animation
+            const content = document.querySelector('.page-content');
+            if (content) {
+                content.classList.add('page-enter');
             }
+            
+            // Handle all navigation links
+            document.addEventListener('click', function(e) {
+                const link = e.target.closest('a');
+                if (link && link.href && !link.href.includes('javascript:') && 
+                    link.href !== '#' && !link.hasAttribute('target')) {
+                    
+                    // Check if it's an internal link
+                    const isInternal = link.href.includes(window.location.hostname) || 
+                                      link.href.startsWith('/');
+                    
+                    if (isInternal && !link.href.includes('logout')) {
+                        e.preventDefault();
+                        
+                        // Trigger loading state
+                        const app = document.querySelector('[x-data]').__x;
+                        if (app && app.$data) {
+                            app.$data.isPageLoading = true;
+                        }
+                        
+                        // Navigate after short delay for smooth transition
+                        setTimeout(() => {
+                            window.location.href = link.href;
+                        }, 200);
+                    }
+                }
+            });
+            
+            // Handle form submissions
+            document.querySelectorAll('form').forEach(form => {
+                form.addEventListener('submit', function(e) {
+                    if (this.id.includes('logout')) {
+                        const app = document.querySelector('[x-data]').__x;
+                        if (app && app.$data) {
+                            app.$data.isPageLoading = true;
+                        }
+                    }
+                });
+            });
         });
         
-        // Mobile search toggle
-        const searchToggle = document.getElementById('mobile-search-toggle');
-        const mobileSearch = document.getElementById('mobile-search');
-        
-        if (searchToggle) {
-            searchToggle.addEventListener('click', function() {
-                mobileSearch.classList.toggle('hidden');
-            });
-        }
-    });
+        // Remove loading state when page is fully loaded
+        window.addEventListener('load', function() {
+            const app = document.querySelector('[x-data]').__x;
+            if (app && app.$data) {
+                setTimeout(() => {
+                    app.$data.isPageLoading = false;
+                }, 300);
+            }
+        });
     </script>
 </body>
 </html>

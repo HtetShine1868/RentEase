@@ -16,10 +16,6 @@ Route::get('/', function () {
     return view('welcome');
 })->name('home');
 
-Route::get('/test-role-middleware', function () {
-    return 'Middleware is working!';
-})->middleware('role:FOOD');
-
 // ============ PUBLIC ROUTES ============
 Route::middleware('guest')->group(function () {
     Route::get('register', [RegisteredUserController::class, 'create'])->name('register');
@@ -143,7 +139,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::delete('/{room}', [RoomController::class, 'destroy'])->name('destroy');
             Route::post('/{room}/status', [RoomController::class, 'updateStatus'])->name('status');
         });   
-          }); 
+         }); 
 
 Route::prefix('owner')->name('owner.')->group(function () {
     Route::get('/dashboard', function () {
@@ -167,7 +163,7 @@ Route::prefix('owner')->name('owner.')->group(function () {
     })->name('complaints.index');
     
     Route::get('/notifications', function () {
-        return view('owner.pages.notifications');
+        return view('owner.pages.notification');
     })->name('notifications');
     
     Route::get('/settings', function () {
@@ -181,27 +177,107 @@ Route::prefix('owner')->name('owner.')->group(function () {
     Route::get('/owner/notifications', function () {
     return view('owner.pages.notifications');
 })->name('owner.notifications');
+
+    // Property Management Routes
+    Route::get('/properties', function () {
+        return view('owner.pages.properties.index');
+    })->name('properties.index');
+    
+    Route::get('/properties/create', function () {
+        return view('owner.pages.properties.create');
+    })->name('properties.create');
+    
+    Route::get('/properties/{id}/edit', function ($id) {
+        return view('owner.pages.properties.edit', ['propertyId' => $id]);
+    })->name('properties.edit');
+    
+    Route::get('/properties/{id}/rooms', function ($id) {
+        return view('owner.pages.properties.rooms.index', ['propertyId' => $id]);
+    })->name('properties.rooms.index');
 });
     });
 
-    // SuperAdmin Routes
-    Route::middleware(['role:SUPERADMIN'])->group(function () {
-        Route::get('/admin/dashboard', function () {
-            return view('dashboard.admin', ['title' => 'SuperAdmin Dashboard']);
-        })->name('admin.dashboard');
-    });
-
-    // Food Provider Routes
-    Route::middleware(['role:FOOD'])->group(function () {
-        Route::get('/food-provider/dashboard', function () {
+Route::middleware(['auth'])->group(function () {
+    Route::prefix('food-provider')->name('food-provider.')->group(function () {
+        
+        // Helper closure for role checking
+        $checkFoodRole = function() {
+            $user = auth()->user();
+            if (!$user || !$user->hasRole('FOOD')) {
+                if ($user && $user->hasRole('OWNER')) {
+                    return redirect()->route('owner.dashboard');
+                }
+                abort(403, 'Unauthorized access. FOOD role required.');
+            }
+        };
+        Route::get('/dashboard', function () {
             return view('food-provider.dashboard.index', ['title' => 'Food Provider Dashboard']);
-        })->name('food.dashboard');
-    });
+        })->name('dashboard');
+        
+        Route::get('/menu', function () {
+            return view('food-provider.menu.index');
+        })->name('menu.index');
+          Route::get('/menu/items', function () {
+            return view('food-provider.menu.items.index');
+        })->name('menu.items.index');
 
-    // Laundry Provider Routes
-    Route::middleware(['role:LAUNDRY'])->group(function () {
-        Route::get('/laundry-provider/dashboard', function () {
-            return view('dashboard.laundry', ['title' => 'Laundry Provider Dashboard']);
-        })->name('laundry.dashboard');
+         Route::get('/menu/items/create', function () {
+            return view('food-provider.menu.items.create');
+        })->name('menu.items.create');
+        
+        Route::get('/orders', function () {
+            return view('food-provider.orders.index');
+        })->name('orders.index');
+        
+        Route::get('/subscriptions', function () {
+            return view('food-provider.subscriptions.index');
+        })->name('subscriptions.index');
+        
+        Route::get('/earnings', function () {
+            return view('food-provider.earnings.index');
+        })->name('earnings.index');
+        
+        Route::get('/notifications', function () {
+            return view('food-provider.notifications.index');
+        })->name('notifications.index');
+        Route::get('/reviews', function () {
+            return view('food-provider.reviews.index');
+        })->name('reviews.index');
+        
+        Route::get('/settings', function () {
+            return view('food-provider.settings.index');
+        })->name('settings.index');
+        
+        Route::get('/profile', function () {
+            return view('food-provider.profile.index');
+        })->name('profile.index');
+         Route::get('/profile/edit', function () {
+            return view('food-provider.profile.edit');
+        })->name('profile.edit');
+
+        
+ 
     });
-  
+});
+
+// LAUNDRY PROVIDER ROUTES (Same structure)
+Route::middleware(['auth', 'role:LAUNDRY'])->group(function () {
+    Route::prefix('laundry-provider')->name('laundry-provider.')->group(function () {
+        Route::get('/dashboard', function () {
+            return view('dashboard.laundry', ['title' => 'Laundry Provider Dashboard']);
+        })->name('dashboard');
+        
+        // Add more laundry provider routes as needed
+    });
+});
+
+// SUPERADMIN ROUTES
+Route::middleware(['auth', 'role:SUPERADMIN'])->group(function () {
+    Route::prefix('admin')->name('admin.')->group(function () {
+        Route::get('/dashboard', function () {
+            return view('dashboard.admin', ['title' => 'SuperAdmin Dashboard']);
+        })->name('dashboard');
+        
+        // Add admin routes here
+    });
+});
