@@ -245,6 +245,23 @@ Route::prefix('owner')->name('owner.')->group(function () {
     Route::get('/owner/notifications', function () {
     return view('owner.pages.notifications');
 })->name('owner.notifications');
+
+    // Property Management Routes
+    Route::get('/properties', function () {
+        return view('owner.pages.properties.index');
+    })->name('properties.index');
+    
+    Route::get('/properties/create', function () {
+        return view('owner.pages.properties.create');
+    })->name('properties.create');
+    
+    Route::get('/properties/{id}/edit', function ($id) {
+        return view('owner.pages.properties.edit', ['propertyId' => $id]);
+    })->name('properties.edit');
+    
+    Route::get('/properties/{id}/rooms', function ($id) {
+        return view('owner.pages.properties.rooms.index', ['propertyId' => $id]);
+    })->name('properties.rooms.index');
 });
     });
 

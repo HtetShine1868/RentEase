@@ -1,4 +1,3 @@
-phoopyaepyaemaung, [1/30/2026 1:06 PM]
 @extends('owner.layout.owner-layout')
 
 @section('title', 'My Properties - RentEase')
@@ -80,8 +79,7 @@ phoopyaepyaemaung, [1/30/2026 1:06 PM]
         </div>
     </div>
 
-phoopyaepyaemaung, [1/30/2026 1:06 PM]
-<!-- Properties Grid/Table -->
+    <!-- Properties Grid/Table -->
     <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
         <!-- Table Header -->
         <div class="border-b border-gray-200">
@@ -150,9 +148,7 @@ phoopyaepyaemaung, [1/30/2026 1:06 PM]
                                     <span class="text-sm text-gray-600">
                                         <i class="fas fa-star text-yellow-500 mr-1"></i> 4.7 (24 reviews)
                                     </span>
-
-phoopyaepyaemaung, [1/30/2026 1:06 PM]
-</div>
+                                </div>
                             </div>
                             
                             <!-- Price & Actions -->
@@ -212,9 +208,7 @@ phoopyaepyaemaung, [1/30/2026 1:06 PM]
                                 </div>
                                 <div class="flex items-center gap-2 mt-2">
                                     <span class="px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-
-phoopyaepyaemaung, [1/30/2026 1:06 PM]
-<i class="fas fa-check-circle mr-1"></i> Active
+                                        <i class="fas fa-check-circle mr-1"></i> Active
                                     </span>
                                     <span class="px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                                         <i class="fas fa-calendar-check mr-1"></i> 12 Bookings
@@ -251,8 +245,7 @@ phoopyaepyaemaung, [1/30/2026 1:06 PM]
                 </div>
             </div>
 
-phoopyaepyaemaung, [1/30/2026 1:06 PM]
-<!-- Property 3 (Draft) -->
+            <!-- Property 3 (Draft) -->
             <div class="px-6 py-4 hover:bg-gray-50 transition-colors">
                 <div class="flex items-center gap-4">
                     <input type="checkbox" class="rounded border-gray-300 text-purple-600 focus:ring-purple-500">
@@ -309,8 +302,7 @@ phoopyaepyaemaung, [1/30/2026 1:06 PM]
             </div>
         </div>
 
-phoopyaepyaemaung, [1/30/2026 1:06 PM]
-<!-- Empty State (Uncomment if needed) -->
+        <!-- Empty State (Uncomment if needed) -->
         <!--
         <div class="text-center py-16">
             <i class="fas fa-home text-gray-300 text-6xl mb-4"></i>
@@ -393,11 +385,11 @@ document.addEventListener('DOMContentLoaded', function() {
             e.preventDefault();
             const propertyName = this.closest('.hover\\:bg-gray-50').querySelector('h3').textContent;
             
-            if (confirm(Are you sure you want to delete "${propertyName}"? This action cannot be undone.)) {
+            if (confirm(`Are you sure you want to delete "${propertyName}"? This action cannot be undone.`)) {
                 // In real app, this would trigger API call
-                console.log(Deleting property: ${propertyName});
+                console.log(`Deleting property: ${propertyName}`);
                 // Show success message
-                alert("${propertyName}" has been scheduled for deletion.);
+                alert(`"${propertyName}" has been scheduled for deletion.`);
             }
         });
     });
