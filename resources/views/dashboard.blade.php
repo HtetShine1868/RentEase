@@ -1,266 +1,680 @@
-@extends('layouts.owner-layout')
+<!DOCTYPE html>
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
 
-@section('title', 'Owner Dashboard - RentEase')
-@section('page-title', 'Dashboard Overview')
-@section('page-subtitle', 'Welcome back to your property management dashboard')
+    <title>@yield('title', config('app.name', 'RMS'))</title>
 
-@section('content')
-<div class="space-y-6">
-    <!-- Welcome Banner -->
-    <div class="bg-gradient-to-r from-blue-600 to-blue-800 rounded-2xl p-6 text-white">
-        <div class="flex flex-col md:flex-row justify-between items-start md:items-center">
-            <div class="mb-4 md:mb-0">
-                <div class="flex items-center mb-2">
-                    <i class="fas fa-hand-wave text-2xl mr-3"></i>
-                    <h2 class="text-2xl md:text-3xl font-bold">Welcome back, Owner!</h2>
-                </div>
-                <p class="text-blue-100 mt-2">
-                    Manage your properties, track bookings, and monitor earnings all in one place.
-                    You have <span class="font-semibold">12 active properties</span> and 
-                    <span class="font-semibold">8 ongoing bookings</span>.
-                </p>
-                <div class="flex flex-wrap gap-3 mt-4">
-                    <span class="px-3 py-1 bg-blue-500 bg-opacity-30 rounded-full text-sm">
-                        <i class="fas fa-bell mr-1"></i> 5 new notifications
-                    </span>
-                    <span class="px-3 py-1 bg-green-500 bg-opacity-30 rounded-full text-sm">
-                        <i class="fas fa-money-bill-wave mr-1"></i> $2,450 earned this month
-                    </span>
-                </div>
-            </div>
-            <button class="bg-white text-blue-700 hover:bg-blue-50 px-5 py-3 rounded-lg font-semibold transition-all hover:scale-[1.02] shadow-lg">
-                <i class="fas fa-plus mr-2"></i> Add New Property
-            </button>
-        </div>
-    </div>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.bunny.net">
+    <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
 
-    <!-- Quick Summary Cards -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-        <!-- Total Properties Card -->
-        <div class="bg-white rounded-xl shadow border hover:shadow-lg transition-shadow duration-300 p-5">
-            <div class="flex justify-between items-start">
-                <div>
-                    <p class="text-gray-500 text-sm font-medium">Total Properties</p>
-                    <p class="text-3xl font-bold text-gray-800 mt-2">12</p>
-                    <div class="flex items-center mt-2">
-                        <span class="text-green-600 text-sm font-medium">
-                            <i class="fas fa-arrow-up mr-1"></i> 2 new
-                        </span>
-                        <span class="text-gray-400 text-sm mx-2">•</span>
-                        <span class="text-gray-500 text-sm">this month</span>
-                    </div>
-                </div>
-                <div class="w-14 h-14 rounded-full bg-blue-100 flex items-center justify-center">
-                    <i class="fas fa-building text-blue-600 text-2xl"></i>
-                </div>
-            </div>
-            <div class="mt-4 pt-4 border-t border-gray-100">
-                <div class="flex justify-between text-sm">
-                    <span class="text-gray-600">Hostels: <span class="font-semibold">8</span></span>
-                    <span class="text-gray-600">Apartments: <span class="font-semibold">4</span></span>
-                </div>
-            </div>
-        </div>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-        <!-- Active Listings Card -->
-        <div class="bg-white rounded-xl shadow border hover:shadow-lg transition-shadow duration-300 p-5">
-            <div class="flex justify-between items-start">
-                <div>
-                    <p class="text-gray-500 text-sm font-medium">Active Listings</p>
-                    <p class="text-3xl font-bold text-gray-800 mt-2">10</p>
-                    <div class="flex items-center mt-2">
-                        <span class="text-green-600 text-sm font-medium">
-                            <i class="fas fa-check-circle mr-1"></i> 83%
-                        </span>
-                        <span class="text-gray-400 text-sm mx-2">•</span>
-                        <span class="text-gray-500 text-sm">active rate</span>
-                    </div>
-                </div>
-                <div class="w-14 h-14 rounded-full bg-green-100 flex items-center justify-center">
-                    <i class="fas fa-clipboard-check text-green-600 text-2xl"></i>
-                </div>
-            </div>
-            <div class="mt-4 pt-4 border-t border-gray-100">
-                <div class="text-sm text-gray-600">
-                    <span>2 properties <span class="text-yellow-600">pending</span></span>
-                </div>
-            </div>
-        </div>
+    <!-- Scripts -->
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
 
-        <!-- Total Bookings Card -->
-        <div class="bg-white rounded-xl shadow border hover:shadow-lg transition-shadow duration-300 p-5">
-            <div class="flex justify-between items-start">
-                <div>
-                    <p class="text-gray-500 text-sm font-medium">Total Bookings</p>
-                    <p class="text-3xl font-bold text-gray-800 mt-2">48</p>
-                    <div class="flex items-center mt-2">
-                        <span class="text-blue-600 text-sm font-medium">
-                            <i class="fas fa-chart-line mr-1"></i> 15%
-                        </span>
-                        <span class="text-gray-400 text-sm mx-2">•</span>
-                        <span class="text-gray-500 text-sm">growth</span>
-                    </div>
-                </div>
-                <div class="w-14 h-14 rounded-full bg-purple-100 flex items-center justify-center">
-                    <i class="fas fa-calendar-alt text-purple-600 text-2xl"></i>
-                </div>
-            </div>
-            <div class="mt-4 pt-4 border-t border-gray-100">
-                <div class="flex justify-between text-sm">
-                    <span class="text-gray-600">Active: <span class="font-semibold text-green-600">8</span></span>
-                    <span class="text-gray-600">Pending: <span class="font-semibold text-yellow-600">3</span></span>
-                </div>
-            </div>
-        </div>
+    <!-- Alpine.js -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 
-        <!-- Earnings Card -->
-        <div class="bg-white rounded-xl shadow border hover:shadow-lg transition-shadow duration-300 p-5">
-            <div class="flex justify-between items-start">
-                <div>
-                    <p class="text-gray-500 text-sm font-medium">Total Earnings</p>
-                    <p class="text-3xl font-bold text-gray-800 mt-2">$24,580</p>
-                    <div class="flex items-center mt-2">
-                        <span class="text-green-600 text-sm font-medium">
-                            <i class="fas fa-money-bill-wave mr-1"></i> $2,450
-                        </span>
-                        <span class="text-gray-400 text-sm mx-2">•</span>
-                        <span class="text-gray-500 text-sm">this month</span>
-                    </div>
-                </div>
-                <div class="w-14 h-14 rounded-full bg-yellow-100 flex items-center justify-center">
-                    <i class="fas fa-dollar-sign text-yellow-600 text-2xl"></i>
-                </div>
-            </div>
-            <div class="mt-4 pt-4 border-t border-gray-100">
-                <div class="text-sm">
-                    <span class="text-gray-600">After commission: </span>
-                    <span class="font-semibold text-green-600">$23,351</span>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Quick Actions -->
-    <div class="bg-white rounded-xl shadow border p-6">
-        <div class="flex justify-between items-center mb-6">
-            <h3 class="text-xl font-bold text-gray-800">Quick Actions</h3>
-            <a href="#" class="text-blue-600 hover:text-blue-800 text-sm font-medium">
-                View all <i class="fas fa-arrow-right ml-1"></i>
-            </a>
-        </div>
+    <style>
+        [x-cloak] { display: none !important; }
         
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <a href="#" class="group p-5 border rounded-xl hover:border-blue-300 hover:bg-blue-50 transition-all text-center">
-                <div class="w-12 h-12 rounded-full bg-blue-100 group-hover:bg-blue-200 flex items-center justify-center mx-auto mb-3 transition-colors">
-                    <i class="fas fa-plus text-blue-600 text-xl"></i>
-                </div>
-                <p class="font-semibold text-gray-800 group-hover:text-blue-700">Add Property</p>
-                <p class="text-xs text-gray-500 mt-1">Create new listing</p>
-            </a>
+        /* Super smooth transitions */
+        .sidebar-transition {
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        /* Page transition */
+        .page-enter {
+            animation: pageFadeIn 0.3s ease-out;
+        }
+        
+        @keyframes pageFadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(8px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        /* Sidebar styling - ALWAYS ICON-ONLY */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+            width: 5rem; /* Icon-only width */
+            background-color: #111827; /* gray-900 */
+            color: white;
+            border-right: 1px solid #374151;
+            z-index: 40;
+            overflow-y: auto;
+            overflow-x: hidden;
+            transform: translateX(-5rem);
+        }
+        
+        /* Sidebar when open */
+        .sidebar-open {
+            transform: translateX(0);
+        }
+        
+        /* Sidebar hover effect - expands on hover */
+        .sidebar:hover {
+            width: 16rem !important;
+        }
+        
+        .sidebar:hover .sidebar-text,
+        .sidebar:hover .user-name,
+        .sidebar:hover .user-email,
+        .sidebar:hover .user-role,
+        .sidebar:hover .logo-text {
+            opacity: 1;
+            max-width: 200px;
+        }
+        
+        .sidebar:hover .logo-full {
+            display: flex;
+        }
+        
+        .sidebar:hover .logo-icon {
+            display: none;
+        }
+        
+        /* Hide text by default in icon-only mode */
+        .sidebar-text,
+        .user-name,
+        .user-email,
+        .user-role,
+        .logo-text {
+            opacity: 0;
+            max-width: 0;
+            overflow: hidden;
+            white-space: nowrap;
+            transition: all 0.25s ease;
+        }
+        
+        /* Show only icons by default */
+        .logo-icon {
+            display: flex;
+        }
+        
+        .logo-full {
+            display: none;
+        }
+        
+        /* Main content adjustment */
+        .main-content {
+            margin-left: 0;
+            transition: margin-left 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .main-content-sidebar-open {
+            margin-left: 5rem;
+        }
+        
+        /* Mobile overlay */
+        .sidebar-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 30;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.25s ease;
+        }
+        
+        .sidebar-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        /* For mobile, sidebar is full width */
+        @media (max-width: 1023px) {
+            .sidebar {
+                width: 16rem;
+                transform: translateX(-16rem);
+            }
             
-            <a href="#" class="group p-5 border rounded-xl hover:border-green-300 hover:bg-green-50 transition-all text-center">
-                <div class="w-12 h-12 rounded-full bg-green-100 group-hover:bg-green-200 flex items-center justify-center mx-auto mb-3 transition-colors">
-                    <i class="fas fa-eye text-green-600 text-xl"></i>
-                </div>
-                <p class="font-semibold text-gray-800 group-hover:text-green-700">View Bookings</p>
-                <p class="text-xs text-gray-500 mt-1">Manage reservations</p>
-            </a>
+            .sidebar-open {
+                transform: translateX(0);
+            }
             
-            <a href="#" class="group p-5 border rounded-xl hover:border-purple-300 hover:bg-purple-50 transition-all text-center">
-                <div class="w-12 h-12 rounded-full bg-purple-100 group-hover:bg-purple-200 flex items-center justify-center mx-auto mb-3 transition-colors">
-                    <i class="fas fa-chart-bar text-purple-600 text-xl"></i>
-                </div>
-                <p class="font-semibold text-gray-800 group-hover:text-purple-700">View Reports</p>
-                <p class="text-xs text-gray-500 mt-1">Analytics & insights</p>
-            </a>
+            .sidebar:hover {
+                width: 16rem !important;
+            }
             
-            <a href="#" class="group p-5 border rounded-xl hover:border-gray-300 hover:bg-gray-50 transition-all text-center">
-                <div class="w-12 h-12 rounded-full bg-gray-100 group-hover:bg-gray-200 flex items-center justify-center mx-auto mb-3 transition-colors">
-                    <i class="fas fa-cog text-gray-600 text-xl"></i>
-                </div>
-                <p class="font-semibold text-gray-800 group-hover:text-gray-700">Settings</p>
-                <p class="text-xs text-gray-500 mt-1">Account & preferences</p>
-            </a>
+            .main-content-sidebar-open {
+                margin-left: 0;
+            }
+            
+            .sidebar-text,
+            .user-name,
+            .user-email,
+            .user-role,
+            .logo-text {
+                opacity: 1;
+                max-width: 200px;
+            }
+            
+            .logo-icon {
+                display: none;
+            }
+            
+            .logo-full {
+                display: flex;
+            }
+        }
+        
+        /* Smooth link hover */
+        a {
+            transition: all 0.2s ease;
+        }
+        
+        /* Loading animation */
+        .loading-spinner {
+            animation: spin 0.8s linear infinite;
+        }
+        
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="font-sans antialiased bg-gray-100">
+    <div x-data="{
+        sidebarOpen: false,
+        isPageLoading: false,
+        currentPage: 'dashboard',
+        
+        init() {
+            // On desktop, sidebar is always visible (icon-only)
+            if (window.innerWidth >= 1024) {
+                this.sidebarOpen = true;
+            }
+            
+            // Set current page based on route
+            this.setCurrentPage();
+            
+            // Listen for page changes
+            window.addEventListener('popstate', () => {
+                this.setCurrentPage();
+            });
+        },
+        
+        setCurrentPage() {
+            const path = window.location.pathname;
+            if (path.includes('dashboard')) this.currentPage = 'dashboard';
+            else if (path.includes('profile')) this.currentPage = 'profile';
+            else if (path.includes('owner')) this.currentPage = 'owner';
+            else if (path.includes('food')) this.currentPage = 'food';
+            else if (path.includes('laundry')) this.currentPage = 'laundry';
+            else if (path.includes('rental')) this.currentPage = 'rental';
+            else if (path.includes('role.apply')) this.currentPage = 'role';
+            else this.currentPage = 'dashboard';
+        },
+        
+        navigate(url) {
+            this.isPageLoading = true;
+            
+            // Add page transition class to content
+            const content = document.querySelector('.page-content');
+            if (content) {
+                content.classList.remove('page-enter');
+                void content.offsetWidth; // Trigger reflow
+                content.classList.add('page-enter');
+            }
+            
+            // Navigate after a short delay for smooth transition
+            setTimeout(() => {
+                window.location.href = url;
+            }, 150);
+        },
+        
+        toggleSidebar() {
+            this.sidebarOpen = !this.sidebarOpen;
+        }
+    }">
+        
+        <!-- Mobile Overlay -->
+        <div x-show="sidebarOpen && window.innerWidth < 1024" 
+             @click="sidebarOpen = false"
+             class="sidebar-overlay"
+             :class="{ 'active': sidebarOpen && window.innerWidth < 1024 }"
+             x-cloak>
         </div>
-    </div>
 
-    <!-- Recent Activity Preview -->
-    <div class="lg:grid lg:grid-cols-3 gap-6 space-y-6 lg:space-y-0">
-        <!-- Recent Bookings Preview -->
-        <div class="lg:col-span-2 bg-white rounded-xl shadow border p-6">
-            <div class="flex justify-between items-center mb-6">
-                <h3 class="text-xl font-bold text-gray-800">Recent Bookings</h3>
-                <a href="{{ route('owner.bookings.index') }}" class="text-blue-600 hover:text-blue-800 text-sm font-medium">
-                    View all <i class="fas fa-arrow-right ml-1"></i>
-                </a>
-            </div>
-            
-            <div class="space-y-4">
-                @for($i = 1; $i <= 3; $i++)
-                <div class="flex items-center p-4 border rounded-lg hover:bg-gray-50 transition-colors">
-                    <div class="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center mr-4">
-                        <i class="fas fa-user text-blue-600"></i>
-                    </div>
-                    <div class="flex-1">
-                        <h4 class="font-medium text-gray-800">John Doe</h4>
-                        <p class="text-sm text-gray-600">Sunshine Apartments #302</p>
-                    </div>
-                    <div class="text-right">
-                        <span class="px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">Active</span>
-                        <p class="text-sm text-gray-500 mt-1">Feb 15, 2024</p>
-                    </div>
-                </div>
-                @endfor
+        <!-- Loading Overlay -->
+        <div x-show="isPageLoading" 
+             class="fixed inset-0 bg-white bg-opacity-80 z-50 flex items-center justify-center"
+             x-cloak>
+            <div class="flex flex-col items-center">
+                <div class="loading-spinner rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500 mb-3"></div>
+                <p class="text-gray-600">Loading...</p>
             </div>
         </div>
 
-        <!-- Notifications Preview -->
-        <div class="bg-white rounded-xl shadow border p-6">
-            <div class="flex justify-between items-center mb-6">
-                <h3 class="text-xl font-bold text-gray-800">Recent Notifications</h3>
-                <a href="{{ route('owner.notifications') }}" class="text-blue-600 hover:text-blue-800 text-sm font-medium">
-                    View all <i class="fas fa-arrow-right ml-1"></i>
-                </a>
-            </div>
+        <!-- Sidebar - ALWAYS ICON-ONLY ON DESKTOP -->
+        <aside :class="{ 'sidebar-open': sidebarOpen }"
+               class="sidebar sidebar-transition"
+               x-cloak>
             
-            <div class="space-y-4">
-                <div class="p-3 bg-blue-50 border border-blue-100 rounded-lg">
-                    <div class="flex items-start">
-                        <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center mr-3 mt-1">
-                            <i class="fas fa-bell text-blue-600 text-sm"></i>
-                        </div>
-                        <div class="flex-1">
-                            <p class="text-sm font-medium text-gray-800">New booking received</p>
-                            <p class="text-xs text-gray-600 mt-1">2 hours ago</p>
-                        </div>
+            <!-- Sidebar Header -->
+            <div class="flex items-center justify-between h-16 px-4 border-b border-gray-800">
+                <!-- Icon-only logo -->
+                <div class="logo-icon">
+                    <div class="h-8 w-8 rounded-lg bg-indigo-600 flex items-center justify-center">
+                        <i class="fas fa-home text-white"></i>
                     </div>
                 </div>
                 
-                <div class="p-3 bg-green-50 border border-green-100 rounded-lg">
-                    <div class="flex items-start">
-                        <div class="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center mr-3 mt-1">
-                            <i class="fas fa-money-bill-wave text-green-600 text-sm"></i>
-                        </div>
-                        <div class="flex-1">
-                            <p class="text-sm font-medium text-gray-800">Payment confirmed</p>
-                            <p class="text-xs text-gray-600 mt-1">5 hours ago</p>
-                        </div>
+                <!-- Full logo (shown on hover/expand) -->
+                <div class="logo-full items-center">
+                    <div class="h-8 w-8 rounded-lg bg-indigo-600 flex items-center justify-center">
+                        <i class="fas fa-home text-white"></i>
+                    </div>
+                    <div class="ml-3">
+                        <h1 class="text-lg font-bold logo-text">RMS System</h1>
+                        <p class="text-xs text-gray-400">Dashboard</p>
                     </div>
                 </div>
                 
-                <div class="p-3 bg-yellow-50 border border-yellow-100 rounded-lg">
-                    <div class="flex items-start">
-                        <div class="w-8 h-8 rounded-full bg-yellow-100 flex items-center justify-center mr-3 mt-1">
-                            <i class="fas fa-exclamation-triangle text-yellow-600 text-sm"></i>
-                        </div>
-                        <div class="flex-1">
-                            <p class="text-sm font-medium text-gray-800">Complaint received</p>
-                            <p class="text-xs text-gray-600 mt-1">1 day ago</p>
+                <!-- Close button for mobile -->
+                <button @click="sidebarOpen = false" 
+                        class="lg:hidden text-gray-400 hover:text-white">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <!-- User Profile -->
+            <div class="px-4 py-6 border-b border-gray-800">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        @if(Auth::user()->avatar_url)
+                            <img src="{{ Storage::url(Auth::user()->avatar_url) }}" 
+                                 alt="{{ Auth::user()->name }}"
+                                 class="h-10 w-10 rounded-full border-2 border-indigo-500 object-cover">
+                        @else
+                            <div class="h-10 w-10 rounded-full bg-gray-700 border-2 border-indigo-500 flex items-center justify-center">
+                                <i class="fas fa-user text-gray-300"></i>
+                            </div>
+                        @endif
+                    </div>
+                    <div class="ml-3 overflow-hidden">
+                        <p class="text-sm font-medium truncate user-name">{{ Auth::user()->name }}</p>
+                        <p class="text-xs text-gray-400 truncate user-email">{{ Auth::user()->email }}</p>
+                        <div class="mt-1">
+                            @foreach(Auth::user()->roles as $role)
+                                <span class="inline-block px-2 py-0.5 rounded text-xs font-medium bg-indigo-500 text-white truncate user-role">
+                                    {{ ucfirst(strtolower($role->name)) }}
+                                </span>
+                            @endforeach
                         </div>
                     </div>
                 </div>
             </div>
+
+            <!-- Navigation -->
+            <nav class="flex-1 px-3 py-4 space-y-1">
+                <!-- Dashboard -->
+                <a href="{{ route('dashboard') }}" 
+                   @click.prevent="navigate('{{ route('dashboard') }}')"
+                   :class="currentPage === 'dashboard' ? 'bg-gray-800 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white'"
+                   class="group flex items-center px-3 py-3 rounded-md sidebar-transition">
+                    <i class="fas fa-tachometer-alt text-lg w-6 text-center"></i>
+                    <span class="ml-3 truncate sidebar-text">Dashboard</span>
+                </a>
+
+                <!-- Profile -->
+                <a href="{{ route('profile.show') }}" 
+                   @click.prevent="navigate('{{ route('profile.show') }}')"
+                   :class="currentPage === 'profile' ? 'bg-gray-800 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white'"
+                   class="group flex items-center px-3 py-3 rounded-md sidebar-transition">
+                    <i class="fas fa-user text-lg w-6 text-center"></i>
+                    <span class="ml-3 truncate sidebar-text">Profile</span>
+                </a>
+
+                <!-- Properties (for Owners) -->
+                @if(auth()->user()->isOwner())
+                    <a href="{{ route('owner.properties.index') }}" 
+                       @click.prevent="navigate('{{ route('owner.properties.index') }}')"
+                       :class="currentPage === 'owner' ? 'bg-gray-800 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white'"
+                       class="group flex items-center px-3 py-3 rounded-md sidebar-transition">
+                        <i class="fas fa-home text-lg w-6 text-center"></i>
+                        <span class="ml-3 truncate sidebar-text">Properties</span>
+                    </a>
+                @endif
+
+                <!-- Food Orders (for Food Providers) -->
+                @if(auth()->user()->isFoodProvider())
+                    <a href="{{ route('food.orders') }}" 
+                       @click.prevent="navigate('{{ route('food.orders') }}')"
+                       :class="currentPage === 'food' ? 'bg-gray-800 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white'"
+                       class="group flex items-center px-3 py-3 rounded-md sidebar-transition">
+                        <i class="fas fa-utensils text-lg w-6 text-center"></i>
+                        <span class="ml-3 truncate sidebar-text">Food Orders</span>
+                    </a>
+                @endif
+
+                <!-- Laundry Orders (for Laundry Providers) -->
+                @if(auth()->user()->isLaundryProvider())
+                    <a href="{{ route('laundry.orders') }}" 
+                       @click.prevent="navigate('{{ route('laundry.orders') }}')"
+                       :class="currentPage === 'laundry' ? 'bg-gray-800 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white'"
+                       class="group flex items-center px-3 py-3 rounded-md sidebar-transition">
+                        <i class="fas fa-tshirt text-lg w-6 text-center"></i>
+                        <span class="ml-3 truncate sidebar-text">Laundry Orders</span>
+                    </a>
+                @endif
+
+                <!-- Find Properties -->
+                <a href="{{ route('rental.search') }}" 
+                   @click.prevent="navigate('{{ route('rental.search') }}')"
+                   :class="currentPage === 'rental' ? 'bg-gray-800 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white'"
+                   class="group flex items-center px-3 py-3 rounded-md sidebar-transition">
+                    <i class="fas fa-search text-lg w-6 text-center"></i>
+                    <span class="ml-3 truncate sidebar-text">Find Properties</span>
+                </a>
+
+                <!-- Food Services -->
+                <a href="{{ route('food.index') }}" 
+                   @click.prevent="navigate('{{ route('food.index') }}')"
+                   class="text-gray-300 hover:bg-gray-700 hover:text-white group flex items-center px-3 py-3 rounded-md sidebar-transition">
+                    <i class="fas fa-utensils text-lg w-6 text-center"></i>
+                    <span class="ml-3 truncate sidebar-text">Food Services</span>
+                </a>
+
+                <!-- Laundry Services -->
+                <a href="{{ route('laundry.index') }}" 
+                   @click.prevent="navigate('{{ route('laundry.index') }}')"
+                   class="text-gray-300 hover:bg-gray-700 hover:text-white group flex items-center px-3 py-3 rounded-md sidebar-transition">
+                    <i class="fas fa-tshirt text-lg w-6 text-center"></i>
+                    <span class="ml-3 truncate sidebar-text">Laundry Services</span>
+                </a>
+
+                <!-- My Bookings -->
+                <a href="{{ route('rental.index') }}" 
+                   @click.prevent="navigate('{{ route('rental.index') }}')"
+                   class="text-gray-300 hover:bg-gray-700 hover:text-white group flex items-center px-3 py-3 rounded-md sidebar-transition">
+                    <i class="fas fa-calendar-alt text-lg w-6 text-center"></i>
+                    <span class="ml-3 truncate sidebar-text">My Bookings</span>
+                </a>
+
+                <!-- My Orders -->
+                <a href="{{ route('food.orders') }}" 
+                   @click.prevent="navigate('{{ route('food.orders') }}')"
+                   class="text-gray-300 hover:bg-gray-700 hover:text-white group flex items-center px-3 py-3 rounded-md sidebar-transition">
+                    <i class="fas fa-shopping-bag text-lg w-6 text-center"></i>
+                    <span class="ml-3 truncate sidebar-text">My Orders</span>
+                </a>
+
+                <!-- Role Application (for regular users) -->
+                @if(auth()->user()->hasRole('USER') && !auth()->user()->isOwner() && !auth()->user()->isFoodProvider() && !auth()->user()->isLaundryProvider())
+                    <a href="{{ route('role.apply.index') }}" 
+                       @click.prevent="navigate('{{ route('role.apply.index') }}')"
+                       :class="currentPage === 'role' ? 'bg-gray-800 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white'"
+                       class="group flex items-center px-3 py-3 rounded-md sidebar-transition">
+                        <i class="fas fa-user-plus text-lg w-6 text-center"></i>
+                        <span class="ml-3 truncate sidebar-text">Apply for Role</span>
+                    </a>
+                @endif
+            </nav>
+
+            <!-- Sidebar Footer -->
+            <div class="border-t border-gray-800 mt-auto">
+                <form method="POST" action="{{ route('logout') }}" id="logout-form">
+                    @csrf
+                    <button type="submit" 
+                            class="w-full text-left text-gray-300 hover:bg-gray-700 hover:text-white group flex items-center px-4 py-3 sidebar-transition">
+                        <i class="fas fa-sign-out-alt text-lg w-6 text-center"></i>
+                        <span class="ml-3 truncate sidebar-text">Logout</span>
+                    </button>
+                </form>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <div :class="{ 'main-content-sidebar-open': sidebarOpen && window.innerWidth >= 1024 }" 
+             class="main-content min-h-screen">
+            
+            <!-- Top Navigation -->
+            <header class="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-30">
+                <div class="flex items-center justify-between px-4 py-3">
+                    <div class="flex items-center">
+                        <!-- Mobile menu button -->
+                        <button @click="toggleSidebar()" 
+                                class="lg:hidden text-gray-500 hover:text-gray-700 focus:outline-none">
+                            <i class="fas fa-bars text-xl"></i>
+                        </button>
+                        
+                        <!-- Desktop menu button -->
+                        <button @click="toggleSidebar()" 
+                                class="hidden lg:flex items-center text-gray-500 hover:text-gray-700 focus:outline-none">
+                            <i class="fas fa-bars text-xl"></i>
+                        </button>
+                        
+                        <!-- Breadcrumb -->
+                        <nav class="ml-4 flex" aria-label="Breadcrumb">
+                            <ol class="flex items-center space-x-2">
+                                <li>
+                                    <div>
+                                        <a href="{{ route('dashboard') }}" 
+                                           @click.prevent="navigate('{{ route('dashboard') }}')"
+                                           class="text-gray-400 hover:text-gray-500">
+                                            <i class="fas fa-home"></i>
+                                        </a>
+                                    </div>
+                                </li>
+                                @if(isset($breadcrumbs))
+                                    @foreach($breadcrumbs as $crumb)
+                                        <li>
+                                            <div class="flex items-center">
+                                                <i class="fas fa-chevron-right text-gray-400 mx-2"></i>
+                                                @if($loop->last)
+                                                    <span class="text-sm font-medium text-gray-500">{{ $crumb['title'] }}</span>
+                                                @else
+                                                    <a href="{{ $crumb['url'] }}" 
+                                                       @click.prevent="navigate('{{ $crumb['url'] }}')"
+                                                       class="text-sm font-medium text-gray-500 hover:text-gray-700">
+                                                        {{ $crumb['title'] }}
+                                                    </a>
+                                                @endif
+                                            </div>
+                                        </li>
+                                    @endforeach
+                                @endif
+                            </ol>
+                        </nav>
+                    </div>
+
+                    <!-- Right Side -->
+                    <div class="flex items-center space-x-4">
+                        <!-- Search -->
+                        <div class="hidden md:block relative">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <i class="fas fa-search text-gray-400"></i>
+                            </div>
+                            <input type="text" 
+                                   placeholder="Search..." 
+                                   class="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 w-64">
+                        </div>
+
+                        <!-- User Menu -->
+                        <div class="relative" x-data="{ userMenuOpen: false }">
+                            <button @click="userMenuOpen = !userMenuOpen" 
+                                    class="flex items-center space-x-2 focus:outline-none">
+                                @if(Auth::user()->avatar_url)
+                                    <img src="{{ Storage::url(Auth::user()->avatar_url) }}" 
+                                         alt="{{ Auth::user()->name }}"
+                                         class="h-8 w-8 rounded-full">
+                                @else
+                                    <div class="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center">
+                                        <i class="fas fa-user text-gray-600"></i>
+                                    </div>
+                                @endif
+                                <span class="hidden md:block text-sm font-medium text-gray-700 truncate max-w-[120px]">
+                                    {{ Auth::user()->name }}
+                                </span>
+                                <i class="fas fa-chevron-down text-gray-400"></i>
+                            </button>
+                            
+                            <!-- User Dropdown -->
+                            <div x-show="userMenuOpen" 
+                                 @click.away="userMenuOpen = false"
+                                 x-transition:enter="transition ease-out duration-100"
+                                 x-transition:enter-start="transform opacity-0 scale-95"
+                                 x-transition:enter-end="transform opacity-100 scale-100"
+                                 x-transition:leave="transition ease-in duration-75"
+                                 x-transition:leave-start="transform opacity-100 scale-100"
+                                 x-transition:leave-end="transform opacity-0 scale-95"
+                                 class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-50"
+                                 style="display: none;">
+                                <div class="py-1">
+                                    <a href="{{ route('profile.show') }}" 
+                                       @click.prevent="navigate('{{ route('profile.show') }}')"
+                                       class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                        <i class="fas fa-user mr-2"></i> Profile
+                                    </a>
+                                    <div class="border-t border-gray-100"></div>
+                                    <form method="POST" action="{{ route('logout') }}" id="logout-form-top">
+                                        @csrf
+                                        <button type="submit" 
+                                                class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                            <i class="fas fa-sign-out-alt mr-2"></i> Logout
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Main Content Area -->
+            <main class="bg-gray-50 min-h-[calc(100vh-64px)] page-content page-enter">
+                <div class="p-6">
+                    <!-- Page Header -->
+                    <div class="mb-6">
+                        <h1 class="text-2xl font-bold text-gray-900">@yield('title', 'Dashboard')</h1>
+                        <p class="mt-2 text-gray-600">@yield('subtitle', 'Welcome to your dashboard')</p>
+                    </div>
+
+                    <!-- Flash Messages -->
+                    @if(session('success'))
+                        <div class="mb-6 bg-green-50 border-l-4 border-green-400 p-4 rounded">
+                            <div class="flex">
+                                <div class="flex-shrink-0">
+                                    <i class="fas fa-check-circle text-green-400"></i>
+                                </div>
+                                <div class="ml-3">
+                                    <p class="text-sm text-green-700">{{ session('success') }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    @endif
+
+                    @if(session('error'))
+                        <div class="mb-6 bg-red-50 border-l-4 border-red-400 p-4 rounded">
+                            <div class="flex">
+                                <div class="flex-shrink-0">
+                                    <i class="fas fa-exclamation-circle text-red-400"></i>
+                                </div>
+                                <div class="ml-3">
+                                    <p class="text-sm text-red-700">{{ session('error') }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    @endif
+
+                    <!-- Page Content -->
+                    <div class="bg-white rounded-lg shadow-sm border border-gray-200">
+                        @yield('content')
+                    </div>
+                </div>
+            </main>
+
+            <!-- Footer -->
+            <footer class="bg-white border-t border-gray-200 py-4 px-6">
+                <div class="flex flex-col md:flex-row justify-between items-center">
+                    <div class="text-sm text-gray-600">
+                        &copy; {{ date('Y') }} RMS System. All rights reserved.
+                    </div>
+                    <div class="mt-2 md:mt-0">
+                        <span class="text-sm text-gray-600">Version 1.0.0</span>
+                    </div>
+                </div>
+            </footer>
         </div>
     </div>
-</div>
-@endsection
+
+    <script>
+        // Handle page transitions
+        document.addEventListener('DOMContentLoaded', function() {
+            // Add page enter animation
+            const content = document.querySelector('.page-content');
+            if (content) {
+                content.classList.add('page-enter');
+            }
+            
+            // Handle all navigation links
+            document.addEventListener('click', function(e) {
+                const link = e.target.closest('a');
+                if (link && link.href && !link.href.includes('javascript:') && 
+                    link.href !== '#' && !link.hasAttribute('target')) {
+                    
+                    // Check if it's an internal link
+                    const isInternal = link.href.includes(window.location.hostname) || 
+                                      link.href.startsWith('/');
+                    
+                    if (isInternal && !link.href.includes('logout')) {
+                        e.preventDefault();
+                        
+                        // Trigger loading state
+                        const app = document.querySelector('[x-data]').__x;
+                        if (app && app.$data) {
+                            app.$data.isPageLoading = true;
+                        }
+                        
+                        // Navigate after short delay for smooth transition
+                        setTimeout(() => {
+                            window.location.href = link.href;
+                        }, 200);
+                    }
+                }
+            });
+            
+            // Handle form submissions
+            document.querySelectorAll('form').forEach(form => {
+                form.addEventListener('submit', function(e) {
+                    if (this.id.includes('logout')) {
+                        const app = document.querySelector('[x-data]').__x;
+                        if (app && app.$data) {
+                            app.$data.isPageLoading = true;
+                        }
+                    }
+                });
+            });
+        });
+        
+        // Remove loading state when page is fully loaded
+        window.addEventListener('load', function() {
+            const app = document.querySelector('[x-data]').__x;
+            if (app && app.$data) {
+                setTimeout(() => {
+                    app.$data.isPageLoading = false;
+                }, 300);
+            }
+        });
+    </script>
+</body>
+</html>

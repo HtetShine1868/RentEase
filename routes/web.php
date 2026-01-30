@@ -15,37 +15,6 @@ use App\Http\Controllers\VerificationController;
 Route::get('/', function () {
     return view('welcome');
 })->name('home');
-Route::get('/debug-middleware-issue', function() {
-    // Check if middleware file exists
-    $middlewarePath = app_path('Http/Middleware/EnsureFoodRole.php');
-    $fileExists = file_exists($middlewarePath);
-    
-    // Check if class is loaded
-    $classExists = class_exists(\App\Http\Middleware\EnsureFoodRole::class);
-    
-    // Try to get middleware from router
-    try {
-        $router = app('router');
-        $middleware = $router->getMiddleware();
-    } catch (\Exception $e) {
-        $middleware = ['error' => $e->getMessage()];
-    }
-    
-    // Check specific aliases
-    $hasFoodRole = isset($middleware['food.role']);
-    $hasFood_role = isset($middleware['food_role']);
-    $hasRole = isset($middleware['role']);
-    
-    return response()->json([
-        'middleware_file_exists' => $fileExists,
-        'middleware_class_exists' => $classExists,
-        'all_middleware_aliases' => array_keys($middleware),
-        'has_food.role_alias' => $hasFoodRole,
-        'has_food_role_alias' => $hasFood_role,
-        'has_role_alias' => $hasRole,
-        'middleware_array' => $middleware
-    ]);
-});
 
 // ============ PUBLIC ROUTES ============
 Route::middleware('guest')->group(function () {
