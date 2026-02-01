@@ -90,6 +90,12 @@
         </div>
     </div>
 
+    <!-- Order Filters Component -->
+    @include('food-provider.orders.components.order-filters', [
+        'showAdvanced' => false,
+        'onFilter' => 'applyOrderFilters()'
+    ])
+
     <!-- Orders Table -->
     <div class="bg-white shadow-sm sm:rounded-lg overflow-hidden">
         <!-- Table Header -->
