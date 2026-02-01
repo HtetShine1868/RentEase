@@ -1,4 +1,4 @@
-phoopyaepyaemaung, [1/30/2026 1:06 PM]
+
 @extends('owner.layout.owner-layout')
 
 @section('title', 'My Properties - RentEase')
@@ -80,7 +80,7 @@ phoopyaepyaemaung, [1/30/2026 1:06 PM]
         </div>
     </div>
 
-phoopyaepyaemaung, [1/30/2026 1:06 PM]
+
 <!-- Properties Grid/Table -->
     <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
         <!-- Table Header -->
@@ -151,11 +151,13 @@ phoopyaepyaemaung, [1/30/2026 1:06 PM]
                                         <i class="fas fa-star text-yellow-500 mr-1"></i> 4.7 (24 reviews)
                                     </span>
 
-phoopyaepyaemaung, [1/30/2026 1:06 PM]
+
 </div>
                             </div>
                             
                             <!-- Price & Actions -->
+
+                            
                             <div class="text-right">
                                 <p class="text-2xl font-bold text-purple-700">$1,250<span class="text-sm font-normal text-gray-500">/month</span></p>
                                 <p class="text-sm text-gray-500 mt-1">After 3% commission: <span class="font-medium">$1,212</span></p>
@@ -213,7 +215,7 @@ phoopyaepyaemaung, [1/30/2026 1:06 PM]
                                 <div class="flex items-center gap-2 mt-2">
                                     <span class="px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
 
-phoopyaepyaemaung, [1/30/2026 1:06 PM]
+
 <i class="fas fa-check-circle mr-1"></i> Active
                                     </span>
                                     <span class="px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
@@ -251,7 +253,7 @@ phoopyaepyaemaung, [1/30/2026 1:06 PM]
                 </div>
             </div>
 
-phoopyaepyaemaung, [1/30/2026 1:06 PM]
+
 <!-- Property 3 (Draft) -->
             <div class="px-6 py-4 hover:bg-gray-50 transition-colors">
                 <div class="flex items-center gap-4">
@@ -309,7 +311,7 @@ phoopyaepyaemaung, [1/30/2026 1:06 PM]
             </div>
         </div>
 
-phoopyaepyaemaung, [1/30/2026 1:06 PM]
+
 <!-- Empty State (Uncomment if needed) -->
         <!--
         <div class="text-center py-16">
@@ -403,4 +405,4 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 </script>
-@endsection
+@endsection    index.blade.php

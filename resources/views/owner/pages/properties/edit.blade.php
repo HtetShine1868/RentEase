@@ -1,3 +1,4 @@
+phoopyaepyaemaung, [2/1/2026 7:59 PM]
 @extends('owner.layout.owner-layout')
 
 @section('title', 'Edit Property - RentEase')
@@ -84,7 +85,8 @@
             </nav>
         </div>
 
-        <!-- Tab Content -->
+phoopyaepyaemaung, [2/1/2026 7:59 PM]
+<!-- Tab Content -->
         <form id="editPropertyForm">
             <!-- Basic Info Tab (Visible by default) -->
             <div class="tab-content active" id="basic-tab">
@@ -152,7 +154,8 @@
                                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors">Beautiful 3-bedroom apartment located in the heart of downtown. Recently renovated with modern amenities, hardwood floors, and stunning city views. Perfect for professionals or small families.</textarea>
                     </div>
 
-                    <!-- Bedrooms & Bathrooms -->
+phoopyaepyaemaung, [2/1/2026 7:59 PM]
+<!-- Bedrooms & Bathrooms -->
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">
                             Bedrooms <span class="text-red-500">*</span>
@@ -214,7 +217,8 @@
                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors">
                     </div>
 
-                    <div>
+phoopyaepyaemaung, [2/1/2026 7:59 PM]
+<div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">
                             State/Province <span class="text-red-500">*</span>
                         </label>
@@ -284,7 +288,8 @@
                         </div>
                     </div>
 
-                    <!-- Security Deposit -->
+phoopyaepyaemaung, [2/1/2026 7:59 PM]
+<!-- Security Deposit -->
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">
                             Security Deposit ($)
@@ -329,7 +334,8 @@
                         </div>
                     </div>
 
-                    <!-- Additional Pricing -->
+phoopyaepyaemaung, [2/1/2026 7:59 PM]
+<!-- Additional Pricing -->
                     <div class="md:col-span-2">
                         <h4 class="font-medium text-gray-900 mb-4">Additional Pricing</h4>
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -377,7 +383,8 @@
                 </div>
             </div>
 
-            <!-- Amenities Tab -->
+phoopyaepyaemaung, [2/1/2026 7:59 PM]
+<!-- Amenities Tab -->
             <div class="tab-content hidden" id="amenities-tab">
                 <h3 class="text-lg font-semibold text-gray-900 mb-6">Amenities & Features</h3>
                 
@@ -428,7 +435,8 @@
                         </div>
                     </div>
 
-                    <!-- Outdoor -->
+phoopyaepyaemaung, [2/1/2026 7:59 PM]
+<!-- Outdoor -->
                     <div class="space-y-3">
                         <h4 class="font-medium text-gray-900">Outdoor</h4>
                         <div class="space-y-2">
@@ -487,7 +495,8 @@
                     </div>
                 </div>
 
-                <!-- Image Gallery -->
+phoopyaepyaemaung, [2/1/2026 7:59 PM]
+<!-- Image Gallery -->
                 <div class="mb-6">
                     <div class="flex items-center justify-between mb-4">
                         <h4 class="font-medium text-gray-900">Image Gallery</h4>
@@ -551,7 +560,8 @@
             </div>
         </form>
 
-        <!-- Form Actions -->
+phoopyaepyaemaung, [2/1/2026 7:59 PM]
+<!-- Form Actions -->
         <div class="flex justify-between items-center pt-8 border-t border-gray-200 mt-8">
             <div>
                 <button type="button" onclick="window.history.back()" class="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors">
@@ -619,6 +629,7 @@ input[type="checkbox"]:checked {
 }
 </style>
 
+phoopyaepyaemaung, [2/1/2026 7:59 PM]
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // Tab functionality
@@ -639,7 +650,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 content.classList.add('hidden');
             });
             
-            const activeTab = document.getElementById(`${tabId}-tab`);
+            const activeTab = document.getElementById(${tabId}-tab);
             if (activeTab) {
                 activeTab.classList.remove('hidden');
                 activeTab.classList.add('active');
@@ -649,11 +660,11 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Number input increment/decrement
     document.querySelectorAll('button').forEach(button => {
-        if (button.innerHTML.includes('fa-plus') || button.innerHTML.includes('fa-minus')) {
+        if (button.innerHTML.includes('fa-plus')  button.innerHTML.includes('fa-minus')) {
             button.addEventListener('click', function() {
                 const input = this.parentNode.querySelector('input[type="number"]');
                 if (input) {
-                    const currentValue = parseInt(input.value) || 0;
+                    const currentValue = parseInt(input.value)  0;
                     if (this.innerHTML.includes('fa-plus')) {
                         input.value = currentValue + 1;
                     } else {
@@ -725,11 +736,12 @@ document.addEventListener('DOMContentLoaded', function() {
             const price = parseFloat(this.value) || 0;
             const commission = price * 0.03;
             const earnings = price - commission;
-            
-            // Update commission display (in real app, you'd update the DOM)
-            console.log(`Updated: Price: $${price}, Commission: $${commission.toFixed(2)}, You Earn: $${earnings.toFixed(2)}`);
+
+phoopyaepyaemaung, [2/1/2026 7:59 PM]
+// Update commission display (in real app, you'd update the DOM)
+            console.log(Updated: Price: $${price}, Commission: $${commission.toFixed(2)}, You Earn: $${earnings.toFixed(2)});
         });
     }
 });
 </script>
-@endsection
+@endsection 

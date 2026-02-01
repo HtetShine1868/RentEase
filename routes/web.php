@@ -206,6 +206,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::put('/{room}', [RoomController::class, 'update'])->name('update');
             Route::delete('/{room}', [RoomController::class, 'destroy'])->name('destroy');
             Route::post('/{room}/status', [RoomController::class, 'updateStatus'])->name('status');
+             
+    });
         });   
          }); 
 
@@ -218,9 +220,8 @@ Route::prefix('owner')->name('owner.')->group(function () {
         return view('owner.pages.properties.index');
     })->name('properties.index');
     
-    Route::get('/bookings', function () {
-        return view('owner.pages.bookings.index');
-    })->name('bookings.index');
+   // Delete the old function and change it to this:
+Route::get('/bookings', [App\Http\Controllers\OwnerController::class, 'bookings'])->name('bookings.index');
     
     Route::get('/earnings', function () {
         return view('owner.pages.earnings.index');
@@ -263,7 +264,9 @@ Route::prefix('owner')->name('owner.')->group(function () {
         return view('owner.pages.properties.rooms.index', ['propertyId' => $id]);
     })->name('properties.rooms.index');
 });
-    });
+
+
+    
 
     // SuperAdmin Routes
     Route::middleware(['role:SUPERADMIN'])->group(function () {
