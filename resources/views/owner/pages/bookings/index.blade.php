@@ -6,6 +6,16 @@
 
 @section('content')
 <div class="space-y-6">
+@foreach ($bookings as $booking)
+            <div class="p-4 border rounded">
+                <p><strong>Property:</strong> {{ $booking->property->name }}</p>
+                <p><strong>User:</strong> {{ $booking->user->name }}</p>
+                <a href="{{ route('owner.bookings.show', $booking->id) }}"
+                   class="px-3 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200">
+                    View Details
+                </a>
+            </div>
+        @endforeach
 
 
     <!-- Header with Stats -->
@@ -139,6 +149,7 @@
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
                             <div class="flex items-center">
+       
                                 <div class="flex-shrink-0 h-8 w-8 bg-purple-100 rounded-full flex items-center justify-center">
                                     <i class="fas fa-user text-purple-600 text-sm"></i>
                                 </div>
@@ -179,6 +190,7 @@
                                         title="Edit">
                                     <i class="fas fa-edit"></i>
                                 </button>
+        
                                 <button onclick="sendReminder(1)" 
                                         class="px-3 py-1.5 bg-yellow-50 text-yellow-700 rounded-lg hover:bg-yellow-100 transition-colors"
                                         title="Send Reminder">
@@ -196,6 +208,8 @@
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
                             <div class="flex items-center">
+        
+                                
                                 <div class="flex-shrink-0 h-8 w-8 bg-blue-100 rounded-full flex items-center justify-center">
                                     <i class="fas fa-user text-blue-600 text-sm"></i>
                                 </div>
@@ -252,6 +266,7 @@
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
                             <div class="flex items-center">
+                                    
                                 <div class="flex-shrink-0 h-8 w-8 bg-green-100 rounded-full flex items-center justify-center">
                                     <i class="fas fa-user text-green-600 text-sm"></i>
                                 </div>
@@ -307,7 +322,7 @@
                             <div class="text-xs text-gray-500">Jan 5, 2024</div>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
-                            <div class="flex items-center">
+                            <div class="flex items-center">                         
                                 <div class="flex-shrink-0 h-8 w-8 bg-gray-100 rounded-full flex items-center justify-center">
                                     <i class="fas fa-user text-gray-600 text-sm"></i>
                                 </div>
@@ -386,15 +401,11 @@
 <script>
 // Booking Management Functions
 function viewBooking(bookingId) {
-    Loading.show('Loading booking details...');
-    setTimeout(() => {
-        window.location.href = `/owner/bookings/${bookingId}`;
-    }, 500);
+    window.location.href = `/owner/bookings/${bookingId}`;
 }
 
 function editBooking(bookingId) {
     Toast.info('Edit Booking', `Opening booking #${bookingId} for editing...`);
-    // In real app, redirect to edit page
 }
 
 function confirmBooking(bookingId) {
