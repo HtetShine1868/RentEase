@@ -60,9 +60,10 @@ class ServiceProvider extends Model
         return $this->hasMany(LaundryItem::class);
     }
 
+// In ServiceProvider.php model
     public function foodOrders()
     {
-        return $this->hasMany(FoodOrder::class);
+        return $this->hasMany(FoodOrder::class, 'service_provider_id');
     }
 
     public function laundryOrders()

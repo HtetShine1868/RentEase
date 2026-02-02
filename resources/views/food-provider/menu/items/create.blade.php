@@ -18,7 +18,7 @@
         </div>
 
         <!-- Form -->
-        <form action="#" method="POST" enctype="multipart/form-data" x-data="menuItemForm()">
+        <form action="{{ route('food-provider.menu.items.store') }}" method="POST" enctype="multipart/form-data" x-data="menuItemForm()">
             @csrf
             
             <div class="px-4 py-5 sm:p-6 space-y-8">
@@ -44,20 +44,19 @@
                         </div>
 
                         <div>
-                            <label for="category_id" class="block text-sm font-medium text-gray-700">
-                                Category *
+                            <label for="meal_type_id" class="block text-sm font-medium text-gray-700">
+                                Meal Type *
                             </label>
                             <div class="mt-1">
-                                <select id="category_id" 
-                                        name="category_id" 
+                                <select id="meal_type_id" 
+                                        name="meal_type_id" 
                                         class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
                                         required>
-                                    <option value="">Select Category</option>
-                                    <option value="1">Vegetarian</option>
-                                    <option value="2">Non-Vegetarian</option>
-                                    <option value="3">Vegan</option>
-                                    <option value="4">Desserts</option>
-                                    <option value="5">Beverages</option>
+                                    <option value="">Select Meal Type</option>
+                                    <option value="1">Breakfast</option>
+                                    <option value="2">Lunch</option>
+                                    <option value="3">Dinner</option>
+                                    <option value="4">Snacks</option>
                                 </select>
                             </div>
                         </div>
@@ -88,7 +87,7 @@
                         <div class="flex flex-wrap gap-3">
                             <div class="flex items-center">
                                 <input id="is_vegetarian" 
-                                       name="dietary_info[]" 
+                                       name="dietary_tags[]" 
                                        type="checkbox" 
                                        value="vegetarian" 
                                        class="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded">
@@ -100,7 +99,7 @@
                             </div>
                             <div class="flex items-center">
                                 <input id="is_gluten_free" 
-                                       name="dietary_info[]" 
+                                       name="dietary_tags[]" 
                                        type="checkbox" 
                                        value="gluten_free" 
                                        class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
@@ -112,7 +111,7 @@
                             </div>
                             <div class="flex items-center">
                                 <input id="is_spicy" 
-                                       name="dietary_info[]" 
+                                       name="dietary_tags[]" 
                                        type="checkbox" 
                                        value="spicy" 
                                        class="h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300 rounded">
@@ -133,7 +132,7 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <!-- Price Input -->
                         <div>
-                            <label for="price" class="block text-sm font-medium text-gray-700">
+                            <label for="base_price" class="block text-sm font-medium text-gray-700">
                                 Price (₹) *
                             </label>
                             <div class="mt-1 relative rounded-md shadow-sm">
@@ -141,8 +140,8 @@
                                     <span class="text-gray-500 sm:text-sm">₹</span>
                                 </div>
                                 <input type="number" 
-                                       name="price" 
-                                       id="price" 
+                                       name="base_price" 
+                                       id="base_price" 
                                        step="1"
                                        min="0"
                                        x-model="price"
@@ -156,8 +155,32 @@
                             </p>
                         </div>
 
+                        <!-- Commission Rate -->
+                        <div>
+                            <label for="commission_rate" class="block text-sm font-medium text-gray-700">
+                                Commission Rate (%)
+                            </label>
+                            <div class="mt-1 relative rounded-md shadow-sm">
+                                <input type="number" 
+                                       name="commission_rate" 
+                                       id="commission_rate" 
+                                       step="0.01"
+                                       min="0"
+                                       max="100"
+                                       class="focus:ring-indigo-500 focus:border-indigo-500 block w-full pr-12 sm:text-sm border-gray-300 rounded-md" 
+                                       placeholder="8.00"
+                                       value="8.00">
+                                <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                                    <span class="text-gray-500 sm:text-sm">%</span>
+                                </div>
+                            </div>
+                            <p class="mt-2 text-sm text-gray-500">
+                                Platform commission percentage
+                            </p>
+                        </div>
+
                         <!-- Commission Preview -->
-                        <div class="bg-gray-50 p-4 rounded-md border border-gray-200">
+                        <div class="col-span-1 md:col-span-2 bg-gray-50 p-4 rounded-md border border-gray-200">
                             <label class="block text-sm font-medium text-gray-700 mb-2">
                                 Commission Preview
                             </label>
@@ -167,7 +190,7 @@
                                     <span class="font-medium" x-text="`₹${price.toFixed(2)}`"></span>
                                 </div>
                                 <div class="flex justify-between text-sm">
-                                    <span class="text-gray-600">Platform Commission (12%):</span>
+                                    <span class="text-gray-600">Platform Commission:</span>
                                     <span class="text-red-600" x-text="`-₹${commission.toFixed(2)}`"></span>
                                 </div>
                                 <div class="border-t pt-2 flex justify-between font-medium">
@@ -227,6 +250,24 @@
                                 </div>
                             </div>
                         </div>
+                    </div>
+
+                    <!-- Daily Quantity -->
+                    <div class="mt-6">
+                        <label for="daily_quantity" class="block text-sm font-medium text-gray-700">
+                            Daily Quantity Limit (optional)
+                        </label>
+                        <div class="mt-1">
+                            <input type="number" 
+                                   name="daily_quantity" 
+                                   id="daily_quantity" 
+                                   min="0"
+                                   class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md" 
+                                   placeholder="Leave empty for unlimited">
+                        </div>
+                        <p class="mt-2 text-sm text-gray-500">
+                            Maximum number of this item available per day
+                        </p>
                     </div>
                 </div>
 
@@ -350,11 +391,10 @@
                             </label>
                             <div class="mt-1">
                                 <select id="status" 
-                                        name="status" 
+                                        name="is_available" 
                                         class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
-                                    <option value="active">Active (Visible to customers)</option>
-                                    <option value="inactive">Inactive (Hidden from customers)</option>
-                                    <option value="out_of_stock">Out of Stock</option>
+                                    <option value="1">Active (Visible to customers)</option>
+                                    <option value="0">Inactive (Hidden from customers)</option>
                                 </select>
                             </div>
                         </div>
@@ -384,6 +424,7 @@
                             <input id="is_featured" 
                                    name="is_featured" 
                                    type="checkbox" 
+                                   value="1"
                                    class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
                             <label for="is_featured" class="ml-2 block text-sm text-gray-900">
                                 Feature this item on restaurant homepage
@@ -424,8 +465,10 @@
             showSpecialPrice: false,
             
             calculateCommission() {
-                const commissionRate = 0.12; // 12% default
-                this.commission = this.price * commissionRate;
+                // Get commission rate from input or use default 8%
+                const commissionRate = document.getElementById('commission_rate') ? 
+                    parseFloat(document.getElementById('commission_rate').value) : 8.00;
+                this.commission = (this.price * commissionRate) / 100;
                 this.earnings = this.price - this.commission;
             },
             
@@ -447,14 +490,34 @@
         };
     }
     
-    // Initialize form
+    // Initialize form and update commission when commission rate changes
     document.addEventListener('DOMContentLoaded', function() {
-        // Auto-generate slug from item name
-        const nameInput = document.getElementById('name');
-        if (nameInput) {
-            nameInput.addEventListener('input', function() {
-                // You can add slug generation logic here if needed
-            });
+        const basePriceInput = document.getElementById('base_price');
+        const commissionRateInput = document.getElementById('commission_rate');
+        
+        if (basePriceInput && commissionRateInput) {
+            const updatePreview = () => {
+                const price = parseFloat(basePriceInput.value) || 0;
+                const commissionRate = parseFloat(commissionRateInput.value) || 8.00;
+                const commission = (price * commissionRate) / 100;
+                const earnings = price - commission;
+                
+                // Update the Alpine.js component if it exists
+                if (window.Alpine && Alpine.evaluate) {
+                    const component = Alpine.evaluate(document.querySelector('[x-data="menuItemForm()"]'), 'this');
+                    if (component) {
+                        component.price = price;
+                        component.commission = commission;
+                        component.earnings = earnings;
+                    }
+                }
+            };
+            
+            basePriceInput.addEventListener('input', updatePreview);
+            commissionRateInput.addEventListener('input', updatePreview);
+            
+            // Initial calculation
+            updatePreview();
         }
     });
 </script>
