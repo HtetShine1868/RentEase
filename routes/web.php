@@ -13,6 +13,7 @@ use App\Http\Controllers\FoodProvider\MenuItemController;
 use App\Http\Controllers\FoodProvider\OrderController;
 use App\Http\Controllers\OwnerController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Owner\BookingController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -125,16 +126,35 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/property/{property}/rent', [RentalSearchController::class, 'rentApartment'])->name('apartment.rent');
         Route::get('/property/{property}/room/{room}/rent', [RentalSearchController::class, 'rentRoom'])->name('room.rent');
     });
+});
 
-    // ============ ROLE-SPECIFIC ROUTES ============
-    
-    // Owner Routes
+// ============ ROLE-SPECIFIC ROUTES ============
+
+// OWNER Routes
+Route::middleware(['auth', 'verified'])->prefix('owner')->name('owner.')->group(function () {
+    // Role check middleware
     Route::middleware(['role:OWNER'])->group(function () {
-        Route::resource('properties', PropertyController::class);
+        // Dashboard
+        Route::get('/dashboard', function () {
+            return view('owner.pages.dashboard');
+        })->name('dashboard');
+        
+        // Bookings Management
+        Route::prefix('bookings')->name('bookings.')->group(function () {
+            Route::get('/', [BookingController::class, 'index'])->name('index');
+            Route::get('/{booking}', [BookingController::class, 'show'])->name('show');
+            Route::patch('/{booking}/status', [BookingController::class, 'updateStatus'])->name('updateStatus');
+            Route::patch('/{booking}/payment-status', [BookingController::class, 'updatePaymentStatus'])->name('updatePaymentStatus');
+        });
+        
+        // Property Management Routes
+        Route::resource('properties', PropertyController::class)->except(['show']);
         Route::post('/properties/{property}/status', [PropertyController::class, 'updateStatus'])->name('properties.status');
         Route::get('/properties/{property}/analytics', [PropertyController::class, 'analytics'])->name('properties.analytics');
         
+        // Room Management
         Route::prefix('properties/{property}/rooms')->name('rooms.')->group(function () {
+            Route::get('/', [RoomController::class, 'index'])->name('index');
             Route::get('/create', [RoomController::class, 'create'])->name('create');
             Route::post('/', [RoomController::class, 'store'])->name('store');
             Route::get('/{room}/edit', [RoomController::class, 'edit'])->name('edit');
@@ -142,75 +162,35 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::delete('/{room}', [RoomController::class, 'destroy'])->name('destroy');
             Route::post('/{room}/status', [RoomController::class, 'updateStatus'])->name('status');
         });
-    });
-});
+        
+        // Other owner pages
+        Route::get('/earnings', function () {
+            return view('owner.pages.earnings.index');
+        })->name('earnings.index');
+        
+        Route::get('/complaints', function () {
+            return view('owner.pages.complaints.index');
+        })->name('complaints.index');
+        
+        Route::get('/notifications', function () {
+            return view('owner.pages.notification');
+        })->name('notifications');
+        
+        Route::get('/settings', function () {
+            return view('owner.pages.settings.index');
+        })->name('settings.index');
+        
+        Route::get('/profile', function () {
+            return view('owner.pages.profile');
+        })->name('profile');
 
-// ============ OWNER ROUTES ============
-Route::prefix('owner')->name('owner.')->group(function () {
-    Route::get('/dashboard', function () {
-        return view('owner.pages.dashboard');
-    })->name('dashboard');
-    
-    Route::get('/properties', function () {
-        return view('owner.pages.properties.index');
-    })->name('properties.index');
-    
-    Route::get('/bookings', [OwnerController::class, 'bookings'])->name('bookings.index');
-    
-    Route::get('/earnings', function () {
-        return view('owner.pages.earnings.index');
-    })->name('earnings.index');
-    
-    Route::get('/complaints', function () {
-        return view('owner.pages.complaints.index');
-    })->name('complaints.index');
-    
-    Route::get('/notifications', function () {
-        return view('owner.pages.notification');
-    })->name('notifications');
-    
-    Route::get('/settings', function () {
-        return view('owner.pages.settings.index');
-    })->name('settings.index');
-    
-    Route::get('/profile', function () {
-        return view('owner.pages.profile');
-    })->name('profile');
-
-    Route::get('/owner/notifications', function () {
-        return view('owner.pages.notifications');
-    })->name('owner.notifications');
-
-    // Property Management Routes
-    Route::get('/properties', function () {
-        return view('owner.pages.properties.index');
-    })->name('properties.index');
-    
-    Route::get('/properties/create', function () {
-        return view('owner.pages.properties.create');
-    })->name('properties.create');
-    
-    Route::get('/properties/{id}/edit', function ($id) {
-        return view('owner.pages.properties.edit', ['propertyId' => $id]);
-    })->name('properties.edit');
-    
-    Route::get('/properties/{id}/rooms', function ($id) {
-        return view('owner.pages.properties.rooms.index', ['propertyId' => $id]);
-    })->name('properties.rooms.index');
+        // This route seems duplicate - consider removing or renaming
 });
 
 // ============ FOOD PROVIDER ROUTES ============
-Route::middleware(['auth'])->group(function () {
-    Route::prefix('food-provider')->name('food-provider.')->group(function () {
-        $checkFoodRole = function() {
-            $user = auth()->user();
-            if (!$user || !$user->hasRole('FOOD')) {
-                if ($user && $user->hasRole('OWNER')) {
-                    return redirect()->route('owner.dashboard');
-                }
-                abort(403, 'Unauthorized access. FOOD role required.');
-            }
-        };
+Route::middleware(['auth', 'verified'])->prefix('food-provider')->name('food-provider.')->group(function () {
+    // Role check middleware
+    Route::middleware(['role:FOOD'])->group(function () {
         // Dashboard
         Route::get('/dashboard', function () {
             return view('food-provider.dashboard.index', ['title' => 'Food Provider Dashboard']);
@@ -289,23 +269,19 @@ Route::middleware(['auth'])->group(function () {
 });
 
 // ============ LAUNDRY PROVIDER ROUTES ============
-Route::middleware(['auth', 'role:LAUNDRY'])->group(function () {
-    Route::prefix('laundry-provider')->name('laundry-provider.')->group(function () {
-        Route::get('/dashboard', function () {
-            return view('dashboard.laundry', ['title' => 'Laundry Provider Dashboard']);
-        })->name('dashboard');
-        
-        // Add more laundry provider routes as needed
-    });
+Route::middleware(['auth', 'verified', 'role:LAUNDRY'])->prefix('laundry-provider')->name('laundry-provider.')->group(function () {
+    Route::get('/dashboard', function () {
+        return view('dashboard.laundry', ['title' => 'Laundry Provider Dashboard']);
+    })->name('dashboard');
+    
+    // Add more laundry provider routes as needed
 });
 
 // ============ SUPERADMIN ROUTES ============
-Route::middleware(['auth', 'role:SUPERADMIN'])->group(function () {
-    Route::prefix('admin')->name('admin.')->group(function () {
-        Route::get('/dashboard', function () {
-            return view('dashboard.admin', ['title' => 'SuperAdmin Dashboard']);
-        })->name('dashboard');
-        
-        // Add admin routes here
-    });
+Route::middleware(['auth', 'verified', 'role:SUPERADMIN'])->prefix('admin')->name('admin.')->group(function () {
+    Route::get('/dashboard', function () {
+        return view('dashboard.admin', ['title' => 'SuperAdmin Dashboard']);
+    })->name('dashboard');
+    
+    // Add admin routes here
 });
