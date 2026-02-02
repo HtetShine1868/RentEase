@@ -195,7 +195,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
     
     // Owner Routes
      
-// Owner Routes with role middleware
 Route::middleware(['role:OWNER'])->group(function () {
     Route::resource('properties', PropertyController::class);
     Route::post('/properties/{property}/status', [PropertyController::class, 'updateStatus'])->name('properties.status');
@@ -267,6 +266,20 @@ Route::prefix('owner')->name('owner.')->group(function () {
     Route::get('/owner/notifications', function () {
         return view('owner.pages.notifications');
     })->name('owner.notifications');
+
+    Route::get('/owner/bookings', function () {
+    // For testing, return view with sample data
+    return view('owner.pages.bookings.index', [
+        'dayCount' => 8,
+        'monthCount' => 24,
+        'monthRevenue' => 4280,
+        'properties' => \App\Models\Property::all() ?? collect([
+            (object)['id' => 1, 'name' => 'Sunshine Apartments'],
+            (object)['id' => 2, 'name' => 'City Hostel'],
+            (object)['id' => 3, 'name' => 'Luxury Villa'],
+        ])
+    ]);
+})->name('owner.bookings.index');
 });
     // Property Management Routes
     Route::get('/properties', function () {
