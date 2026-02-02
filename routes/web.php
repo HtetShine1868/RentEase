@@ -10,7 +10,7 @@ use App\Http\Controllers\RoomController;
 use App\Http\Controllers\RentalSearchController;
 use App\Http\Controllers\VerificationController;
  use Illuminate\Support\Facades\Route;
-
+use App\Http\Controllers\Owner\BookingController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -126,35 +126,55 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // ============ ROLE-SPECIFIC ROUTES ============
     
     // Owner Routes
-    Route::middleware(['role:OWNER'])->group(function () {
-        Route::resource('properties', PropertyController::class);
-        Route::post('/properties/{property}/status', [PropertyController::class, 'updateStatus'])->name('properties.status');
-        Route::get('/properties/{property}/analytics', [PropertyController::class, 'analytics'])->name('properties.analytics');
-        
-        Route::prefix('properties/{property}/rooms')->name('rooms.')->group(function () {
-            Route::get('/create', [RoomController::class, 'create'])->name('create');
-            Route::post('/', [RoomController::class, 'store'])->name('store');
-            Route::get('/{room}/edit', [RoomController::class, 'edit'])->name('edit');
-            Route::put('/{room}', [RoomController::class, 'update'])->name('update');
-            Route::delete('/{room}', [RoomController::class, 'destroy'])->name('destroy');
-            Route::post('/{room}/status', [RoomController::class, 'updateStatus'])->name('status');
-             
+     
+Route::middleware(['role:OWNER'])->group(function () {
+    Route::resource('properties', PropertyController::class);
+    Route::post('/properties/{property}/status', [PropertyController::class, 'updateStatus'])->name('properties.status');
+    Route::get('/properties/{property}/analytics', [PropertyController::class, 'analytics'])->name('properties.analytics');
+    
+    Route::prefix('properties/{property}/rooms')->name('rooms.')->group(function () {
+        Route::get('/create', [RoomController::class, 'create'])->name('create');
+        Route::post('/', [RoomController::class, 'store'])->name('store');
+        Route::get('/{room}/edit', [RoomController::class, 'edit'])->name('edit');
+        Route::put('/{room}', [RoomController::class, 'update'])->name('update');
+        Route::delete('/{room}', [RoomController::class, 'destroy'])->name('destroy');
+        Route::post('/{room}/status', [RoomController::class, 'updateStatus'])->name('status');
     });
-        });   
-         }); 
+});
 
+// Owner Dashboard and Management Routes
 Route::prefix('owner')->name('owner.')->group(function () {
+    // Dashboard
     Route::get('/dashboard', function () {
         return view('owner.pages.dashboard');
     })->name('dashboard');
     
+    // Bookings Management - USING BookingController
+    Route::prefix('bookings')->name('bookings.')->group(function () {
+        Route::get('/', [BookingController::class, 'index'])->name('index');
+        Route::get('/{booking}', [BookingController::class, 'show'])->name('show');
+        Route::patch('/{booking}/status', [BookingController::class, 'updateStatus'])->name('updateStatus');
+        Route::patch('/{booking}/payment-status', [BookingController::class, 'updatePaymentStatus'])->name('updatePaymentStatus');
+    });
+    
+    // Properties (view routes)
     Route::get('/properties', function () {
         return view('owner.pages.properties.index');
     })->name('properties.index');
     
-   // Delete the old function and change it to this:
-Route::get('/bookings', [App\Http\Controllers\OwnerController::class, 'bookings'])->name('bookings.index');
+    Route::get('/properties/create', function () {
+        return view('owner.pages.properties.create');
+    })->name('properties.create');
     
+    Route::get('/properties/{id}/edit', function ($id) {
+        return view('owner.pages.properties.edit', ['propertyId' => $id]);
+    })->name('properties.edit');
+    
+    Route::get('/properties/{id}/rooms', function ($id) {
+        return view('owner.pages.properties.rooms.index', ['propertyId' => $id]);
+    })->name('properties.rooms.index');
+    
+    // Other owner pages
     Route::get('/earnings', function () {
         return view('owner.pages.earnings.index');
     })->name('earnings.index');
@@ -176,9 +196,23 @@ Route::get('/bookings', [App\Http\Controllers\OwnerController::class, 'bookings'
     })->name('profile');
 
     Route::get('/owner/notifications', function () {
-    return view('owner.pages.notifications');
-})->name('owner.notifications');
+        return view('owner.pages.notifications');
+    })->name('owner.notifications');
 
+    Route::get('/owner/bookings', function () {
+    // For testing, return view with sample data
+    return view('owner.pages.bookings.index', [
+        'dayCount' => 8,
+        'monthCount' => 24,
+        'monthRevenue' => 4280,
+        'properties' => \App\Models\Property::all() ?? collect([
+            (object)['id' => 1, 'name' => 'Sunshine Apartments'],
+            (object)['id' => 2, 'name' => 'City Hostel'],
+            (object)['id' => 3, 'name' => 'Luxury Villa'],
+        ])
+    ]);
+})->name('owner.bookings.index');
+});
     // Property Management Routes
     Route::get('/properties', function () {
         return view('owner.pages.properties.index');
