@@ -67,5 +67,7 @@ class Kernel extends HttpKernel
         'verified' => \App\Http\Middleware\EnsureEmailIsVerified::class, // Use your custom one
         'role' => \App\Http\Middleware\CheckRole::class,
         'food_role' => \App\Http\Middleware\EnsureFoodRole::class,
+        'owner_role' => \App\Http\Middleware\CheckOwnerRole::class,
+        'food.provider' => \App\Http\Middleware\IsFoodProvider::class,
     ];
 }

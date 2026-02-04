@@ -40,11 +40,11 @@ class ServiceProvider extends Model
         return $this->belongsTo(User::class);
     }
 
-    public function foodConfig()
+     public function foodServiceConfig()
     {
-        return $this->hasOne(FoodServiceConfig::class);
-    }
 
+        return $this->hasOne(FoodServiceConfig::class, 'service_provider_id');
+    }
     public function laundryConfig()
     {
         return $this->hasOne(LaundryServiceConfig::class);
@@ -96,5 +96,10 @@ class ServiceProvider extends Model
         ->whereRaw("
             (6371 * acos(cos(radians(?)) * cos(radians(latitude)) * cos(radians(longitude) - radians(?)) + sin(radians(?)) * sin(radians(latitude)))) <= service_radius_km
         ", [$lat, $lng, $lat]);
+    }
+        public function mealTypes()
+    {
+
+        return $this->belongsToMany(MealType::class, 'food_service_meal_types', 'service_provider_id', 'meal_type_id');
     }
 }

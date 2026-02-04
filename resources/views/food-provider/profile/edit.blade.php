@@ -17,17 +17,29 @@
             </p>
         </div>
 
+        <div class="bg-yellow-50 p-4 mb-4 rounded">
+            <p class="text-sm">
+                Form Action URL: {{ route('food-provider.profile.update') }}<br>
+                Current Route: {{ request()->url() }}
+            </p>
+        </div>
+
         <!-- Form -->
-        <form action="{{ route('food-provider.profile.update') }}" 
+        <form action="{{ route('food-provider.profile.update') }}"  
               method="POST" 
               enctype="multipart/form-data" 
               x-data="restaurantProfileForm()"
-              data-coverage-radius="{{ auth()->user()->restaurant->coverage_radius ?? 5 }}">
+              data-coverage-radius="{{ auth()->user()->serviceProvider->service_radius_km ?? 5 }}">
             @csrf
-            @method('PUT')
+            <input type="hidden" name="_method" value="PUT">
+            
+            @php
+                $serviceProvider = auth()->user()->serviceProvider;
+                $foodConfig = $serviceProvider->foodServiceConfig ?? null;
+            @endphp
             
             <div class="px-4 py-5 sm:p-6 space-y-8">
-                <!-- Restaurant Logo -->
+                <!-- Restaurant Logo (Update from user's avatar_url) -->
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">
                         Restaurant Logo
@@ -35,7 +47,7 @@
                     <div class="flex items-center space-x-6">
                         <div class="shrink-0">
                             <img class="h-24 w-24 rounded-lg object-cover border"
-                                 :src="logoPreview || '{{ auth()->user()->restaurant->logo_url ?? 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=200&h=200&fit=crop' }}'"
+                                 :src="logoPreview || '{{ auth()->user()->avatar_url ?? 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=200&h=200&fit=crop' }}'"
                                  alt="Restaurant Logo">
                         </div>
                         <div class="flex-1">
@@ -52,33 +64,33 @@
                     </div>
                 </div>
 
-                <!-- Restaurant Name & Tagline -->
+                <!-- Restaurant Name & Description -->
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                        <label for="name" class="block text-sm font-medium text-gray-700">
+                        <label for="business_name" class="block text-sm font-medium text-gray-700">
                             Restaurant Name *
                         </label>
                         <div class="mt-1">
                             <input type="text" 
-                                   name="name" 
-                                   id="name" 
-                                   value="{{ auth()->user()->restaurant->name ?? '' }}"
+                                   name="business_name" 
+                                   id="business_name" 
+                                   value="{{ $serviceProvider->business_name ?? '' }}"
                                    class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
                                    required>
                         </div>
                     </div>
 
                     <div>
-                        <label for="tagline" class="block text-sm font-medium text-gray-700">
-                            Tagline / Slogan
+                        <label for="city" class="block text-sm font-medium text-gray-700">
+                            City *
                         </label>
                         <div class="mt-1">
                             <input type="text" 
-                                   name="tagline" 
-                                   id="tagline" 
-                                   value="{{ auth()->user()->restaurant->tagline ?? '' }}"
+                                   name="city" 
+                                   id="city" 
+                                   value="{{ $serviceProvider->city ?? '' }}"
                                    class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
-                                   placeholder="e.g., Best food in town!">
+                                   required>
                         </div>
                     </div>
                 </div>
@@ -94,7 +106,7 @@
                                   rows="4" 
                                   class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
                                   placeholder="Describe your restaurant, cuisine type, specialties..."
-                                  required>{{ auth()->user()->restaurant->description ?? '' }}</textarea>
+                                  required>{{ $serviceProvider->description ?? '' }}</textarea>
                     </div>
                     <p class="mt-2 text-sm text-gray-500">
                         Brief description about your restaurant (max 500 characters).
@@ -109,28 +121,28 @@
                     <h4 class="text-md font-medium text-gray-900 mb-4">Contact Information</h4>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
-                            <label for="phone" class="block text-sm font-medium text-gray-700">
+                            <label for="contact_phone" class="block text-sm font-medium text-gray-700">
                                 Phone Number *
                             </label>
                             <div class="mt-1">
                                 <input type="tel" 
-                                       name="phone" 
-                                       id="phone" 
-                                       value="{{ auth()->user()->phone ?? '' }}"
+                                       name="contact_phone" 
+                                       id="contact_phone" 
+                                       value="{{ $serviceProvider->contact_phone ?? '' }}"
                                        class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
                                        required>
                             </div>
                         </div>
 
                         <div>
-                            <label for="email" class="block text-sm font-medium text-gray-700">
+                            <label for="contact_email" class="block text-sm font-medium text-gray-700">
                                 Contact Email *
                             </label>
                             <div class="mt-1">
                                 <input type="email" 
-                                       name="email" 
-                                       id="email" 
-                                       value="{{ auth()->user()->email ?? '' }}"
+                                       name="contact_email" 
+                                       id="contact_email" 
+                                       value="{{ $serviceProvider->contact_email ?? '' }}"
                                        class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
                                        required>
                             </div>
@@ -152,7 +164,7 @@
                                       name="address" 
                                       rows="2" 
                                       class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
-                                      required>{{ auth()->user()->restaurant->address ?? '' }}</textarea>
+                                      required>{{ $serviceProvider->address ?? '' }}</textarea>
                         </div>
                     </div>
 
@@ -176,8 +188,8 @@
                                 </button>
                             </div>
                             <!-- Hidden fields for coordinates -->
-                            <input type="hidden" name="latitude" id="latitude" value="{{ auth()->user()->restaurant->latitude ?? '' }}">
-                            <input type="hidden" name="longitude" id="longitude" value="{{ auth()->user()->restaurant->longitude ?? '' }}">
+                            <input type="hidden" name="latitude" id="latitude" value="{{ $serviceProvider->latitude ?? '' }}">
+                            <input type="hidden" name="longitude" id="longitude" value="{{ $serviceProvider->longitude ?? '' }}">
                         </div>
                         <p class="mt-1 text-xs text-gray-500">
                             Your location helps customers find you and determines delivery availability
@@ -186,17 +198,17 @@
 
                     <!-- Coverage Radius -->
                     <div>
-                        <label for="coverage_radius" class="block text-sm font-medium text-gray-700">
+                        <label for="service_radius_km" class="block text-sm font-medium text-gray-700">
                             Service Coverage Radius (km) *
                         </label>
                         <div class="mt-1">
                             <input type="range" 
-                                   id="coverage_radius" 
-                                   name="coverage_radius" 
+                                   id="service_radius_km" 
+                                   name="service_radius_km" 
                                    min="1" 
                                    max="20" 
-                                   step="1"
-                                   value="{{ auth()->user()->restaurant->coverage_radius ?? 5 }}"
+                                   step="0.5"
+                                   value="{{ $serviceProvider->service_radius_km ?? 5 }}"
                                    class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
                                    x-model="coverageRadius"
                                    @input="updateCoverageEstimate">
@@ -228,66 +240,46 @@
                         <label class="block text-sm font-medium text-gray-700 mb-2">
                             Available Meal Types *
                         </label>
-                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                            @php
-                                $restaurant = auth()->user()->restaurant ?? null;
-                            @endphp
+                        <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
+                            @foreach($allMealTypes as $mealType)
                             <div class="relative flex items-start p-4 border border-gray-200 rounded-lg hover:bg-gray-50">
                                 <div class="flex items-center h-5">
-                                    <input id="breakfast" 
-                                           name="meal_types[]" 
-                                           type="checkbox" 
-                                           value="breakfast" 
-                                           class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded"
-                                           {{ ($restaurant && $restaurant->serves_breakfast) ? 'checked' : '' }}>
+                                    <input id="meal_type_{{ $mealType->id }}" 
+                                        name="meal_types[]" 
+                                        type="checkbox" 
+                                        value="{{ $mealType->id }}" 
+                                        class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded"
+                                        {{ in_array($mealType->id, $serviceProviderMealTypes) ? 'checked' : '' }}>
                                 </div>
                                 <div class="ml-3">
-                                    <label for="breakfast" class="font-medium text-gray-700">
+                                    <label for="meal_type_{{ $mealType->id }}" class="font-medium text-gray-700">
                                         <span class="inline-flex items-center">
-                                            <i class="fas fa-sun text-yellow-500 mr-2"></i> Breakfast
+                                            @if($mealType->name == 'Breakfast')
+                                            <i class="fas fa-sun text-yellow-500 mr-2"></i>
+                                            @elseif($mealType->name == 'Lunch')
+                                            <i class="fas fa-utensils text-orange-500 mr-2"></i>
+                                            @elseif($mealType->name == 'Dinner')
+                                            <i class="fas fa-moon text-blue-500 mr-2"></i>
+                                            @else
+                                            <i class="fas fa-coffee text-gray-500 mr-2"></i>
+                                            @endif
+                                            {{ $mealType->name }}
                                         </span>
                                     </label>
-                                    <p class="text-sm text-gray-500">7:00 AM - 11:00 AM</p>
+                                    <p class="text-sm text-gray-500">
+                                        @if($mealType->name == 'Breakfast')
+                                        7:00 AM - 11:00 AM
+                                        @elseif($mealType->name == 'Lunch')
+                                        12:00 PM - 3:00 PM
+                                        @elseif($mealType->name == 'Dinner')
+                                        7:00 PM - 11:00 PM
+                                        @else
+                                        Available all day
+                                        @endif
+                                    </p>
                                 </div>
                             </div>
-                            
-                            <div class="relative flex items-start p-4 border border-gray-200 rounded-lg hover:bg-gray-50">
-                                <div class="flex items-center h-5">
-                                    <input id="lunch" 
-                                           name="meal_types[]" 
-                                           type="checkbox" 
-                                           value="lunch" 
-                                           class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded"
-                                           {{ ($restaurant && $restaurant->serves_lunch) ? 'checked' : '' }}>
-                                </div>
-                                <div class="ml-3">
-                                    <label for="lunch" class="font-medium text-gray-700">
-                                        <span class="inline-flex items-center">
-                                            <i class="fas fa-utensils text-orange-500 mr-2"></i> Lunch
-                                        </span>
-                                    </label>
-                                    <p class="text-sm text-gray-500">12:00 PM - 3:00 PM</p>
-                                </div>
-                            </div>
-                            
-                            <div class="relative flex items-start p-4 border border-gray-200 rounded-lg hover:bg-gray-50">
-                                <div class="flex items-center h-5">
-                                    <input id="dinner" 
-                                           name="meal_types[]" 
-                                           type="checkbox" 
-                                           value="dinner" 
-                                           class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded"
-                                           {{ ($restaurant && $restaurant->serves_dinner) ? 'checked' : '' }}>
-                                </div>
-                                <div class="ml-3">
-                                    <label for="dinner" class="font-medium text-gray-700">
-                                        <span class="inline-flex items-center">
-                                            <i class="fas fa-moon text-blue-500 mr-2"></i> Dinner
-                                        </span>
-                                    </label>
-                                    <p class="text-sm text-gray-500">7:00 PM - 11:00 PM</p>
-                                </div>
-                            </div>
+                            @endforeach
                         </div>
                     </div>
 
@@ -299,15 +291,15 @@
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div class="relative flex items-start p-4 border border-gray-200 rounded-lg hover:bg-gray-50">
                                 <div class="flex items-center h-5">
-                                    <input id="subscription" 
-                                           name="service_types[]" 
+                                    <input id="supports_subscription" 
+                                           name="supports_subscription" 
                                            type="checkbox" 
-                                           value="subscription" 
+                                           value="1" 
                                            class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded"
-                                           {{ ($restaurant && $restaurant->offers_subscription) ? 'checked' : '' }}>
+                                           {{ $foodConfig && $foodConfig->supports_subscription ? 'checked' : '' }}>
                                 </div>
                                 <div class="ml-3 flex-1">
-                                    <label for="subscription" class="font-medium text-gray-700">
+                                    <label for="supports_subscription" class="font-medium text-gray-700">
                                         <span class="inline-flex items-center">
                                             <i class="fas fa-calendar-alt text-indigo-500 mr-2"></i> Monthly Subscription
                                         </span>
@@ -315,22 +307,22 @@
                                     <p class="text-sm text-gray-500">Recurring meal plans for customers</p>
                                     <div class="mt-2 text-xs text-gray-500">
                                         <i class="fas fa-info-circle mr-1"></i>
-                                        Higher commission: 15%
+                                        Subscription discount: {{ $foodConfig->subscription_discount_percent ?? 10 }}%
                                     </div>
                                 </div>
                             </div>
                             
                             <div class="relative flex items-start p-4 border border-gray-200 rounded-lg hover:bg-gray-50">
                                 <div class="flex items-center h-5">
-                                    <input id="pay_per_eat" 
-                                           name="service_types[]" 
+                                    <input id="supports_pay_per_eat" 
+                                           name="supports_pay_per_eat" 
                                            type="checkbox" 
-                                           value="pay_per_eat" 
+                                           value="1" 
                                            class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded"
-                                           {{ ($restaurant && $restaurant->offers_pay_per_eat) ? 'checked' : '' }}>
+                                           {{ $foodConfig && $foodConfig->supports_pay_per_eat ? 'checked' : '' }}>
                                 </div>
                                 <div class="ml-3 flex-1">
-                                    <label for="pay_per_eat" class="font-medium text-gray-700">
+                                    <label for="supports_pay_per_eat" class="font-medium text-gray-700">
                                         <span class="inline-flex items-center">
                                             <i class="fas fa-shopping-cart text-pink-500 mr-2"></i> Pay-Per-Eat
                                         </span>
@@ -338,7 +330,7 @@
                                     <p class="text-sm text-gray-500">One-time orders</p>
                                     <div class="mt-2 text-xs text-gray-500">
                                         <i class="fas fa-info-circle mr-1"></i>
-                                        Standard commission: 12%
+                                        Commission rate: 8%
                                     </div>
                                 </div>
                             </div>
@@ -350,52 +342,101 @@
                 <div class="border-t border-gray-200 pt-6">
                     <h4 class="text-md font-medium text-gray-900 mb-4">Operating Hours</h4>
                     <div class="space-y-4">
-                        @foreach(['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'] as $day)
-                        @php
-                            $dayLower = strtolower($day);
-                            $hours = $restaurant ? json_decode($restaurant->opening_hours, true) : [];
-                            $dayHours = $hours[$dayLower] ?? ['open' => '08:00', 'close' => '22:00'];
-                            $isClosed = isset($dayHours['open']) && $dayHours['open'] === 'closed';
-                        @endphp
                         <div class="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
                             <div class="flex items-center">
-                                <span class="font-medium text-gray-700 w-24">{{ $day }}</span>
+                                <span class="font-medium text-gray-700 w-32">Opening Time</span>
                                 <div class="flex items-center space-x-2">
-                                    <select name="opening_hours[{{ $dayLower }}][open]" 
-                                            class="border-gray-300 rounded-md text-sm">
-                                        <option value="closed" {{ $isClosed ? 'selected' : '' }}>Closed</option>
-                                        @foreach(range(6, 23) as $hour)
-                                            <option value="{{ sprintf('%02d:00', $hour) }}" {{ !$isClosed && $dayHours['open'] == sprintf('%02d:00', $hour) ? 'selected' : '' }}>{{ sprintf('%02d:00', $hour) }}</option>
-                                            <option value="{{ sprintf('%02d:30', $hour) }}" {{ !$isClosed && $dayHours['open'] == sprintf('%02d:30', $hour) ? 'selected' : '' }}>{{ sprintf('%02d:30', $hour) }}</option>
-                                        @endforeach
-                                    </select>
-                                    <span class="text-gray-500">to</span>
-                                    <select name="opening_hours[{{ $dayLower }}][close]" 
-                                            class="border-gray-300 rounded-md text-sm">
-                                        <option value="closed" {{ $isClosed ? 'selected' : '' }}>Closed</option>
-                                        @foreach(range(6, 23) as $hour)
-                                            <option value="{{ sprintf('%02d:00', $hour) }}" {{ !$isClosed && $dayHours['close'] == sprintf('%02d:00', $hour) ? 'selected' : '' }}>{{ sprintf('%02d:00', $hour) }}</option>
-                                            <option value="{{ sprintf('%02d:30', $hour) }}" {{ !$isClosed && $dayHours['close'] == sprintf('%02d:30', $hour) ? 'selected' : '' }}>{{ sprintf('%02d:30', $hour) }}</option>
-                                        @endforeach
-                                    </select>
+                                    <input type="time" 
+                                           name="opening_time" 
+                                           value="{{ $foodConfig->opening_time ?? '08:00' }}"
+                                           class="border-gray-300 rounded-md text-sm px-2 py-1">
                                 </div>
                             </div>
+                        </div>
+                        
+                        <div class="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
                             <div class="flex items-center">
-                                <input id="{{ $dayLower }}-closed" 
-                                       name="{{ $dayLower }}_closed" 
-                                       type="checkbox" 
-                                       value="1"
-                                       class="h-4 w-4 text-indigo-600 border-gray-300 rounded"
-                                       {{ $isClosed ? 'checked' : '' }}>
-                                <label for="{{ $dayLower }}-closed" class="ml-2 text-sm text-gray-700">
-                                    Closed
-                                </label>
+                                <span class="font-medium text-gray-700 w-32">Closing Time</span>
+                                <div class="flex items-center space-x-2">
+                                    <input type="time" 
+                                           name="closing_time" 
+                                           value="{{ $foodConfig->closing_time ?? '22:00' }}"
+                                           class="border-gray-300 rounded-md text-sm px-2 py-1">
+                                </div>
                             </div>
                         </div>
-                        @endforeach
+                    </div>
+                </div>
+
+                <!-- Additional Food Service Configuration -->
+                <div class="border-t border-gray-200 pt-6">
+                    <h4 class="text-md font-medium text-gray-900 mb-4">Additional Settings</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label for="avg_preparation_minutes" class="block text-sm font-medium text-gray-700">
+                                Average Preparation Time (minutes) *
+                            </label>
+                            <div class="mt-1">
+                                <input type="number" 
+                                       name="avg_preparation_minutes" 
+                                       id="avg_preparation_minutes" 
+                                       min="10"
+                                       max="120"
+                                       value="{{ $foodConfig->avg_preparation_minutes ?? 30 }}"
+                                       class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                                       required>
+                            </div>
+                            <p class="mt-1 text-xs text-gray-500">
+                                Average time to prepare an order
+                            </p>
+                        </div>
+
+                        <div>
+                            <label for="delivery_buffer_minutes" class="block text-sm font-medium text-gray-700">
+                                Delivery Buffer (minutes per km) *
+                            </label>
+                            <div class="mt-1">
+                                <input type="number" 
+                                       name="delivery_buffer_minutes" 
+                                       id="delivery_buffer_minutes" 
+                                       min="1"
+                                       max="30"
+                                       step="1"
+                                       value="{{ $foodConfig->delivery_buffer_minutes ?? 15 }}"
+                                       class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                                       required>
+                            </div>
+                            <p class="mt-1 text-xs text-gray-500">
+                                Additional delivery time per kilometer
+                            </p>
+                        </div>
                     </div>
                 </div>
             </div>
+
+            <!-- Debug Script -->
+            <script>
+            document.querySelector('form').addEventListener('submit', function(e) {
+                console.log('=== FORM SUBMIT DEBUG ===');
+                console.log('Form action:', this.action);
+                console.log('Form method:', this.method);
+                
+                // Check for all hidden inputs
+                const hiddenInputs = this.querySelectorAll('input[type="hidden"]');
+                console.log('Hidden inputs:');
+                hiddenInputs.forEach(input => {
+                    console.log(`  ${input.name} = ${input.value}`);
+                });
+                
+                // Check if _method input exists
+                const methodInput = this.querySelector('input[name="_method"]');
+                if (methodInput) {
+                    console.log('✓ _method found with value:', methodInput.value);
+                } else {
+                    console.log('✗ _method NOT FOUND');
+                }
+            });
+            </script>
 
             <!-- Form Actions -->
             <div class="px-4 py-3 bg-gray-50 text-right sm:px-6">
@@ -423,10 +464,16 @@
             init() {
                 // Get coverage radius from data attribute
                 const radiusData = this.$el.dataset.coverageRadius;
-                this.coverageRadius = radiusData ? parseInt(radiusData) : 5;
+                this.coverageRadius = radiusData ? parseFloat(radiusData) : 5;
                 
                 // Initialize estimated customers based on current radius
                 this.updateCoverageEstimate();
+                
+                // Initialize character count
+                const desc = document.getElementById('description');
+                if (desc) {
+                    document.getElementById('char-count').textContent = desc.value.length;
+                }
             },
             
             updateLogoPreview(event) {
@@ -456,7 +503,8 @@
                     15: '300-450',
                     20: '400-600'
                 };
-                this.estimatedCustomers = estimates[this.coverageRadius] || '100-150';
+                const radius = Math.round(this.coverageRadius);
+                this.estimatedCustomers = estimates[radius] || '100-150';
             }
         };
     }
@@ -465,9 +513,6 @@
     document.addEventListener('DOMContentLoaded', function() {
         const desc = document.getElementById('description');
         if (desc) {
-            // Initialize character count
-            document.getElementById('char-count').textContent = desc.value.length;
-            
             // Add input event listener
             desc.addEventListener('input', function() {
                 const count = this.value.length;
@@ -487,12 +532,20 @@
     function openMapPicker() {
         alert('Map picker would open here. Integration with Google Maps API would be implemented here.');
         // Implementation would use Google Maps API or similar
-        // For now, we'll just set some default coordinates
-        document.getElementById('latitude').value = '28.6139';
-        document.getElementById('longitude').value = '77.2090';
+        // For now, we'll just set some default coordinates if empty
+        const latField = document.getElementById('latitude');
+        const lngField = document.getElementById('longitude');
         
-        // Show success message
-        showToast('Location set to default coordinates for demo purposes.', 'success');
+        if (!latField.value || !lngField.value) {
+            // Default coordinates (Dhaka, Bangladesh)
+            latField.value = '23.8103';
+            lngField.value = '90.4125';
+            
+            // Show success message
+            showToast('Location set to default coordinates for demo purposes.', 'success');
+        } else {
+            showToast('Location already set. Map picker would open for editing.', 'info');
+        }
     }
 
     // Toast notification function
@@ -500,19 +553,19 @@
         const toastId = 'toast-' + Date.now();
         const toastHtml = `
             <div id="${toastId}"
-                 class="fixed top-4 right-4 z-50 max-w-sm w-full ${type === 'success' ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'} rounded-lg shadow-lg border p-4">
+                 class="fixed top-4 right-4 z-50 max-w-sm w-full ${type === 'success' ? 'bg-green-50 border-green-200' : type === 'info' ? 'bg-blue-50 border-blue-200' : 'bg-red-50 border-red-200'} rounded-lg shadow-lg border p-4">
                 <div class="flex items-start">
                     <div class="flex-shrink-0">
-                        <i class="fas ${type === 'success' ? 'fa-check-circle text-green-400' : 'fa-exclamation-circle text-red-400'} h-5 w-5"></i>
+                        <i class="fas ${type === 'success' ? 'fa-check-circle text-green-400' : type === 'info' ? 'fa-info-circle text-blue-400' : 'fa-exclamation-circle text-red-400'} h-5 w-5"></i>
                     </div>
                     <div class="ml-3 flex-1">
-                        <p class="text-sm font-medium ${type === 'success' ? 'text-green-800' : 'text-red-800'}">
+                        <p class="text-sm font-medium ${type === 'success' ? 'text-green-800' : type === 'info' ? 'text-blue-800' : 'text-red-800'}">
                             ${message}
                         </p>
                     </div>
                     <button type="button" 
                             onclick="document.getElementById('${toastId}').remove()" 
-                            class="ml-4 flex-shrink-0 inline-flex rounded-md p-1.5 ${type === 'success' ? 'text-green-500 hover:bg-green-100' : 'text-red-500 hover:bg-red-100'}">
+                            class="ml-4 flex-shrink-0 inline-flex rounded-md p-1.5 ${type === 'success' ? 'text-green-500 hover:bg-green-100' : type === 'info' ? 'text-blue-500 hover:bg-blue-100' : 'text-red-500 hover:bg-red-100'}">
                         <i class="fas fa-times h-4 w-4"></i>
                     </button>
                 </div>
