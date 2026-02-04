@@ -88,7 +88,7 @@
                 </div>
             </div>
         </div>
-    </div>
+    </div> 
 
     <!-- Order Filters Component -->
     @include('food-provider.orders.components.order-filters', [
