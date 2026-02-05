@@ -51,7 +51,7 @@ class Property extends Model
         'type_name',
     ];
 
-    // Relationships
+    // ========== RELATIONSHIPS ==========
     public function owner()
     {
         return $this->belongsTo(User::class, 'owner_id');
@@ -72,10 +72,7 @@ class Property extends Model
         return $this->hasMany(Booking::class);
     }
 
-public function availableRooms()
-{
-    return $this->hasMany(Room::class)->where('status', 'AVAILABLE');
-}
+    // ADD THESE TWO METHODS HERE:
     public function images()
     {
         return $this->hasMany(PropertyImage::class)->orderBy('display_order');
@@ -85,12 +82,19 @@ public function availableRooms()
     {
         return $this->hasOne(PropertyImage::class)->where('is_primary', true);
     }
+    // END OF ADDITIONS
+
+    public function availableRooms()
+    {
+        return $this->hasMany(Room::class)->where('status', 'AVAILABLE');
+    }
 
     public function reviews()
     {
         return $this->hasMany(PropertyRating::class);
     }
 
+    // ========== ACCESSORS ==========
     public function averageRating()
     {
         return $this->reviews()->avg('overall_rating');
@@ -101,7 +105,6 @@ public function availableRooms()
         return $this->reviews()->count();
     }
 
-    // Accessors
     public function getTotalPriceAttribute()
     {
         return $this->base_price + ($this->base_price * $this->commission_rate / 100);
@@ -149,7 +152,7 @@ public function availableRooms()
         };
     }
 
-    // Scopes
+    // ========== SCOPES ==========
     public function scopeActive($query)
     {
         return $query->where('status', 'ACTIVE');
@@ -179,7 +182,7 @@ public function availableRooms()
                     ->orWhere('area', 'like', "%{$search}%");
     }
 
-    // Business Logic
+    // ========== BUSINESS LOGIC ==========
     public function canBeBooked()
     {
         return $this->status === 'ACTIVE' && 
@@ -196,5 +199,15 @@ public function availableRooms()
         }
         
         return false;
+    }
+
+    public static function getOwnerStats($ownerId)
+    {
+        return [
+            'total' => self::where('owner_id', $ownerId)->count(),
+            'active' => self::where('owner_id', $ownerId)->where('status', 'ACTIVE')->count(),
+            'draft' => self::where('owner_id', $ownerId)->where('status', 'DRAFT')->count(),
+            'inactive' => self::where('owner_id', $ownerId)->where('status', 'INACTIVE')->count(),
+        ];
     }
 }

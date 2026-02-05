@@ -25,8 +25,10 @@ class PropertyController extends Controller
             ->withCount('rooms')
             ->latest()
             ->paginate(10);
-        
-        return view('owner.properties.index', compact('properties'));
+
+        $stats = Property::getOwnerStats(Auth::id());
+
+        return view('properties.index', compact('properties', 'stats'));
     }
 
     /**
@@ -35,9 +37,14 @@ class PropertyController extends Controller
     public function create()
     {
         $commissionRates = CommissionConfig::whereIn('service_type', ['HOSTEL', 'APARTMENT'])
-            ->pluck('rate', 'service_type');
+            ->pluck('rate', 'service_type')
+            ->toArray();
         
-        return view('owner.properties.create', compact('commissionRates'));
+        // Ensure defaults
+        $commissionRates['HOSTEL'] = $commissionRates['HOSTEL'] ?? 5.00;
+        $commissionRates['APARTMENT'] = $commissionRates['APARTMENT'] ?? 3.00;
+        
+        return view('properties.create', compact('commissionRates'));
     }
 
     /**
@@ -103,26 +110,32 @@ class PropertyController extends Controller
         
         $property->load(['rooms', 'amenities', 'images']);
         
-        return view('owner.properties.show', compact('property'));
+        return view('properties.show', compact('property'));
     }
 
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(Property $property)
-    {
-        // Check authorization
-        if ($property->owner_id !== Auth::id() && !Auth::user()->hasRole('SUPERADMIN')) {
-            abort(403, 'Unauthorized action.');
-        }
-        
-        $commissionRates = CommissionConfig::whereIn('service_type', ['HOSTEL', 'APARTMENT'])
-            ->pluck('rate', 'service_type');
-        
-        $property->load(['rooms', 'amenities', 'images']);
-        
-        return view('owner.properties.edit', compact('property', 'commissionRates'));
+public function edit(Property $property)
+{
+    // Check authorization
+    if ($property->owner_id !== Auth::id() && !Auth::user()->hasRole('SUPERADMIN')) {
+        abort(403, 'Unauthorized action.');
     }
+    
+    $commissionRates = CommissionConfig::whereIn('service_type', ['HOSTEL', 'APARTMENT'])
+        ->pluck('rate', 'service_type')
+        ->toArray();
+    
+    // Ensure defaults
+    $commissionRates['HOSTEL'] = $commissionRates['HOSTEL'] ?? 5.00;
+    $commissionRates['APARTMENT'] = $commissionRates['APARTMENT'] ?? 3.00;
+    
+    // Load relationships
+    $property->load(['rooms', 'amenities', 'images']);
+    
+    return view('properties.edit', compact('property', 'commissionRates'));
+}
 
     /**
      * Update the specified resource in storage.
@@ -271,9 +284,6 @@ class PropertyController extends Controller
             'delete_images' => 'nullable|array',
             'delete_images.*' => 'exists:property_images,id',
             'amenities' => 'nullable|array',
-            'amenities.*.type' => 'required|in:BASIC,SECURITY,UTILITY,RECREATION',
-            'amenities.*.name' => 'required|string|max:100',
-            'amenities.*.description' => 'nullable|string|max:255',
         ];
         
         // Add room validation rules for hostels
@@ -302,7 +312,11 @@ class PropertyController extends Controller
      */
     private function createProperty(array $validated)
     {
-        return Property::create([
+        // Get commission rate from config or use default
+        $commissionRate = $validated['commission_rate'] ?? 
+            ($validated['type'] === 'HOSTEL' ? 5.00 : 3.00);
+        
+        $propertyData = [
             'owner_id' => Auth::id(),
             'type' => $validated['type'],
             'name' => $validated['name'],
@@ -318,11 +332,19 @@ class PropertyController extends Controller
             'unit_size' => $validated['type'] === 'APARTMENT' ? ($validated['unit_size'] ?? null) : null,
             'furnishing_status' => $validated['furnishing_status'] ?? null,
             'base_price' => $validated['base_price'],
-            'commission_rate' => $validated['commission_rate'],
-            'min_stay_months' => $validated['type'] === 'APARTMENT' ? ($validated['min_stay_months'] ?? 3) : 1,
+            'commission_rate' => $commissionRate,
             'deposit_months' => $validated['deposit_months'] ?? 1,
             'status' => $validated['status'],
-        ]);
+        ];
+        
+        // Only set min_stay_months for apartments
+        if ($validated['type'] === 'APARTMENT') {
+            $propertyData['min_stay_months'] = $validated['min_stay_months'] ?? 3;
+        } else {
+            $propertyData['min_stay_months'] = 1; // Default for hostels
+        }
+        
+        return Property::create($propertyData);
     }
 
     /**
@@ -330,6 +352,10 @@ class PropertyController extends Controller
      */
     private function updateProperty(Property $property, array $validated)
     {
+        // Get commission rate from config or use default
+        $commissionRate = $validated['commission_rate'] ?? 
+            ($validated['type'] === 'HOSTEL' ? 5.00 : 3.00);
+        
         $updateData = [
             'type' => $validated['type'],
             'name' => $validated['name'],
@@ -344,7 +370,7 @@ class PropertyController extends Controller
             'gender_policy' => $validated['gender_policy'],
             'furnishing_status' => $validated['furnishing_status'] ?? null,
             'base_price' => $validated['base_price'],
-            'commission_rate' => $validated['commission_rate'],
+            'commission_rate' => $commissionRate,
             'deposit_months' => $validated['deposit_months'] ?? 1,
             'status' => $validated['status'],
         ];
@@ -363,49 +389,61 @@ class PropertyController extends Controller
         return $property;
     }
 
-    /**
-     * Store cover image
-     */
-    private function storeCoverImage(Property $property, $image)
-    {
-        $path = $image->store("properties/{$property->id}/cover", 'public');
-        $property->update(['cover_image' => $path]);
-    }
+/**
+ * Store cover image
+ */
+private function storeCoverImage(Property $property, $image)
+{
+    $path = $image->store("properties/{$property->id}/cover", 'public');
+    
+    PropertyImage::create([
+        'property_id' => $property->id,
+        'image_path' => $path,
+        'is_primary' => true,
+        'display_order' => 1,
+    ]);
+}
 
-    /**
-     * Store additional images
-     */
-    private function storeAdditionalImages(Property $property, array $images)
-    {
-        $order = $property->images()->max('display_order') ?? 0;
+/**
+ * Store additional images
+ */
+private function storeAdditionalImages(Property $property, array $images)
+{
+    $order = $property->images()->max('display_order') ?? 1;
+    
+    foreach ($images as $image) {
+        $order++;
+        $path = $image->store("properties/{$property->id}/gallery", 'public');
         
-        foreach ($images as $image) {
-            $order++;
-            $path = $image->store("properties/{$property->id}/gallery", 'public');
-            
-            PropertyImage::create([
-                'property_id' => $property->id,
-                'image_path' => $path,
-                'original_name' => $image->getClientOriginalName(),
-                'mime_type' => $image->getMimeType(),
-                'file_size' => $image->getSize(),
-                'display_order' => $order,
-            ]);
+        PropertyImage::create([
+            'property_id' => $property->id,
+            'image_path' => $path,
+            'is_primary' => false,
+            'display_order' => $order,
+        ]);
+    }
+}
+
+/**
+ * Delete images
+ */
+private function deleteImages(Property $property, array $imageIds)
+{
+    $images = $property->images()->whereIn('id', $imageIds)->get();
+    
+    foreach ($images as $image) {
+        Storage::disk('public')->delete($image->image_path);
+        $image->delete();
+    }
+    
+    // If we deleted the primary image, make another one primary
+    if ($property->images()->where('is_primary', true)->count() === 0) {
+        $newPrimary = $property->images()->first();
+        if ($newPrimary) {
+            $newPrimary->update(['is_primary' => true]);
         }
     }
-
-    /**
-     * Delete images
-     */
-    private function deleteImages(Property $property, array $imageIds)
-    {
-        $images = $property->images()->whereIn('id', $imageIds)->get();
-        
-        foreach ($images as $image) {
-            Storage::disk('public')->delete($image->image_path);
-            $image->delete();
-        }
-    }
+}
 
     /**
      * Create rooms for hostel
@@ -484,13 +522,14 @@ class PropertyController extends Controller
      */
     private function createAmenities(Property $property, array $amenitiesData)
     {
-        foreach ($amenitiesData as $amenityData) {
-            PropertyAmenity::create([
-                'property_id' => $property->id,
-                'amenity_type' => $amenityData['type'],
-                'name' => $amenityData['name'],
-                'description' => $amenityData['description'] ?? null,
-            ]);
+        foreach ($amenitiesData as $amenityName) {
+            if (is_string($amenityName) && !empty($amenityName)) {
+                PropertyAmenity::create([
+                    'property_id' => $property->id,
+                    'amenity_type' => 'BASIC', // Default type
+                    'name' => $amenityName,
+                ]);
+            }
         }
     }
 
@@ -520,7 +559,7 @@ class PropertyController extends Controller
         $commission = CommissionConfig::where('service_type', $type)->first();
         
         return response()->json([
-            'rate' => $commission ? $commission->rate : 0,
+            'rate' => $commission ? $commission->rate : ($type === 'HOSTEL' ? 5.00 : 3.00),
             'type' => $type
         ]);
     }

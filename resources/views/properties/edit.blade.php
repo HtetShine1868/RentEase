@@ -1,19 +1,29 @@
 @extends('owner.layout.owner-layout')
 
-@section('title', 'Add New Property - RentEase')
-@section('page-title', 'Add New Property')
-@section('page-subtitle', 'Create a new hostel or apartment listing')
+@section('title', 'Edit Property - RentEase')
+@section('page-title', 'Edit Property')
+@section('page-subtitle', 'Update your property details')
 
 @section('content')
 <div class="space-y-6">
-    <!-- Progress Steps -->
+    <!-- Property Header -->
     <div class="bg-white rounded-xl border border-gray-200 p-6">
-        <div class="mb-8">
-            <h2 class="text-xl font-bold text-gray-900 mb-2">Create New Property</h2>
-            <p class="text-gray-600">Fill in all required details to list your property</p>
+        <div class="flex items-center justify-between mb-6">
+            <div>
+                <h2 class="text-xl font-bold text-gray-900 mb-2">Edit Property</h2>
+                <p class="text-gray-600">Update property details for "{{ $property->name }}"</p>
+            </div>
+            <div class="flex items-center gap-3">
+                <span class="px-3 py-1 text-sm font-medium rounded-full {{ $property->status_badge }}">
+                    {{ $property->status }}
+                </span>
+                <span class="px-3 py-1 text-sm font-medium rounded-full {{ $property->type === 'HOSTEL' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800' }}">
+                    {{ $property->type_name }}
+                </span>
+            </div>
         </div>
-        
-        <!-- Step Indicator -->
+
+        <!-- Progress Steps -->
         <div class="mb-10">
             <div class="flex items-center justify-between">
                 <div class="flex-1">
@@ -36,7 +46,7 @@
                         </div>
                         <div class="flex-1 h-1 bg-purple-200 mx-4"></div>
                         
-                        <!-- Step 3: ROOMS (Changed from Pricing) -->
+                        <!-- Step 3: ROOMS -->
                         <div class="flex flex-col items-center">
                             <div class="w-10 h-10 rounded-full bg-gray-200 text-gray-400 flex items-center justify-center font-bold">
                                 3
@@ -45,7 +55,7 @@
                         </div>
                         <div class="flex-1 h-1 bg-gray-200 mx-4"></div>
                         
-                        <!-- Step 4: PRICING (Changed from Rooms) -->
+                        <!-- Step 4: PRICING -->
                         <div class="flex flex-col items-center">
                             <div class="w-10 h-10 rounded-full bg-gray-200 text-gray-400 flex items-center justify-center font-bold">
                                 4
@@ -76,13 +86,14 @@
         </div>
 
         <!-- Form -->
-        <form id="propertyForm" action="{{ route('owner.properties.store') }}" method="POST" enctype="multipart/form-data">
+        <form id="propertyForm" action="{{ route('owner.properties.update', $property->id) }}" method="POST" enctype="multipart/form-data">
             @csrf
+            @method('PUT')
             
-            <!-- Hidden field for property type to track step 4 content -->
-            <input type="hidden" id="propertyTypeHidden" name="type" value="{{ old('type', 'HOSTEL') }}">
+            <!-- Hidden field for property type -->
+            <input type="hidden" id="propertyTypeHidden" name="type" value="{{ old('type', $property->type) }}">
             
-            <!-- Step 1: Basic Information (Visible) -->
+            <!-- Step 1: Basic Information -->
             <div class="mb-10" id="step1">
                 <h3 class="text-lg font-semibold text-gray-900 mb-6 pb-4 border-b border-gray-200">Basic Information</h3>
                 
@@ -95,7 +106,7 @@
                         <div class="grid grid-cols-2 gap-4">
                             <label class="relative cursor-pointer">
                                 <input type="radio" name="type" value="HOSTEL" class="sr-only peer property-type" 
-                                       data-type="hostel" required {{ old('type') == 'HOSTEL' ? 'checked' : 'checked' }}>
+                                       data-type="hostel" required {{ old('type', $property->type) == 'HOSTEL' ? 'checked' : '' }}>
                                 <div class="p-4 border-2 border-gray-200 rounded-lg peer-checked:border-purple-500 peer-checked:bg-purple-50 transition-all">
                                     <div class="flex items-center gap-3">
                                         <div class="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center">
@@ -110,7 +121,7 @@
                             </label>
                             <label class="relative cursor-pointer">
                                 <input type="radio" name="type" value="APARTMENT" class="sr-only peer property-type" 
-                                       data-type="apartment" required {{ old('type') == 'APARTMENT' ? 'checked' : '' }}>
+                                       data-type="apartment" required {{ old('type', $property->type) == 'APARTMENT' ? 'checked' : '' }}>
                                 <div class="p-4 border-2 border-gray-200 rounded-lg peer-checked:border-purple-500 peer-checked:bg-purple-50 transition-all">
                                     <div class="flex items-center gap-3">
                                         <div class="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
@@ -137,7 +148,7 @@
                         <input type="text" 
                                id="name"
                                name="name"
-                               value="{{ old('name') }}"
+                               value="{{ old('name', $property->name) }}"
                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors"
                                placeholder="e.g., Sunshine Apartments"
                                required>
@@ -156,7 +167,7 @@
                                   rows="4" 
                                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors"
                                   placeholder="Describe your property, features, and what makes it special..."
-                                  required>{{ old('description') }}</textarea>
+                                  required>{{ old('description', $property->description) }}</textarea>
                         @error('description')
                             <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                         @enderror
@@ -170,11 +181,11 @@
                         <select id="bedrooms" name="bedrooms" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors" required>
                             <option value="">Select</option>
                             @for($i = 1; $i <= 10; $i++)
-                                <option value="{{ $i }}" {{ old('bedrooms') == $i ? 'selected' : '' }}>
+                                <option value="{{ $i }}" {{ old('bedrooms', $property->bedrooms) == $i ? 'selected' : '' }}>
                                     {{ $i }} {{ $i == 1 ? 'Bedroom' : 'Bedrooms' }}
                                 </option>
                             @endfor
-                            <option value="11" {{ old('bedrooms') == 11 ? 'selected' : '' }}>11+ Bedrooms</option>
+                            <option value="11" {{ old('bedrooms', $property->bedrooms) == 11 ? 'selected' : '' }}>11+ Bedrooms</option>
                         </select>
                         @error('bedrooms')
                             <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
@@ -188,11 +199,11 @@
                         <select id="bathrooms" name="bathrooms" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors" required>
                             <option value="">Select</option>
                             @for($i = 1; $i <= 10; $i++)
-                                <option value="{{ $i }}" {{ old('bathrooms') == $i ? 'selected' : '' }}>
+                                <option value="{{ $i }}" {{ old('bathrooms', $property->bathrooms) == $i ? 'selected' : '' }}>
                                     {{ $i }} {{ $i == 1 ? 'Bathroom' : 'Bathrooms' }}
                                 </option>
                             @endfor
-                            <option value="11" {{ old('bathrooms') == 11 ? 'selected' : '' }}>11+ Bathrooms</option>
+                            <option value="11" {{ old('bathrooms', $property->bathrooms) == 11 ? 'selected' : '' }}>11+ Bathrooms</option>
                         </select>
                         @error('bathrooms')
                             <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
@@ -206,9 +217,9 @@
                         </label>
                         <select id="gender_policy" name="gender_policy" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors" required>
                             <option value="">Select</option>
-                            <option value="MALE_ONLY" {{ old('gender_policy') == 'MALE_ONLY' ? 'selected' : '' }}>Male Only</option>
-                            <option value="FEMALE_ONLY" {{ old('gender_policy') == 'FEMALE_ONLY' ? 'selected' : '' }}>Female Only</option>
-                            <option value="MIXED" {{ old('gender_policy') == 'MIXED' ? 'selected' : '' }}>Mixed</option>
+                            <option value="MALE_ONLY" {{ old('gender_policy', $property->gender_policy) == 'MALE_ONLY' ? 'selected' : '' }}>Male Only</option>
+                            <option value="FEMALE_ONLY" {{ old('gender_policy', $property->gender_policy) == 'FEMALE_ONLY' ? 'selected' : '' }}>Female Only</option>
+                            <option value="MIXED" {{ old('gender_policy', $property->gender_policy) == 'MIXED' ? 'selected' : '' }}>Mixed</option>
                         </select>
                         @error('gender_policy')
                             <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
@@ -216,14 +227,14 @@
                     </div>
 
                     <!-- Unit Size (Apartment only) -->
-                    <div id="unitSizeContainer" class="{{ old('type') == 'APARTMENT' ? '' : 'hidden' }}">
+                    <div id="unitSizeContainer" class="{{ old('type', $property->type) == 'APARTMENT' ? '' : 'hidden' }}">
                         <label for="unit_size" class="block text-sm font-medium text-gray-700 mb-2">
                             Unit Size (sqft) <span id="unitSizeRequired" class="text-red-500 hidden">*</span>
                         </label>
                         <input type="number" 
                                id="unit_size"
                                name="unit_size"
-                               value="{{ old('unit_size') }}"
+                               value="{{ old('unit_size', $property->unit_size) }}"
                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors"
                                placeholder="e.g., 1200"
                                min="1">
@@ -239,9 +250,9 @@
                         </label>
                         <select id="furnishing_status" name="furnishing_status" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors">
                             <option value="">Select</option>
-                            <option value="FURNISHED" {{ old('furnishing_status') == 'FURNISHED' ? 'selected' : '' }}>Furnished</option>
-                            <option value="SEMI_FURNISHED" {{ old('furnishing_status') == 'SEMI_FURNISHED' ? 'selected' : '' }}>Semi-Furnished</option>
-                            <option value="UNFURNISHED" {{ old('furnishing_status') == 'UNFURNISHED' ? 'selected' : '' }}>Unfurnished</option>
+                            <option value="FURNISHED" {{ old('furnishing_status', $property->furnishing_status) == 'FURNISHED' ? 'selected' : '' }}>Furnished</option>
+                            <option value="SEMI_FURNISHED" {{ old('furnishing_status', $property->furnishing_status) == 'SEMI_FURNISHED' ? 'selected' : '' }}>Semi-Furnished</option>
+                            <option value="UNFURNISHED" {{ old('furnishing_status', $property->furnishing_status) == 'UNFURNISHED' ? 'selected' : '' }}>Unfurnished</option>
                         </select>
                         @error('furnishing_status')
                             <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
@@ -250,7 +261,7 @@
                 </div>
             </div>
 
-            <!-- Step 2: Location (Hidden by default) -->
+            <!-- Step 2: Location -->
             <div class="mb-10 hidden" id="step2">
                 <h3 class="text-lg font-semibold text-gray-900 mb-6 pb-4 border-b border-gray-200">Location Details</h3>
                 
@@ -263,7 +274,7 @@
                         <input type="text" 
                                id="address"
                                name="address"
-                               value="{{ old('address') }}"
+                               value="{{ old('address', $property->address) }}"
                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors"
                                placeholder="Street address, apartment, suite, etc."
                                required>
@@ -280,7 +291,7 @@
                         <input type="text" 
                                id="city"
                                name="city"
-                               value="{{ old('city') }}"
+                               value="{{ old('city', $property->city) }}"
                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors"
                                placeholder="e.g., Dhaka"
                                required>
@@ -296,7 +307,7 @@
                         <input type="text" 
                                id="area"
                                name="area"
-                               value="{{ old('area') }}"
+                               value="{{ old('area', $property->area) }}"
                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors"
                                placeholder="e.g., Dhanmondi"
                                required>
@@ -314,7 +325,7 @@
                                id="latitude"
                                name="latitude"
                                step="0.0000001"
-                               value="{{ old('latitude', 23.810331) }}"
+                               value="{{ old('latitude', $property->latitude) }}"
                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors"
                                placeholder="23.810331"
                                required>
@@ -331,7 +342,7 @@
                                id="longitude"
                                name="longitude"
                                step="0.0000001"
-                               value="{{ old('longitude', 90.412521) }}"
+                               value="{{ old('longitude', $property->longitude) }}"
                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors"
                                placeholder="90.412521"
                                required>
@@ -350,7 +361,7 @@
                                 <i class="fas fa-map-marked-alt text-gray-400 text-3xl mb-3"></i>
                                 <p class="text-gray-600">Click to select location on map</p>
                                 <p class="text-sm text-gray-500 mt-1" id="coordinatesDisplay">
-                                    Latitude: <span id="latDisplay">{{ old('latitude', '23.8103') }}</span> • Longitude: <span id="lngDisplay">{{ old('longitude', '90.4125') }}</span>
+                                    Latitude: <span id="latDisplay">{{ old('latitude', $property->latitude) }}</span> • Longitude: <span id="lngDisplay">{{ old('longitude', $property->longitude) }}</span>
                                 </p>
                                 <button type="button" id="openMapBtn" class="mt-3 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors">
                                     Open Map
@@ -362,7 +373,7 @@
                 </div>
             </div>
 
-            <!-- Step 3: Rooms Configuration (Changed from step4 to step3) -->
+            <!-- Step 3: Rooms Configuration -->
             <div class="mb-10 hidden" id="step3">
                 <h3 class="text-lg font-semibold text-gray-900 mb-6 pb-4 border-b border-gray-200">Room Configuration</h3>
                 
@@ -393,8 +404,14 @@
 
                     <!-- Rooms Container -->
                     <div id="roomsContainer" class="space-y-6">
-                        @if(old('rooms'))
-                            @foreach(old('rooms') as $index => $room)
+                        @php
+                            $oldRooms = old('rooms', []);
+                            $propertyRooms = $property->rooms;
+                            $roomIndex = 0;
+                        @endphp
+                        
+                        @if(count($oldRooms) > 0)
+                            @foreach($oldRooms as $index => $room)
                                 <div class="border border-gray-200 rounded-lg p-6 bg-white room-item">
                                     <div class="flex justify-between items-start mb-4">
                                         <h5 class="font-medium text-gray-900">Room Type <span class="room-index">{{ $index + 1 }}</span></h5>
@@ -491,6 +508,108 @@
                                         </div>
                                     </div>
                                 </div>
+                                @php $roomIndex++; @endphp
+                            @endforeach
+                        @elseif($property->type === 'HOSTEL' && $propertyRooms->count() > 0)
+                            @foreach($propertyRooms as $room)
+                                <div class="border border-gray-200 rounded-lg p-6 bg-white room-item">
+                                    <div class="flex justify-between items-start mb-4">
+                                        <h5 class="font-medium text-gray-900">Room Type <span class="room-index">{{ $loop->iteration }}</span></h5>
+                                        <button type="button" class="text-red-500 hover:text-red-700 remove-room-btn">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
+                                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                                        <!-- Room Number -->
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                                Room Number <span class="text-red-500">*</span>
+                                            </label>
+                                            <input type="text" 
+                                                   name="rooms[{{ $roomIndex }}][room_number]"
+                                                   value="{{ $room->room_number }}"
+                                                   class="room-number-input w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors"
+                                                   placeholder="101"
+                                                   required>
+                                        </div>
+
+                                        <!-- Room Type -->
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                                Room Type <span class="text-red-500">*</span>
+                                            </label>
+                                            <select name="rooms[{{ $roomIndex }}][room_type]" class="room-type-select w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors" required>
+                                                <option value="">Select</option>
+                                                <option value="SINGLE" {{ $room->room_type == 'SINGLE' ? 'selected' : '' }}>Single</option>
+                                                <option value="DOUBLE" {{ $room->room_type == 'DOUBLE' ? 'selected' : '' }}>Double</option>
+                                                <option value="TRIPLE" {{ $room->room_type == 'TRIPLE' ? 'selected' : '' }}>Triple</option>
+                                                <option value="QUAD" {{ $room->room_type == 'QUAD' ? 'selected' : '' }}>Quad</option>
+                                                <option value="DORM" {{ $room->room_type == 'DORM' ? 'selected' : '' }}>Dorm</option>
+                                            </select>
+                                        </div>
+
+                                        <!-- Floor Number -->
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                                Floor Number
+                                            </label>
+                                            <input type="number" 
+                                                   name="rooms[{{ $roomIndex }}][floor_number]"
+                                                   value="{{ $room->floor_number }}"
+                                                   min="0"
+                                                   class="floor-number-input w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors"
+                                                   placeholder="1">
+                                        </div>
+
+                                        <!-- Capacity -->
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                                Capacity <span class="text-red-500">*</span>
+                                            </label>
+                                            <input type="number" 
+                                                   name="rooms[{{ $roomIndex }}][capacity]"
+                                                   value="{{ $room->capacity }}"
+                                                   min="1"
+                                                   class="capacity-input w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors"
+                                                   placeholder="2"
+                                                   required>
+                                        </div>
+
+                                        <!-- Base Price -->
+                                        <div class="md:col-span-2">
+                                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                                Monthly Price (৳) <span class="text-red-500">*</span>
+                                            </label>
+                                            <div class="relative">
+                                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                                    <span class="text-gray-500">৳</span>
+                                                </div>
+                                                <input type="number" 
+                                                       name="rooms[{{ $roomIndex }}][base_price]"
+                                                       value="{{ $room->base_price }}"
+                                                       step="0.01"
+                                                       min="0"
+                                                       class="room-price-input w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors"
+                                                       placeholder="0.00"
+                                                       required>
+                                            </div>
+                                        </div>
+
+                                        <!-- Room Status -->
+                                        <div class="md:col-span-2">
+                                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                                Room Status
+                                            </label>
+                                            <select name="rooms[{{ $roomIndex }}][status]" class="room-status-select w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors">
+                                                <option value="AVAILABLE" {{ $room->status == 'AVAILABLE' ? 'selected' : '' }}>Available</option>
+                                                <option value="MAINTENANCE" {{ $room->status == 'MAINTENANCE' ? 'selected' : '' }}>Maintenance</option>
+                                                <option value="RESERVED" {{ $room->status == 'RESERVED' ? 'selected' : '' }}>Reserved</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <input type="hidden" name="rooms[{{ $roomIndex }}][id]" value="{{ $room->id }}">
+                                </div>
+                                @php $roomIndex++; @endphp
                             @endforeach
                         @endif
                     </div>
@@ -517,7 +636,7 @@
                     </div>
 
                     <!-- No rooms message -->
-                    <div id="noRoomsMessage" class="{{ old('rooms') ? 'hidden' : 'block' }} text-center py-8 border-2 border-dashed border-gray-300 rounded-lg">
+                    <div id="noRoomsMessage" class="{{ ($property->type === 'HOSTEL' && $propertyRooms->count() > 0) ? 'hidden' : 'block' }} text-center py-8 border-2 border-dashed border-gray-300 rounded-lg">
                         <i class="fas fa-bed text-gray-400 text-4xl mb-3"></i>
                         <p class="text-gray-600 font-medium">No rooms added yet</p>
                         <p class="text-gray-500">Click "Add Room Type" to start adding rooms</p>
@@ -525,15 +644,15 @@
                 </div>
             </div>
 
-            <!-- Step 4: Pricing (Changed from step3 to step4) -->
+            <!-- Step 4: Pricing -->
             <div class="mb-10 hidden" id="step4">
                 <h3 class="text-lg font-semibold text-gray-900 mb-6 pb-4 border-b border-gray-200">Pricing & Commission</h3>
                 
                 <!-- Apartment Pricing Section -->
-                <div id="apartmentPricingSection" class="hidden">
+                <div id="apartmentPricingSection" class="{{ $property->type === 'APARTMENT' ? '' : 'hidden' }}">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <!-- Monthly Price -->
-                        <div>
+                        <div id="apartmentPriceContainer">
                             <label for="base_price" class="block text-sm font-medium text-gray-700 mb-2">
                                 Monthly Price (৳) <span class="text-red-500">*</span>
                             </label>
@@ -544,12 +663,12 @@
                                 <input type="number" 
                                        id="base_price"
                                        name="base_price"
-                                       value="{{ old('base_price') }}"
+                                       value="{{ old('base_price', $property->base_price) }}"
                                        step="0.01"
                                        min="0"
                                        class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors"
                                        placeholder="0.00"
-                                       required>
+                                       {{ $property->type === 'APARTMENT' ? 'required' : '' }}>
                             </div>
                             @error('base_price')
                                 <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
@@ -565,7 +684,7 @@
                                 <input type="number" 
                                        id="commission_rate"
                                        name="commission_rate"
-                                       value="{{ old('commission_rate') }}"
+                                       value="{{ old('commission_rate', $property->commission_rate) }}"
                                        step="0.01"
                                        min="0"
                                        max="100"
@@ -591,23 +710,23 @@
                                 </div>
                                 <div class="text-right">
                                     <p class="text-sm text-gray-600">Commission Rate</p>
-                                    <p id="apartmentCommissionRateDisplay" class="text-xl font-bold text-purple-700">3%</p>
+                                    <p id="apartmentCommissionRateDisplay" class="text-xl font-bold text-purple-700">{{ $property->commission_rate ?? 3.00 }}%</p>
                                 </div>
                             </div>
                             
                             <div class="space-y-3">
                                 <div class="flex justify-between items-center">
                                     <span class="text-gray-700">Monthly Price</span>
-                                    <span id="apartmentMonthlyPriceDisplay" class="font-medium">৳0.00</span>
+                                    <span id="apartmentMonthlyPriceDisplay" class="font-medium">৳{{ number_format($property->base_price, 2) }}</span>
                                 </div>
                                 <div class="flex justify-between items-center">
                                     <span class="text-gray-700">Commission Amount</span>
-                                    <span id="apartmentCommissionAmountDisplay" class="font-medium text-red-600">৳0.00</span>
+                                    <span id="apartmentCommissionAmountDisplay" class="font-medium text-red-600">৳{{ number_format($property->base_price * ($property->commission_rate / 100), 2) }}</span>
                                 </div>
                                 <div class="pt-3 border-t border-purple-200">
                                     <div class="flex justify-between items-center">
                                         <span class="text-lg font-semibold text-gray-900">Total Price (with commission)</span>
-                                        <span id="apartmentTotalPriceDisplay" class="text-2xl font-bold text-green-600">৳0.00</span>
+                                        <span id="apartmentTotalPriceDisplay" class="text-2xl font-bold text-green-600">৳{{ number_format($property->total_price, 2) }}</span>
                                     </div>
                                 </div>
                             </div>
@@ -616,7 +735,7 @@
                 </div>
 
                 <!-- Hostel Pricing Section -->
-                <div id="hostelPricingSection" class="hidden">
+                <div id="hostelPricingSection" class="{{ $property->type === 'HOSTEL' ? '' : 'hidden' }}">
                     <div class="bg-purple-50 border border-purple-200 rounded-lg p-6 mb-6">
                         <div class="flex items-center justify-between mb-4">
                             <div>
@@ -625,47 +744,47 @@
                             </div>
                             <div class="text-right">
                                 <p class="text-sm text-gray-600">Commission Rate</p>
-                                <p id="hostelCommissionRateDisplay" class="text-xl font-bold text-purple-700">5%</p>
+                                <p id="hostelCommissionRateDisplay" class="text-xl font-bold text-purple-700">{{ $property->commission_rate ?? 5.00 }}%</p>
                             </div>
                         </div>
                         
                         <div class="space-y-3">
                             <div class="flex justify-between items-center">
                                 <span class="text-gray-700">Total Rooms</span>
-                                <span id="hostelTotalRoomsFinal" class="font-medium">0</span>
+                                <span id="hostelTotalRoomsFinal" class="font-medium">{{ $property->rooms->count() }}</span>
                             </div>
                             <div class="flex justify-between items-center">
                                 <span class="text-gray-700">Total Monthly Revenue (all rooms)</span>
-                                <span id="hostelTotalRevenueFinal" class="font-medium text-green-600">৳0.00</span>
+                                <span id="hostelTotalRevenueFinal" class="font-medium text-green-600">৳{{ number_format($property->rooms->sum('base_price'), 2) }}</span>
                             </div>
                             <div class="flex justify-between items-center">
-                                <span class="text-gray-700">Commission Amount (5%)</span>
-                                <span id="hostelCommissionFinal" class="font-medium text-red-600">৳0.00</span>
+                                <span class="text-gray-700">Commission Amount ({{ $property->commission_rate ?? 5.00 }}%)</span>
+                                <span id="hostelCommissionFinal" class="font-medium text-red-600">৳{{ number_format($property->rooms->sum('base_price') * (($property->commission_rate ?? 5.00) / 100), 2) }}</span>
                             </div>
                             <div class="pt-3 border-t border-purple-200">
                                 <div class="flex justify-between items-center">
                                     <span class="text-lg font-semibold text-gray-900">Total With Commission</span>
-                                    <span id="hostelTotalWithCommissionFinal" class="text-2xl font-bold text-green-600">৳0.00</span>
+                                    <span id="hostelTotalWithCommissionFinal" class="text-2xl font-bold text-green-600">৳{{ number_format($property->rooms->sum('base_price') * (1 + (($property->commission_rate ?? 5.00) / 100)), 2) }}</span>
                                 </div>
                             </div>
                         </div>
                     </div>
 
                     <!-- Hidden field for hostel total price -->
-                    <input type="hidden" id="hostel_total_revenue" name="hostel_total_revenue" value="0">
+                    <input type="hidden" id="hostel_total_revenue" name="hostel_total_revenue" value="{{ $property->rooms->sum('base_price') }}">
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
                     <!-- Minimum Stay (Apartment only) -->
-                    <div id="minStayContainer" class="hidden">
+                    <div id="minStayContainer" class="{{ $property->type === 'APARTMENT' ? '' : 'hidden' }}">
                         <label for="min_stay_months" class="block text-sm font-medium text-gray-700 mb-2">
                             Minimum Stay (Months)
                         </label>
                         <select id="min_stay_months" name="min_stay_months" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors">
-                            <option value="1" {{ old('min_stay_months', 1) == 1 ? 'selected' : '' }}>1 Month</option>
-                            <option value="3" {{ old('min_stay_months', 1) == 3 ? 'selected' : '' }}>3 Months</option>
-                            <option value="6" {{ old('min_stay_months', 1) == 6 ? 'selected' : '' }}>6 Months</option>
-                            <option value="12" {{ old('min_stay_months', 1) == 12 ? 'selected' : '' }}>12 Months</option>
+                            <option value="1" {{ old('min_stay_months', $property->min_stay_months) == 1 ? 'selected' : '' }}>1 Month</option>
+                            <option value="3" {{ old('min_stay_months', $property->min_stay_months) == 3 ? 'selected' : '' }}>3 Months</option>
+                            <option value="6" {{ old('min_stay_months', $property->min_stay_months) == 6 ? 'selected' : '' }}>6 Months</option>
+                            <option value="12" {{ old('min_stay_months', $property->min_stay_months) == 12 ? 'selected' : '' }}>12 Months</option>
                         </select>
                         @error('min_stay_months')
                             <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
@@ -678,10 +797,10 @@
                             Security Deposit (Months)
                         </label>
                         <select id="deposit_months" name="deposit_months" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors">
-                            <option value="0" {{ old('deposit_months', 1) == 0 ? 'selected' : '' }}>No Deposit</option>
-                            <option value="1" {{ old('deposit_months', 1) == 1 ? 'selected' : '' }}>1 Month</option>
-                            <option value="2" {{ old('deposit_months', 1) == 2 ? 'selected' : '' }}>2 Months</option>
-                            <option value="3" {{ old('deposit_months', 1) == 3 ? 'selected' : '' }}>3 Months</option>
+                            <option value="0" {{ old('deposit_months', $property->deposit_months) == 0 ? 'selected' : '' }}>No Deposit</option>
+                            <option value="1" {{ old('deposit_months', $property->deposit_months) == 1 ? 'selected' : '' }}>1 Month</option>
+                            <option value="2" {{ old('deposit_months', $property->deposit_months) == 2 ? 'selected' : '' }}>2 Months</option>
+                            <option value="3" {{ old('deposit_months', $property->deposit_months) == 3 ? 'selected' : '' }}>3 Months</option>
                         </select>
                         @error('deposit_months')
                             <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
@@ -694,8 +813,10 @@
                             Property Status
                         </label>
                         <select id="status" name="status" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors">
-                            <option value="DRAFT" {{ old('status', 'DRAFT') == 'DRAFT' ? 'selected' : '' }}>Draft</option>
-                            <option value="PENDING" {{ old('status', 'DRAFT') == 'PENDING' ? 'selected' : '' }}>Submit for Review</option>
+                            <option value="DRAFT" {{ old('status', $property->status) == 'DRAFT' ? 'selected' : '' }}>Draft</option>
+                            <option value="PENDING" {{ old('status', $property->status) == 'PENDING' ? 'selected' : '' }}>Submit for Review</option>
+                            <option value="ACTIVE" {{ old('status', $property->status) == 'ACTIVE' ? 'selected' : '' }}>Active</option>
+                            <option value="INACTIVE" {{ old('status', $property->status) == 'INACTIVE' ? 'selected' : '' }}>Inactive</option>
                         </select>
                         @error('status')
                             <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
@@ -724,20 +845,19 @@
                                 ['icon' => 'chair', 'name' => 'Furniture', 'value' => 'Furniture'],
                                 ['icon' => 'box', 'name' => 'Storage', 'value' => 'Storage Space'],
                             ];
+                            $propertyAmenities = $property->amenities->pluck('name')->toArray();
                         @endphp
                         
                         @foreach($basicAmenities as $amenity)
                             <label class="flex items-center p-4 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
                                 <input type="checkbox" 
-                                       name="amenities[{{ $loop->index }}][name]" 
+                                       name="amenities[]" 
                                        value="{{ $amenity['value'] }}" 
                                        class="amenity-checkbox h-5 w-5 text-purple-600 rounded focus:ring-purple-500 border-gray-300"
-                                       {{ in_array($amenity['value'], old('amenities', [])) ? 'checked' : '' }}>
+                                       {{ in_array($amenity['value'], old('amenities', $propertyAmenities)) ? 'checked' : '' }}>
                                 <div class="ml-3">
                                     <p class="text-sm font-medium text-gray-900">{{ $amenity['name'] }}</p>
                                 </div>
-                                <input type="hidden" name="amenities[{{ $loop->index }}][type]" value="BASIC">
-                                <input type="hidden" name="amenities[{{ $loop->index }}][description]" value="">
                             </label>
                         @endforeach
                     </div>
@@ -754,21 +874,18 @@
                                 ['icon' => 'user-shield', 'name' => 'Security Guard', 'value' => 'Security Guard'],
                                 ['icon' => 'fire-extinguisher', 'name' => 'Fire Safety', 'value' => 'Fire Safety'],
                             ];
-                            $basicCount = count($basicAmenities);
                         @endphp
                         
-                        @foreach($securityAmenities as $index => $amenity)
+                        @foreach($securityAmenities as $amenity)
                             <label class="flex items-center p-4 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
                                 <input type="checkbox" 
-                                       name="amenities[{{ $basicCount + $index }}][name]" 
+                                       name="amenities[]" 
                                        value="{{ $amenity['value'] }}" 
                                        class="amenity-checkbox h-5 w-5 text-purple-600 rounded focus:ring-purple-500 border-gray-300"
-                                       {{ in_array($amenity['value'], old('amenities', [])) ? 'checked' : '' }}>
+                                       {{ in_array($amenity['value'], old('amenities', $propertyAmenities)) ? 'checked' : '' }}>
                                 <div class="ml-3">
                                     <p class="text-sm font-medium text-gray-900">{{ $amenity['name'] }}</p>
                                 </div>
-                                <input type="hidden" name="amenities[{{ $basicCount + $index }}][type]" value="SECURITY">
-                                <input type="hidden" name="amenities[{{ $basicCount + $index }}][description]" value="">
                             </label>
                         @endforeach
                     </div>
@@ -776,31 +893,29 @@
 
                 <!-- Custom Amenity -->
                 <div>
-                    <h4 class="font-medium text-gray-900 mb-4">Add Custom Amenities</h4>
+                    <h4 class="font-medium text-gray-900 mb-4">Custom Amenities</h4>
                     <div class="space-y-4" id="customAmenitiesContainer">
-                        @if(old('custom_amenities'))
-                            @foreach(old('custom_amenities') as $customAmenity)
+                        @php
+                            $customAmenities = $property->amenities->whereNotIn('name', array_merge(
+                                array_column($basicAmenities, 'value'),
+                                array_column($securityAmenities, 'value')
+                            ))->pluck('name')->toArray();
+                        @endphp
+                        
+                        @foreach(old('custom_amenities', $customAmenities) as $customAmenity)
+                            @if(!empty($customAmenity))
                                 <div class="flex gap-4">
-                                    <select name="amenities[{{ count($basicAmenities) + count($securityAmenities) + $loop->index }}][type]" class="w-1/3 px-3 py-2 border border-gray-300 rounded-lg">
-                                        <option value="BASIC" {{ ($customAmenity['type'] ?? '') == 'BASIC' ? 'selected' : '' }}>Basic</option>
-                                        <option value="SECURITY" {{ ($customAmenity['type'] ?? '') == 'SECURITY' ? 'selected' : '' }}>Security</option>
-                                        <option value="UTILITY" {{ ($customAmenity['type'] ?? '') == 'UTILITY' ? 'selected' : '' }}>Utility</option>
-                                        <option value="RECREATION" {{ ($customAmenity['type'] ?? '') == 'RECREATION' ? 'selected' : '' }}>Recreation</option>
-                                    </select>
                                     <input type="text" 
-                                           name="amenities[{{ count($basicAmenities) + count($securityAmenities) + $loop->index }}][name]" 
-                                           value="{{ $customAmenity['name'] ?? '' }}"
+                                           name="custom_amenities[]" 
+                                           value="{{ $customAmenity }}"
                                            class="flex-1 px-3 py-2 border border-gray-300 rounded-lg" 
                                            placeholder="Amenity name">
-                                    <input type="hidden" 
-                                           name="amenities[{{ count($basicAmenities) + count($securityAmenities) + $loop->index }}][description]" 
-                                           value="">
                                     <button type="button" class="text-red-500 hover:text-red-700 remove-amenity-btn">
                                         <i class="fas fa-times"></i>
                                     </button>
                                 </div>
-                            @endforeach
-                        @endif
+                            @endif
+                        @endforeach
                     </div>
                     <button type="button" id="addCustomAmenityBtn" class="mt-4 px-4 py-2 border border-dashed border-gray-300 text-gray-600 rounded-lg hover:bg-gray-50">
                         <i class="fas fa-plus mr-2"></i> Add Custom Amenity
@@ -812,16 +927,53 @@
             <div class="mb-10 hidden" id="step6">
                 <h3 class="text-lg font-semibold text-gray-900 mb-6 pb-4 border-b border-gray-200">Property Images</h3>
                 
-                <!-- Cover Image -->
+                <!-- Existing Images -->
+                @if($property->images->count() > 0)
+                    <div class="mb-8">
+                        <h4 class="font-medium text-gray-900 mb-4">Current Images</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            @foreach($property->images as $image)
+                                <div class="border border-gray-200 rounded-lg overflow-hidden">
+                                    <div class="h-48 bg-gray-100 flex items-center justify-center">
+                                        <img src="{{ Storage::url($image->image_path) }}" alt="Property image" class="h-full w-full object-cover">
+                                    </div>
+                                    <div class="p-3 bg-white">
+                                        <div class="flex justify-between items-center">
+                                            <div class="flex items-center">
+                                                @if($image->is_primary)
+                                                    <span class="px-2 py-1 text-xs bg-purple-100 text-purple-800 rounded mr-2">Cover</span>
+                                                @endif
+                                                <span class="text-sm text-gray-600">Image {{ $loop->iteration }}</span>
+                                            </div>
+                                            <div class="flex items-center gap-2">
+                                                @if(!$image->is_primary)
+                                                    <button type="button" class="text-purple-600 hover:text-purple-800 set-primary-btn" data-image-id="{{ $image->id }}">
+                                                        <i class="fas fa-star"></i>
+                                                    </button>
+                                                @endif
+                                                <input type="checkbox" 
+                                                       name="delete_images[]" 
+                                                       value="{{ $image->id }}" 
+                                                       class="h-4 w-4 text-red-600 rounded focus:ring-red-500 border-gray-300">
+                                                <span class="text-red-500 text-sm">Delete</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+                @endif
+
+                <!-- Cover Image Upload -->
                 <div class="mb-8">
                     <label for="cover_image" class="block text-sm font-medium text-gray-700 mb-2">
-                        Cover Image <span class="text-red-500">*</span>
-                        <span class="text-xs text-gray-500">(Recommended: 1200x800px)</span>
+                        New Cover Image <span class="text-xs text-gray-500">(Optional, replaces existing)</span>
                     </label>
                     <div id="coverImageUpload" class="border-2 border-dashed border-gray-300 rounded-lg h-64 flex items-center justify-center bg-gray-50 hover:bg-gray-100 transition-colors cursor-pointer">
                         <div class="text-center">
                             <i class="fas fa-cloud-upload-alt text-gray-400 text-4xl mb-3"></i>
-                            <p class="text-gray-600 font-medium">Click to upload cover image</p>
+                            <p class="text-gray-600 font-medium">Click to upload new cover image</p>
                             <p class="text-sm text-gray-500 mt-1">or drag and drop</p>
                             <p class="text-xs text-gray-400 mt-2">PNG, JPG, GIF up to 10MB</p>
                         </div>
@@ -830,8 +982,7 @@
                            id="cover_image"
                            name="cover_image"
                            accept="image/*"
-                           class="hidden"
-                           required>
+                           class="hidden">
                     <div id="coverImagePreview" class="hidden mt-4">
                         <img src="" alt="Cover preview" class="max-h-64 rounded-lg">
                         <button type="button" id="removeCoverImage" class="mt-2 text-red-500 hover:text-red-700">
@@ -846,7 +997,7 @@
                 <!-- Additional Images -->
                 <div class="mb-6">
                     <label class="block text-sm font-medium text-gray-700 mb-2">
-                        Additional Images <span class="text-xs text-gray-500">(Up to 10 images)</span>
+                        Additional Images <span class="text-xs text-gray-500">(Optional, adds to existing)</span>
                     </label>
                     <div id="additionalImagesUpload" class="border-2 border-dashed border-gray-300 rounded-lg p-6 bg-gray-50 hover:bg-gray-100 transition-colors cursor-pointer">
                         <div class="text-center">
@@ -863,9 +1014,9 @@
                            multiple
                            class="hidden">
                     
-                    <!-- Image Gallery Preview -->
+                    <!-- New Images Preview -->
                     <div id="imageGallery" class="mt-6">
-                        <h4 class="font-medium text-gray-900 mb-4">Image Gallery Preview</h4>
+                        <h4 class="font-medium text-gray-900 mb-4">New Images Preview</h4>
                         <div id="galleryGrid" class="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <!-- Images will be added here -->
                         </div>
@@ -882,6 +1033,9 @@
                 </div>
                 
                 <div class="flex items-center gap-4">
+                    <a href="{{ route('owner.properties.index') }}" class="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors">
+                        Cancel
+                    </a>
                     <button type="button" id="saveDraftBtn" class="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors">
                         Save as Draft
                     </button>
@@ -889,7 +1043,7 @@
                         Next Step <i class="fas fa-arrow-right ml-2"></i>
                     </button>
                     <button type="submit" id="submitBtn" class="px-6 py-3 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors hidden">
-                        <i class="fas fa-check mr-2"></i> Create Property
+                        <i class="fas fa-check mr-2"></i> Update Property
                     </button>
                 </div>
             </div>
@@ -934,32 +1088,48 @@ input[type="checkbox"]:checked {
 </style>
 
 <script>
+// Pass commission rates from PHP to JavaScript
+const commissionRates = {
+    'HOSTEL': {{ $commissionRates['HOSTEL'] ?? 5.00 }},
+    'APARTMENT': {{ $commissionRates['APARTMENT'] ?? 3.00 }}
+};
+
+// Initialize with property data
+const initialPropertyType = '{{ $property->type }}';
+const initialRoomsCount = {{ $property->rooms->count() }};
+const initialHostelRevenue = {{ $property->rooms->sum('base_price') }};
+
 document.addEventListener('DOMContentLoaded', function() {
     let currentStep = 1;
     const totalSteps = 6;
-    let roomCounter = {{ old('rooms') ? count(old('rooms')) : 0 }};
-    let customAmenityCounter = {{ old('custom_amenities') ? count(old('custom_amenities')) : 0 }};
-    let selectedPropertyType = document.querySelector('input[name="type"]:checked')?.value || 'HOSTEL';
-    let hostelTotalRevenue = 0;
+    let roomCounter = {{ $property->type === 'HOSTEL' ? $property->rooms->count() : 0 }};
+    let selectedPropertyType = initialPropertyType;
+    let hostelTotalRevenue = initialHostelRevenue;
     
-    // Get commission rate from server
+    // Simple commission rate function
     async function fetchCommissionRate(type) {
-        try {
-            const response = await fetch(`/api/commission-rate/${type}`);
-            const data = await response.json();
-            return data.rate || (type === 'HOSTEL' ? 5.00 : 3.00);
-        } catch (error) {
-            console.error('Error fetching commission rate:', error);
-            return type === 'HOSTEL' ? 5.00 : 3.00;
-        }
+        return commissionRates[type] || (type === 'HOSTEL' ? 5.00 : 3.00);
     }
     
+     
     // Update step indicator
     function updateStepIndicator() {
-        document.querySelectorAll('.flex-col.items-center').forEach((step, index) => {
+        const steps = document.querySelectorAll('.flex-col.items-center');
+        if (steps.length === 0) {
+            console.warn('No step elements found');
+            return;
+        }
+        
+        steps.forEach((step, index) => {
             const stepNumber = index + 1;
             const circle = step.querySelector('.rounded-full');
             const text = step.querySelector('.text-sm');
+            
+            // Skip if elements don't exist
+            if (!circle || !text) {
+                console.warn(`Step ${stepNumber} elements not found`);
+                return;
+            }
             
             if (stepNumber < currentStep) {
                 circle.className = 'w-10 h-10 rounded-full bg-purple-600 text-white flex items-center justify-center font-bold step-completed';
@@ -973,13 +1143,16 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
         
-        document.querySelectorAll('.h-1').forEach((connector, index) => {
-            if (index + 1 < currentStep) {
-                connector.className = 'flex-1 h-1 bg-purple-200 mx-4';
-            } else {
-                connector.className = 'flex-1 h-1 bg-gray-200 mx-4';
-            }
-        });
+        const connectors = document.querySelectorAll('.h-1');
+        if (connectors.length > 0) {
+            connectors.forEach((connector, index) => {
+                if (index + 1 < currentStep) {
+                    connector.className = 'flex-1 h-1 bg-purple-200 mx-4';
+                } else {
+                    connector.className = 'flex-1 h-1 bg-gray-200 mx-4';
+                }
+            });
+        }
     }
     
     // Show current step
@@ -1009,76 +1182,74 @@ document.addEventListener('DOMContentLoaded', function() {
         const submitBtn = document.getElementById('submitBtn');
         
         if (step === 1) {
-            prevBtn.classList.add('hidden');
+            if (prevBtn) prevBtn.classList.add('hidden');
         } else {
-            prevBtn.classList.remove('hidden');
+            if (prevBtn) prevBtn.classList.remove('hidden');
         }
         
         if (step === totalSteps) {
-            nextBtn.classList.add('hidden');
-            submitBtn.classList.remove('hidden');
+            if (nextBtn) nextBtn.classList.add('hidden');
+            if (submitBtn) submitBtn.classList.remove('hidden');
         } else {
-            nextBtn.classList.remove('hidden');
-            submitBtn.classList.add('hidden');
+            if (nextBtn) nextBtn.classList.remove('hidden');
+            if (submitBtn) submitBtn.classList.add('hidden');
         }
         
         updateStepIndicator();
     }
     
     // Update property type specific displays
-    function updatePropertyTypeSpecificDisplay(step) {
-        const isApartment = selectedPropertyType === 'APARTMENT';
-        const isHostel = selectedPropertyType === 'HOSTEL';
+function updatePropertyTypeSpecificDisplay(step) {
+    const isApartment = selectedPropertyType === 'APARTMENT';
+    const isHostel = selectedPropertyType === 'HOSTEL';
+    
+    if (step === 3) { // Rooms step
+        const apartmentMessage = document.getElementById('apartmentMessage');
+        const hostelRoomsSection = document.getElementById('hostelRoomsSection');
+        const hostelTotalPriceContainer = document.getElementById('hostelTotalPriceContainer');
         
-        if (step === 3) { // Rooms step
-            const apartmentMessage = document.getElementById('apartmentMessage');
-            const hostelRoomsSection = document.getElementById('hostelRoomsSection');
-            const hostelTotalPriceContainer = document.getElementById('hostelTotalPriceContainer');
-            
-            if (isApartment) {
-                apartmentMessage.classList.remove('hidden');
-                hostelRoomsSection.classList.add('hidden');
-                hostelTotalPriceContainer.classList.add('hidden');
-                // Remove required from room fields for apartments
-                document.querySelectorAll('#roomsContainer [required]').forEach(input => {
-                    input.removeAttribute('required');
-                });
-            } else {
-                apartmentMessage.classList.add('hidden');
-                hostelRoomsSection.classList.remove('hidden');
-                // Calculate hostel total for display
-                calculateHostelTotalRevenue();
-                // Add required back for hostels
-                document.querySelectorAll('#roomsContainer [required]').forEach(input => {
-                    input.setAttribute('required', 'required');
-                });
-            }
-        }
-        
-        if (step === 4) { // Pricing step
-            const apartmentPricingSection = document.getElementById('apartmentPricingSection');
-            const hostelPricingSection = document.getElementById('hostelPricingSection');
-            const minStayContainer = document.getElementById('minStayContainer');
-            
-            if (isApartment) {
-                apartmentPricingSection.classList.remove('hidden');
-                hostelPricingSection.classList.add('hidden');
-                minStayContainer.classList.remove('hidden');
-                // Update apartment commission display
-                updateApartmentCommissionDisplay();
-            } else {
-                apartmentPricingSection.classList.add('hidden');
-                hostelPricingSection.classList.remove('hidden');
-                minStayContainer.classList.add('hidden');
-                // Update hostel commission display
-                updateHostelCommissionDisplay();
-            }
-            
-            // Update commission rate
-            updateCommissionRate();
+        if (isApartment) {
+            if (apartmentMessage) apartmentMessage.classList.remove('hidden');
+            if (hostelRoomsSection) hostelRoomsSection.classList.add('hidden');
+            if (hostelTotalPriceContainer) hostelTotalPriceContainer.classList.add('hidden');
+        } else {
+            if (apartmentMessage) apartmentMessage.classList.add('hidden');
+            if (hostelRoomsSection) hostelRoomsSection.classList.remove('hidden');
+            calculateHostelTotalRevenue();
         }
     }
     
+    if (step === 4) { // Pricing step
+        const apartmentPricingSection = document.getElementById('apartmentPricingSection');
+        const hostelPricingSection = document.getElementById('hostelPricingSection');
+        const minStayContainer = document.getElementById('minStayContainer');
+        const basePriceInput = document.getElementById('base_price');
+        
+        if (isApartment) {
+            if (apartmentPricingSection) apartmentPricingSection.classList.remove('hidden');
+            if (hostelPricingSection) hostelPricingSection.classList.add('hidden');
+            if (minStayContainer) minStayContainer.classList.remove('hidden');
+            // Show and make base_price required for apartments
+            if (basePriceInput) {
+                basePriceInput.required = true;
+                basePriceInput.parentElement.parentElement.classList.remove('hidden');
+            }
+            updateApartmentCommissionDisplay();
+        } else {
+            if (apartmentPricingSection) apartmentPricingSection.classList.add('hidden');
+            if (hostelPricingSection) hostelPricingSection.classList.remove('hidden');
+            if (minStayContainer) minStayContainer.classList.add('hidden');
+            // Hide and make base_price NOT required for hostels
+            if (basePriceInput) {
+                basePriceInput.required = false;
+                basePriceInput.parentElement.parentElement.classList.add('hidden');
+            }
+            updateHostelCommissionDisplay();
+        }
+        
+        updateCommissionRate();
+    }
+}
     // Calculate hostel total revenue from rooms
     function calculateHostelTotalRevenue() {
         const rooms = document.querySelectorAll('.room-item');
@@ -1095,44 +1266,57 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         
         if (rooms.length === 0) {
-            hostelTotalPriceContainer.classList.add('hidden');
+            if (hostelTotalPriceContainer) hostelTotalPriceContainer.classList.add('hidden');
             return;
         }
         
-        totalRoomsCount.textContent = rooms.length;
-        totalMonthlyRevenue.textContent = '৳' + hostelTotalRevenue.toFixed(2);
-        hostelTotalPriceContainer.classList.remove('hidden');
+        if (totalRoomsCount) totalRoomsCount.textContent = rooms.length;
+        if (totalMonthlyRevenue) totalMonthlyRevenue.textContent = '৳' + hostelTotalRevenue.toFixed(2);
+        if (hostelTotalPriceContainer) hostelTotalPriceContainer.classList.remove('hidden');
         
-        // Store in hidden field for use in pricing step
-        document.getElementById('hostel_total_revenue').value = hostelTotalRevenue;
+        const hiddenField = document.getElementById('hostel_total_revenue');
+        if (hiddenField) hiddenField.value = hostelTotalRevenue;
     }
     
     // Update hostel commission display
     function updateHostelCommissionDisplay() {
         const totalRooms = document.querySelectorAll('.room-item').length;
-        const commissionRate = parseFloat(document.getElementById('commission_rate').value) || 5.00;
+        const commissionRateInput = document.getElementById('commission_rate');
+        const commissionRate = commissionRateInput ? parseFloat(commissionRateInput.value) || 5.00 : 5.00;
         const commissionAmount = hostelTotalRevenue * (commissionRate / 100);
         const totalWithCommission = hostelTotalRevenue + commissionAmount;
         
-        document.getElementById('hostelTotalRoomsFinal').textContent = totalRooms;
-        document.getElementById('hostelTotalRevenueFinal').textContent = '৳' + hostelTotalRevenue.toFixed(2);
-        document.getElementById('hostelCommissionFinal').textContent = '৳' + commissionAmount.toFixed(2);
-        document.getElementById('hostelTotalWithCommissionFinal').textContent = '৳' + totalWithCommission.toFixed(2);
-        document.getElementById('hostelCommissionRateDisplay').textContent = commissionRate + '%';
+        const totalRoomsEl = document.getElementById('hostelTotalRoomsFinal');
+        const totalRevenueEl = document.getElementById('hostelTotalRevenueFinal');
+        const commissionEl = document.getElementById('hostelCommissionFinal');
+        const totalWithCommissionEl = document.getElementById('hostelTotalWithCommissionFinal');
+        const commissionRateDisplay = document.getElementById('hostelCommissionRateDisplay');
+        
+        if (totalRoomsEl) totalRoomsEl.textContent = totalRooms;
+        if (totalRevenueEl) totalRevenueEl.textContent = '৳' + hostelTotalRevenue.toFixed(2);
+        if (commissionEl) commissionEl.textContent = '৳' + commissionAmount.toFixed(2);
+        if (totalWithCommissionEl) totalWithCommissionEl.textContent = '৳' + totalWithCommission.toFixed(2);
+        if (commissionRateDisplay) commissionRateDisplay.textContent = commissionRate + '%';
     }
     
     // Update apartment commission display
     function updateApartmentCommissionDisplay() {
         const priceInput = document.getElementById('base_price');
-        const commissionRate = parseFloat(document.getElementById('commission_rate').value) || 3.00;
-        const price = parseFloat(priceInput.value) || 0;
+        const commissionRateInput = document.getElementById('commission_rate');
+        const commissionRate = commissionRateInput ? parseFloat(commissionRateInput.value) || 3.00 : 3.00;
+        const price = priceInput ? parseFloat(priceInput.value) || 0 : 0;
         const commissionAmount = price * (commissionRate / 100);
         const totalPrice = price + commissionAmount;
         
-        document.getElementById('apartmentMonthlyPriceDisplay').textContent = '৳' + price.toFixed(2);
-        document.getElementById('apartmentCommissionAmountDisplay').textContent = '৳' + commissionAmount.toFixed(2);
-        document.getElementById('apartmentTotalPriceDisplay').textContent = '৳' + totalPrice.toFixed(2);
-        document.getElementById('apartmentCommissionRateDisplay').textContent = commissionRate + '%';
+        const monthlyPriceEl = document.getElementById('apartmentMonthlyPriceDisplay');
+        const commissionAmountEl = document.getElementById('apartmentCommissionAmountDisplay');
+        const totalPriceEl = document.getElementById('apartmentTotalPriceDisplay');
+        const commissionRateDisplay = document.getElementById('apartmentCommissionRateDisplay');
+        
+        if (monthlyPriceEl) monthlyPriceEl.textContent = '৳' + price.toFixed(2);
+        if (commissionAmountEl) commissionAmountEl.textContent = '৳' + commissionAmount.toFixed(2);
+        if (totalPriceEl) totalPriceEl.textContent = '৳' + totalPrice.toFixed(2);
+        if (commissionRateDisplay) commissionRateDisplay.textContent = commissionRate + '%';
     }
     
     // Update commission rate from server
@@ -1144,7 +1328,6 @@ document.addEventListener('DOMContentLoaded', function() {
             commissionRateInput.value = commissionRate;
         }
         
-        // Update display based on property type
         if (selectedPropertyType === 'APARTMENT') {
             updateApartmentCommissionDisplay();
         } else {
@@ -1160,31 +1343,37 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // Next button click
-    document.getElementById('nextBtn').addEventListener('click', function() {
-        if (validateCurrentStep()) {
-            if (currentStep < totalSteps) {
-                currentStep++;
-                showStep(currentStep);
+    const nextBtn = document.getElementById('nextBtn');
+    if (nextBtn) {
+        nextBtn.addEventListener('click', function() {
+            if (validateCurrentStep()) {
+                if (currentStep < totalSteps) {
+                    currentStep++;
+                    showStep(currentStep);
+                }
             }
-        }
-    });
+        });
+    }
     
     // Previous button click
-    document.getElementById('prevBtn').addEventListener('click', function() {
-        if (currentStep > 1) {
-            currentStep--;
-            showStep(currentStep);
-        }
-    });
+    const prevBtn = document.getElementById('prevBtn');
+    if (prevBtn) {
+        prevBtn.addEventListener('click', function() {
+            if (currentStep > 1) {
+                currentStep--;
+                showStep(currentStep);
+            }
+        });
+    }
     
     // Property type change
     document.querySelectorAll('.property-type').forEach(radio => {
         radio.addEventListener('change', function() {
             selectedPropertyType = this.value;
-            document.getElementById('propertyTypeHidden').value = selectedPropertyType;
+            const hiddenField = document.getElementById('propertyTypeHidden');
+            if (hiddenField) hiddenField.value = selectedPropertyType;
             updatePropertyTypeDependencies();
             
-            // Update displays if we're on relevant steps
             if (currentStep === 3 || currentStep === 4) {
                 updatePropertyTypeSpecificDisplay(currentStep);
             }
@@ -1201,16 +1390,15 @@ document.addEventListener('DOMContentLoaded', function() {
         const unitSizeRequired = document.getElementById('unitSizeRequired');
         
         if (isApartment) {
-            unitSizeContainer.classList.remove('hidden');
-            unitSizeRequired.classList.remove('hidden');
-            unitSizeInput.required = true;
+            if (unitSizeContainer) unitSizeContainer.classList.remove('hidden');
+            if (unitSizeRequired) unitSizeRequired.classList.remove('hidden');
+            if (unitSizeInput) unitSizeInput.required = true;
         } else {
-            unitSizeContainer.classList.add('hidden');
-            unitSizeRequired.classList.add('hidden');
-            unitSizeInput.required = false;
+            if (unitSizeContainer) unitSizeContainer.classList.add('hidden');
+            if (unitSizeRequired) unitSizeRequired.classList.add('hidden');
+            if (unitSizeInput) unitSizeInput.required = false;
         }
         
-        // Update commission rate
         updateCommissionRate();
     }
     
@@ -1221,9 +1409,12 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // Room management
-    document.getElementById('addRoomBtn')?.addEventListener('click', function() {
-        addRoom();
-    });
+    const addRoomBtn = document.getElementById('addRoomBtn');
+    if (addRoomBtn) {
+        addRoomBtn.addEventListener('click', function() {
+            addRoom();
+        });
+    }
     
     function addRoom() {
         const container = document.getElementById('roomsContainer');
@@ -1333,7 +1524,6 @@ document.addEventListener('DOMContentLoaded', function() {
             updateRoomsDisplay();
             renumberRooms();
             calculateHostelTotalRevenue();
-            // Update pricing display if we're on that step
             if (currentStep === 4 && selectedPropertyType === 'HOSTEL') {
                 updateHostelCommissionDisplay();
             }
@@ -1343,7 +1533,6 @@ document.addEventListener('DOMContentLoaded', function() {
         const priceInput = roomDiv.querySelector('.room-price-input');
         priceInput.addEventListener('input', function() {
             calculateHostelTotalRevenue();
-            // Update pricing display if we're on that step
             if (currentStep === 4 && selectedPropertyType === 'HOSTEL') {
                 updateHostelCommissionDisplay();
             }
@@ -1352,7 +1541,6 @@ document.addEventListener('DOMContentLoaded', function() {
         container.appendChild(roomDiv);
         roomCounter++;
         
-        // Update display
         updateRoomsDisplay();
         calculateHostelTotalRevenue();
     }
@@ -1374,7 +1562,6 @@ document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('.room-price-input').forEach(input => {
         input.addEventListener('input', function() {
             calculateHostelTotalRevenue();
-            // Update pricing display if we're on that step
             if (currentStep === 4 && selectedPropertyType === 'HOSTEL') {
                 updateHostelCommissionDisplay();
             }
@@ -1398,7 +1585,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 indexSpan.textContent = index + 1;
             }
             
-            // Update input names
             room.querySelectorAll('input, select').forEach(input => {
                 const name = input.getAttribute('name');
                 if (name && name.includes('rooms[')) {
@@ -1411,75 +1597,52 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // Custom amenities management
-    document.getElementById('addCustomAmenityBtn')?.addEventListener('click', function() {
-        addCustomAmenity();
-    });
+    const addCustomAmenityBtn = document.getElementById('addCustomAmenityBtn');
+    if (addCustomAmenityBtn) {
+        addCustomAmenityBtn.addEventListener('click', function() {
+            addCustomAmenity();
+        });
+    }
     
     function addCustomAmenity() {
         const container = document.getElementById('customAmenitiesContainer');
-        
         if (!container) return;
         
         const amenityDiv = document.createElement('div');
         amenityDiv.className = 'flex gap-4';
         amenityDiv.innerHTML = `
-            <select name="amenities[${customAmenityCounter}][type]" class="w-1/3 px-3 py-2 border border-gray-300 rounded-lg">
-                <option value="BASIC">Basic</option>
-                <option value="SECURITY">Security</option>
-                <option value="UTILITY">Utility</option>
-                <option value="RECREATION">Recreation</option>
-            </select>
             <input type="text" 
-                   name="amenities[${customAmenityCounter}][name]" 
+                   name="custom_amenities[]" 
                    class="flex-1 px-3 py-2 border border-gray-300 rounded-lg" 
                    placeholder="Amenity name">
-            <input type="hidden" 
-                   name="amenities[${customAmenityCounter}][description]" 
-                   value="">
             <button type="button" class="text-red-500 hover:text-red-700 remove-amenity-btn">
                 <i class="fas fa-times"></i>
             </button>
         `;
         
-        // Add remove functionality
         const removeBtn = amenityDiv.querySelector('.remove-amenity-btn');
         removeBtn.addEventListener('click', function() {
             amenityDiv.remove();
-            renumberCustomAmenities();
         });
         
         container.appendChild(amenityDiv);
         customAmenityCounter++;
     }
     
-    // Add remove functionality to existing custom amenities
     document.querySelectorAll('.remove-amenity-btn').forEach(btn => {
         btn.addEventListener('click', function() {
             const amenityDiv = this.parentElement;
-            amenityDiv.remove();
-            renumberCustomAmenities();
+            if (amenityDiv) {
+                amenityDiv.remove();
+            }
         });
     });
-    
-    function renumberCustomAmenities() {
-        customAmenityCounter = 0;
-        document.querySelectorAll('#customAmenitiesContainer > div').forEach((amenity, index) => {
-            amenity.querySelectorAll('input, select').forEach(input => {
-                const name = input.getAttribute('name');
-                if (name && name.includes('amenities[')) {
-                    const newName = name.replace(/amenities\[\d+\]/, `amenities[${index}]`);
-                    input.setAttribute('name', newName);
-                }
-            });
-            customAmenityCounter++;
-        });
-    }
     
     // Image upload functionality
     const coverImageUpload = document.getElementById('coverImageUpload');
     const coverImageInput = document.getElementById('cover_image');
     const coverImagePreview = document.getElementById('coverImagePreview');
-    const coverImagePreviewImg = coverImagePreview.querySelector('img');
+    const coverImagePreviewImg = coverImagePreview ? coverImagePreview.querySelector('img') : null;
     
     if (coverImageUpload && coverImageInput) {
         coverImageUpload.addEventListener('click', () => coverImageInput.click());
@@ -1488,20 +1651,23 @@ document.addEventListener('DOMContentLoaded', function() {
             if (this.files && this.files[0]) {
                 const reader = new FileReader();
                 reader.onload = function(e) {
-                    coverImagePreviewImg.src = e.target.result;
-                    coverImagePreview.classList.remove('hidden');
-                    coverImageUpload.classList.add('hidden');
+                    if (coverImagePreviewImg) coverImagePreviewImg.src = e.target.result;
+                    if (coverImagePreview) coverImagePreview.classList.remove('hidden');
+                    if (coverImageUpload) coverImageUpload.classList.add('hidden');
                 }
                 reader.readAsDataURL(this.files[0]);
             }
         });
     }
     
-    document.getElementById('removeCoverImage')?.addEventListener('click', function() {
-        coverImageInput.value = '';
-        coverImagePreview.classList.add('hidden');
-        coverImageUpload.classList.remove('hidden');
-    });
+    const removeCoverImageBtn = document.getElementById('removeCoverImage');
+    if (removeCoverImageBtn) {
+        removeCoverImageBtn.addEventListener('click', function() {
+            if (coverImageInput) coverImageInput.value = '';
+            if (coverImagePreview) coverImagePreview.classList.add('hidden');
+            if (coverImageUpload) coverImageUpload.classList.remove('hidden');
+        });
+    }
     
     // Additional images upload
     const additionalImagesUpload = document.getElementById('additionalImagesUpload');
@@ -1523,6 +1689,8 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     function addImageToGallery(file) {
+        if (!galleryGrid) return;
+        
         const reader = new FileReader();
         reader.onload = function(e) {
             const colDiv = document.createElement('div');
@@ -1555,6 +1723,16 @@ document.addEventListener('DOMContentLoaded', function() {
     // Form validation
     function validateCurrentStep() {
         const currentStepElement = document.getElementById(`step${currentStep}`);
+        if (!currentStepElement) {
+            console.error(`Step ${currentStep} element not found`);
+            return true;
+        }
+        
+        // Skip validation for steps that are conditionally hidden
+        if (currentStep === 3 && selectedPropertyType === 'APARTMENT') {
+            return true; // Skip rooms validation for apartments
+        }
+        
         const inputs = currentStepElement.querySelectorAll('[required]');
         let isValid = true;
         
@@ -1562,25 +1740,35 @@ document.addEventListener('DOMContentLoaded', function() {
         currentStepElement.querySelectorAll('.border-red-500').forEach(el => {
             el.classList.remove('border-red-500');
         });
-        currentStepElement.querySelectorAll('.text-red-500.text-sm.mt-1').forEach(el => {
-            if (el.previousElementSibling && el.previousElementSibling.tagName !== 'SELECT') {
-                el.remove();
-            }
-        });
         
-        // Validate required fields
+        // Validate only visible required fields
         inputs.forEach(input => {
-            if (!input.value.trim() && input.offsetParent !== null) {
+            // Skip validation for hidden elements
+            if (input.offsetParent === null || input.closest('.hidden')) {
+                return;
+            }
+            
+            if (!input.value || input.value.trim() === '') {
                 input.classList.add('border-red-500');
                 isValid = false;
                 
                 // Show error message
                 let errorElement = input.nextElementSibling;
                 if (!errorElement || !errorElement.classList.contains('text-red-500')) {
+                    const parent = input.parentNode;
                     errorElement = document.createElement('p');
                     errorElement.className = 'text-red-500 text-sm mt-1';
                     errorElement.textContent = 'This field is required';
-                    input.parentNode.appendChild(errorElement);
+                    if (parent) {
+                        parent.appendChild(errorElement);
+                    }
+                }
+            } else {
+                // Remove error if field is now valid
+                input.classList.remove('border-red-500');
+                const errorElement = input.nextElementSibling;
+                if (errorElement && errorElement.classList.contains('text-red-500')) {
+                    errorElement.remove();
                 }
             }
         });
@@ -1598,10 +1786,13 @@ document.addEventListener('DOMContentLoaded', function() {
         if (currentStep === 4) {
             if (selectedPropertyType === 'APARTMENT') {
                 const priceInput = document.getElementById('base_price');
-                if (!priceInput.value || parseFloat(priceInput.value) <= 0) {
-                    alert('Please enter a valid monthly price for the apartment');
-                    priceInput.classList.add('border-red-500');
-                    isValid = false;
+                // Check if the input is visible
+                if (priceInput && priceInput.offsetParent !== null) {
+                    if (!priceInput.value || parseFloat(priceInput.value) <= 0) {
+                        alert('Please enter a valid monthly price for the apartment');
+                        priceInput.classList.add('border-red-500');
+                        isValid = false;
+                    }
                 }
             } else if (selectedPropertyType === 'HOSTEL') {
                 const rooms = document.querySelectorAll('.room-item');
@@ -1615,7 +1806,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Additional validation for step 6 (images)
         if (currentStep === 6) {
             const coverImage = document.getElementById('cover_image');
-            if (!coverImage.files || coverImage.files.length === 0) {
+            if (coverImage && (!coverImage.files || coverImage.files.length === 0)) {
                 alert('Cover image is required');
                 isValid = false;
             }
@@ -1625,24 +1816,27 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // Save as draft
-    document.getElementById('saveDraftBtn').addEventListener('click', function() {
-        document.getElementById('status').value = 'DRAFT';
-        // Validate all steps before submitting
-        let allValid = true;
-        for (let i = 1; i <= totalSteps; i++) {
-            if (!validateStep(i)) {
-                allValid = false;
-                currentStep = i;
-                showStep(i);
-                break;
+    const saveDraftBtn = document.getElementById('saveDraftBtn');
+    if (saveDraftBtn) {
+        saveDraftBtn.addEventListener('click', function() {
+            const statusSelect = document.getElementById('status');
+            if (statusSelect) statusSelect.value = 'DRAFT';
+            
+            let allValid = true;
+            for (let i = 1; i <= totalSteps; i++) {
+                if (!validateStep(i)) {
+                    allValid = false;
+                    currentStep = i;
+                    showStep(i);
+                    break;
+                }
             }
-        }
-        if (allValid) {
-            document.getElementById('propertyForm').submit();
-        }
-    });
+            if (allValid) {
+                document.getElementById('propertyForm').submit();
+            }
+        });
+    }
     
-    // Helper function to validate a specific step
     function validateStep(step) {
         const stepElement = document.getElementById(`step${step}`);
         if (!stepElement) return true;
@@ -1651,6 +1845,11 @@ document.addEventListener('DOMContentLoaded', function() {
         let isValid = true;
         
         inputs.forEach(input => {
+            // Skip validation for hidden elements
+            if (input.offsetParent === null || input.closest('.hidden')) {
+                return;
+            }
+            
             if (!input.value.trim() && input.offsetParent !== null) {
                 isValid = false;
             }
