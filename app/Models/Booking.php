@@ -49,9 +49,19 @@ class Booking extends Model
         return $this->belongsTo(Room::class);
     }
 
-    public function payment()
+    public function payments()
     {
-        return $this->morphOne(Payment::class, 'payable');
+        return $this->morphMany(Payment::class, 'payable');
+    }
+        public function latestPayment()
+    {
+        return $this->morphOne(Payment::class, 'payable')->latestOfMany();
+    }
+       public function isPaid()
+    {
+        return $this->payments()
+            ->where('status', 'COMPLETED')
+            ->exists();
     }
 
     public function rating()
