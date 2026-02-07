@@ -17,7 +17,7 @@
             </p>
         </div>
         <div class="mt-4 sm:mt-0 flex space-x-3">
-            <a href="{{ route('food-provider.menu.categories.index') }}" 
+            <a href="{{ url('/food-provider/menu/categories') }}" 
                class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                 <i class="fas fa-tags mr-2"></i>
                 Manage Categories
@@ -234,7 +234,7 @@
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                             <div class="flex space-x-2">
-                                <a href="{{ route('food-provider.menu.items.edit', $i) }}" 
+                                <a href="{{ url('food-provider/menu/items/edit', $i) }}" 
                                    class="text-indigo-600 hover:text-indigo-900" 
                                    title="Edit">
                                     <i class="fas fa-edit"></i>
@@ -286,7 +286,7 @@
                         <div class="flex flex-col items-end space-y-2">
                             <span class="px-2 py-1 text-xs bg-green-100 text-green-800 rounded">Active</span>
                             <div class="flex space-x-2">
-                                <a href="{{ route('food-provider.menu.items.edit', $i) }}" 
+                                <a href="{{ url('food-provider/menu/items/edit', $i) }}" 
                                    class="text-indigo-600 hover:text-indigo-900">
                                     <i class="fas fa-edit"></i>
                                 </a>

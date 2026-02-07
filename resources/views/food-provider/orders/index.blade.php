@@ -261,7 +261,7 @@
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                             <div class="flex space-x-2">
-                                <a href="{{ route('food-provider.orders.show', $i) }}" 
+                                <a href="{{ url('food-provider/orders/show', $i) }}" 
                                    class="text-indigo-600 hover:text-indigo-900"
                                    title="View Details">
                                     <i class="fas fa-eye"></i>

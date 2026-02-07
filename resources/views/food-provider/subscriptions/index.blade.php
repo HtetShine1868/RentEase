@@ -148,7 +148,7 @@
                             $120.00/month
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                            <a href="{{ route('food-provider.subscriptions.show', $i) }}" class="text-blue-600 hover:text-blue-900 mr-3">View</a>
+                            <a href="{{ url('food-provider/subscriptions/show', $i) }}" class="text-blue-600 hover:text-blue-900 mr-3">View</a>
                             <button class="text-yellow-600 hover:text-yellow-900 mr-3">Pause</button>
                             <button class="text-red-600 hover:text-red-900">Cancel</button>
                         </td>
