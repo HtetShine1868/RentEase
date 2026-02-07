@@ -6,19 +6,18 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
-    public function up(): void
+    public function up()
     {
-        //
+        Schema::table('payments', function (Blueprint $table) {
+            // Increase payable_type column size
+            $table->string('payable_type', 255)->change();
+        });
     }
 
-    /**
-     * Reverse the migrations.
-     */
-    public function down(): void
+    public function down()
     {
-        //
+        Schema::table('payments', function (Blueprint $table) {
+            $table->string('payable_type', 100)->change();
+        });
     }
 };
