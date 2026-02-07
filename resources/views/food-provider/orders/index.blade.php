@@ -94,7 +94,7 @@
                 </div>
             </div>
         </div>
-    </div>
+    </div> 
 
     <!-- Order Filters Component (only include if it exists) -->
     @if(View::exists('food-provider.orders.components.order-filters'))
