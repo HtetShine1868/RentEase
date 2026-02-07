@@ -10,6 +10,7 @@ use App\Http\Controllers\RoomController;
 use App\Http\Controllers\BookingController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\RentalSearchController;
+use App\Http\Controllers\MyRentalController;
 use App\Http\Controllers\VerificationController;
 use Illuminate\Support\Facades\Route;
 
@@ -48,10 +49,7 @@ Route::middleware('auth')->group(function () {
 
         // ============ USER SERVICE ROUTES ============
         
-        // Main rental page
-        Route::get('/rental', function () {
-            return view('rental.index');
-        })->name('rental.index');
+    Route::get('/rental', [MyRentalController::class, 'index'])->name('rental.index');
 
         // Food Services
         Route::prefix('food')->name('food.')->group(function () {
@@ -113,6 +111,18 @@ Route::middleware('auth')->group(function () {
             Route::get('/show/{id}', [RoleApplicationController::class, 'show'])->name('show');
             Route::delete('/{id}', [RoleApplicationController::class, 'destroy'])->name('destroy');
         });
+        // My Rental Dashboard
+            Route::get('/my-rental', [MyRentalController::class, 'index'])
+                ->name('my-rental')
+                ->middleware(['auth', 'verified']);
+                // Complaints Routes
+            Route::middleware(['auth', 'verified'])->prefix('complaints')->name('complaints.')->group(function () {
+                Route::get('/', [ComplaintController::class, 'index'])->name('index');
+                Route::get('/create', [ComplaintController::class, 'create'])->name('create');
+                Route::post('/', [ComplaintController::class, 'store'])->name('store');
+                Route::get('/{complaint}', [ComplaintController::class, 'show'])->name('show');
+                Route::put('/{complaint}', [ComplaintController::class, 'update'])->name('update');
+            });
 
  // ============ RENTAL ROUTES ============
     Route::prefix('rental')->name('rental.')->group(function () {
