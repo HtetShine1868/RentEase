@@ -79,4 +79,47 @@ class MyRentalController extends Controller
             'userProperties'
         ));
     }
+    public function storeBookingReview(Request $request, Booking $booking)
+{
+    // Check if user owns this booking
+    if ($booking->user_id !== Auth::id()) {
+        abort(403);
+    }
+    
+    // Check if booking can be reviewed
+    if (!$booking->canBeReviewed()) {
+        return back()->with('error', 'This booking cannot be reviewed.');
+    }
+    
+    $request->validate([
+        'cleanliness_rating' => 'required|integer|min:1|max:5',
+        'location_rating' => 'required|integer|min:1|max:5',
+        'value_rating' => 'required|integer|min:1|max:5',
+        'service_rating' => 'required|integer|min:1|max:5',
+        'comment' => 'nullable|string|max:1000',
+    ]);
+    
+    // Calculate overall rating
+    $overallRating = (
+        $request->cleanliness_rating + 
+        $request->location_rating + 
+        $request->value_rating + 
+        $request->service_rating
+    ) / 4;
+    
+    $review = PropertyRating::create([
+        'user_id' => Auth::id(),
+        'property_id' => $booking->property_id,
+        'booking_id' => $booking->id,
+        'cleanliness_rating' => $request->cleanliness_rating,
+        'location_rating' => $request->location_rating,
+        'value_rating' => $request->value_rating,
+        'service_rating' => $request->service_rating,
+        'overall_rating' => $overallRating,
+        'comment' => $request->comment,
+        'is_approved' => true,
+    ]);
+    
+    return back()->with('success', 'Thank you for your review!');
+}
 }

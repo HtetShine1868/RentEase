@@ -9,8 +9,8 @@ use App\Http\Controllers\Owner\PropertyController;
 use App\Http\Controllers\RoomController;
 use App\Http\Controllers\BookingController;
 use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\RentalController;
 use App\Http\Controllers\RentalSearchController;
-use App\Http\Controllers\MyRentalController;
 use App\Http\Controllers\VerificationController;
 use Illuminate\Support\Facades\Route;
 
@@ -48,9 +48,7 @@ Route::middleware('auth')->group(function () {
         })->name('dashboard.user');
 
         // ============ USER SERVICE ROUTES ============
-        
-    Route::get('/rental', [MyRentalController::class, 'index'])->name('rental.index');
-
+    
         // Food Services
         Route::prefix('food')->name('food.')->group(function () {
             Route::get('/', function () {
@@ -111,18 +109,7 @@ Route::middleware('auth')->group(function () {
             Route::get('/show/{id}', [RoleApplicationController::class, 'show'])->name('show');
             Route::delete('/{id}', [RoleApplicationController::class, 'destroy'])->name('destroy');
         });
-        // My Rental Dashboard
-            Route::get('/my-rental', [MyRentalController::class, 'index'])
-                ->name('my-rental')
-                ->middleware(['auth', 'verified']);
-                // Complaints Routes
-            Route::middleware(['auth', 'verified'])->prefix('complaints')->name('complaints.')->group(function () {
-                Route::get('/', [ComplaintController::class, 'index'])->name('index');
-                Route::get('/create', [ComplaintController::class, 'create'])->name('create');
-                Route::post('/', [ComplaintController::class, 'store'])->name('store');
-                Route::get('/{complaint}', [ComplaintController::class, 'show'])->name('show');
-                Route::put('/{complaint}', [ComplaintController::class, 'update'])->name('update');
-            });
+    
 
  // ============ RENTAL ROUTES ============
     Route::prefix('rental')->name('rental.')->group(function () {
@@ -152,6 +139,17 @@ Route::middleware('auth')->group(function () {
         Route::post('/booking/{booking}/payment', [PaymentController::class, 'store'])->name('booking.payment.store');
         Route::get('/payment/{payment}/success', [PaymentController::class, 'success'])->name('payment.success');
         Route::get('/payment/{payment}/cancel', [PaymentController::class, 'cancel'])->name('payment.cancel');
+            // My Rental Dashboard
+    Route::get('/rental', [RentalController::class, 'myRental'])->name('rental.index');
+    
+    // Rental Actions
+    Route::post('/booking/{booking}/check-in', [RentalController::class, 'checkIn'])->name('booking.check-in');
+    Route::post('/booking/{booking}/check-out', [RentalController::class, 'checkOut'])->name('booking.check-out');
+    Route::post('/booking/{booking}/complaint', [RentalController::class, 'storeComplaint'])->name('booking.complaint.store');
+    
+    // Reviews
+    Route::get('/booking/{booking}/review', [RentalController::class, 'createReview'])->name('booking.review.create');
+    Route::post('/booking/{booking}/review', [RentalController::class, 'storeReview'])->name('booking.review.store');
     });
     }); // End of 'verified' middleware group
 }); 

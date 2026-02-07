@@ -18,7 +18,7 @@ class BookingController extends Controller
             ->latest()
             ->paginate(10);
             
-        return view('rental.my-bookings', compact('bookings'));
+        return view('rental.index', compact('bookings'));
     }
     
     public function show(Booking $booking)
