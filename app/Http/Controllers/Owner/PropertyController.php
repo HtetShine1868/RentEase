@@ -28,7 +28,7 @@ class PropertyController extends Controller
 
         $stats = Property::getOwnerStats(Auth::id());
 
-        return view('properties.index', compact('properties', 'stats'));
+        return view('owner.properties.index', compact('properties', 'stats'));
     }
 
     /**
@@ -44,7 +44,7 @@ class PropertyController extends Controller
         $commissionRates['HOSTEL'] = $commissionRates['HOSTEL'] ?? 5.00;
         $commissionRates['APARTMENT'] = $commissionRates['APARTMENT'] ?? 3.00;
         
-        return view('properties.create', compact('commissionRates'));
+        return view('owner.properties.create', compact('commissionRates')); // FIXED
     }
 
     /**
@@ -110,32 +110,32 @@ class PropertyController extends Controller
         
         $property->load(['rooms', 'amenities', 'images']);
         
-        return view('properties.show', compact('property'));
+        return view('owner.properties.show', compact('property')); // FIXED
     }
 
     /**
      * Show the form for editing the specified resource.
      */
-public function edit(Property $property)
-{
-    // Check authorization
-    if ($property->owner_id !== Auth::id() && !Auth::user()->hasRole('SUPERADMIN')) {
-        abort(403, 'Unauthorized action.');
+    public function edit(Property $property)
+    {
+        // Check authorization
+        if ($property->owner_id !== Auth::id() && !Auth::user()->hasRole('SUPERADMIN')) {
+            abort(403, 'Unauthorized action.');
+        }
+        
+        $commissionRates = CommissionConfig::whereIn('service_type', ['HOSTEL', 'APARTMENT'])
+            ->pluck('rate', 'service_type')
+            ->toArray();
+    
+        // Ensure defaults
+        $commissionRates['HOSTEL'] = $commissionRates['HOSTEL'] ?? 5.00;
+        $commissionRates['APARTMENT'] = $commissionRates['APARTMENT'] ?? 3.00;
+        
+        // Load relationships
+        $property->load(['rooms', 'amenities', 'images']);
+        
+        return view('owner.properties.edit', compact('property', 'commissionRates')); // FIXED
     }
-    
-    $commissionRates = CommissionConfig::whereIn('service_type', ['HOSTEL', 'APARTMENT'])
-        ->pluck('rate', 'service_type')
-        ->toArray();
-    
-    // Ensure defaults
-    $commissionRates['HOSTEL'] = $commissionRates['HOSTEL'] ?? 5.00;
-    $commissionRates['APARTMENT'] = $commissionRates['APARTMENT'] ?? 3.00;
-    
-    // Load relationships
-    $property->load(['rooms', 'amenities', 'images']);
-    
-    return view('properties.edit', compact('property', 'commissionRates'));
-}
 
     /**
      * Update the specified resource in storage.
@@ -184,7 +184,7 @@ public function edit(Property $property)
             
             DB::commit();
             
-            return redirect()->route('owner.properties.show', $property)
+            return redirect()->route('owner.properties.show', $property) // FIXED
                 ->with('success', 'Property updated successfully!');
                 
         } catch (\Exception $e) {
@@ -389,61 +389,61 @@ public function edit(Property $property)
         return $property;
     }
 
-/**
- * Store cover image
- */
-private function storeCoverImage(Property $property, $image)
-{
-    $path = $image->store("properties/{$property->id}/cover", 'public');
-    
-    PropertyImage::create([
-        'property_id' => $property->id,
-        'image_path' => $path,
-        'is_primary' => true,
-        'display_order' => 1,
-    ]);
-}
-
-/**
- * Store additional images
- */
-private function storeAdditionalImages(Property $property, array $images)
-{
-    $order = $property->images()->max('display_order') ?? 1;
-    
-    foreach ($images as $image) {
-        $order++;
-        $path = $image->store("properties/{$property->id}/gallery", 'public');
+    /**
+     * Store cover image
+     */
+    private function storeCoverImage(Property $property, $image)
+    {
+        $path = $image->store("properties/{$property->id}/cover", 'public');
         
         PropertyImage::create([
             'property_id' => $property->id,
             'image_path' => $path,
-            'is_primary' => false,
-            'display_order' => $order,
+            'is_primary' => true,
+            'display_order' => 1,
         ]);
     }
-}
 
-/**
- * Delete images
- */
-private function deleteImages(Property $property, array $imageIds)
-{
-    $images = $property->images()->whereIn('id', $imageIds)->get();
-    
-    foreach ($images as $image) {
-        Storage::disk('public')->delete($image->image_path);
-        $image->delete();
-    }
-    
-    // If we deleted the primary image, make another one primary
-    if ($property->images()->where('is_primary', true)->count() === 0) {
-        $newPrimary = $property->images()->first();
-        if ($newPrimary) {
-            $newPrimary->update(['is_primary' => true]);
+    /**
+     * Store additional images
+     */
+    private function storeAdditionalImages(Property $property, array $images)
+    {
+        $order = $property->images()->max('display_order') ?? 1;
+        
+        foreach ($images as $image) {
+            $order++;
+            $path = $image->store("properties/{$property->id}/gallery", 'public');
+            
+            PropertyImage::create([
+                'property_id' => $property->id,
+                'image_path' => $path,
+                'is_primary' => false,
+                'display_order' => $order,
+            ]);
         }
     }
-}
+
+    /**
+     * Delete images
+     */
+    private function deleteImages(Property $property, array $imageIds)
+    {
+        $images = $property->images()->whereIn('id', $imageIds)->get();
+        
+        foreach ($images as $image) {
+            Storage::disk('public')->delete($image->image_path);
+            $image->delete();
+        }
+        
+        // If we deleted the primary image, make another one primary
+        if ($property->images()->where('is_primary', true)->count() === 0) {
+            $newPrimary = $property->images()->first();
+            if ($newPrimary) {
+                $newPrimary->update(['is_primary' => true]);
+            }
+        }
+    }
 
     /**
      * Create rooms for hostel

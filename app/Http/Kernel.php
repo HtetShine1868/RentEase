@@ -38,6 +38,5 @@ class Kernel extends HttpKernel
         ],
     ];
     
-    // REMOVE OR COMMENT OUT $middlewareAliases section
-    // The middleware aliases will be registered in bootstrap/app.php
+
 }

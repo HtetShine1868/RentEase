@@ -12,7 +12,7 @@ class DashboardController extends Controller
         
         // Check if user is verified
         if (!$user->isVerified()) {
-            return redirect()->route('verify.show');
+            return redirect()->route('verification.show');
         }
         
         // Redirect based on role

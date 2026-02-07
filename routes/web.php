@@ -10,7 +10,6 @@ use App\Http\Controllers\RoomController;
 use App\Http\Controllers\BookingController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\RentalController;
-use App\Http\Controllers\RentalSearchController;
 use App\Http\Controllers\VerificationController;
 use Illuminate\Support\Facades\Route;
 
@@ -21,18 +20,18 @@ Route::get('/', function () {
 // ============ PUBLIC ROUTES ============
 Route::middleware('guest')->group(function () {
     Route::get('register', [RegisteredUserController::class, 'create'])->name('register');
-    Route::post('register', [RegisteredUserController::class, 'store']);
+    Route::post('register', [RegisteredUserController::class, 'store'])->name('register.store');
     
     Route::get('login', [AuthenticatedSessionController::class, 'create'])->name('login');
-    Route::post('login', [AuthenticatedSessionController::class, 'store']);
+    Route::post('login', [AuthenticatedSessionController::class, 'store'])->name('login.store');
 });
 
 // ============ AUTHENTICATED ROUTES ============
 Route::middleware('auth')->group(function () {
-    // Custom Verification Routes (Unique names)
-    Route::prefix('verify-email')->name('verify.')->group(function () {
+    // Custom verification routes
+    Route::prefix('verify')->name('verification.')->group(function () {
         Route::get('/', [VerificationController::class, 'show'])->name('show');
-        Route::post('/', [VerificationController::class, 'verify'])->name('submit');
+        Route::post('/', [VerificationController::class, 'verify'])->name('verify');
         Route::post('/resend', [VerificationController::class, 'resend'])->name('resend');
     });
     
@@ -40,15 +39,16 @@ Route::middleware('auth')->group(function () {
     Route::post('logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
     
     // ============ VERIFIED USER ROUTES ============
-    Route::middleware('verified')->group(function () {
-        // Dashboard
+    Route::middleware('verified.custom')->group(function () {
+        // Main Dashboard Route
         Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
-        Route::get('/user/dashboard', function () {
+        
+        // Regular User Dashboard (fallback)
+        Route::get('/dashboard/user', function () {
             return view('dashboard.user', ['title' => 'User Dashboard']);
         })->name('dashboard.user');
 
         // ============ USER SERVICE ROUTES ============
-    
         // Food Services
         Route::prefix('food')->name('food.')->group(function () {
             Route::get('/', function () {
@@ -110,53 +110,53 @@ Route::middleware('auth')->group(function () {
             Route::delete('/{id}', [RoleApplicationController::class, 'destroy'])->name('destroy');
         });
     
-
- // ============ RENTAL ROUTES ============
-    Route::prefix('rental')->name('rental.')->group(function () {
-        // Search & Browse
-        Route::get('/search', [RentalController::class, 'search'])->name('search');
-        Route::get('/property/{property}', [RentalController::class, 'show'])->name('property.details');
+        // My Rental Dashboard
+        Route::get('/rental', [RentalController::class, 'myRental'])->name('rental.index');
         
-        // Booking Process
-        Route::get('/apartment/{property}/rent', [RentalController::class, 'rentApartment'])->name('apartment.rent');
-        Route::post('/apartment/{property}/book', [BookingController::class, 'storeApartment'])->name('apartment.book');
-        
-        Route::get('/hostel/{property}/room/{room}/book', [RentalController::class, 'bookRoom'])->name('room.book');
-        Route::post('/hostel/{property}/room/{room}/book', [BookingController::class, 'storeRoom'])->name('room.book.submit');
-        
-        // Availability Check
-        Route::post('/property/{property}/check-availability', [RentalController::class, 'checkAvailability'])
-            ->name('check.availability');
-        
-        // My Bookings
-        Route::get('/my-bookings', [BookingController::class, 'index'])->name('my-bookings');
-        Route::get('/booking/{booking}', [BookingController::class, 'show'])->name('booking.details');
-        Route::post('/booking/{booking}/cancel', [BookingController::class, 'cancel'])->name('booking.cancel');
+        // Rental Actions
+        Route::post('/booking/{booking}/check-in', [RentalController::class, 'checkIn'])->name('booking.check-in');
+        Route::post('/booking/{booking}/check-out', [RentalController::class, 'checkOut'])->name('booking.check-out');
+        Route::post('/booking/{booking}/complaint', [RentalController::class, 'storeComplaint'])->name('booking.complaint.store');
         
         // Reviews
-        Route::post('/property/{property}/review', [RentalController::class, 'storeReview'])->name('review.store');
-        Route::get('/booking/{booking}/payment', [PaymentController::class, 'create'])->name('booking.payment');
-        Route::post('/booking/{booking}/payment', [PaymentController::class, 'store'])->name('booking.payment.store');
-        Route::get('/payment/{payment}/success', [PaymentController::class, 'success'])->name('payment.success');
-        Route::get('/payment/{payment}/cancel', [PaymentController::class, 'cancel'])->name('payment.cancel');
-            // My Rental Dashboard
-    Route::get('/rental', [RentalController::class, 'myRental'])->name('rental.index');
-    
-    // Rental Actions
-    Route::post('/booking/{booking}/check-in', [RentalController::class, 'checkIn'])->name('booking.check-in');
-    Route::post('/booking/{booking}/check-out', [RentalController::class, 'checkOut'])->name('booking.check-out');
-    Route::post('/booking/{booking}/complaint', [RentalController::class, 'storeComplaint'])->name('booking.complaint.store');
-    
-    // Reviews
-    Route::get('/booking/{booking}/review', [RentalController::class, 'createReview'])->name('booking.review.create');
-    Route::post('/booking/{booking}/review', [RentalController::class, 'storeReview'])->name('booking.review.store');
-    });
-    }); // End of 'verified' middleware group
+        Route::get('/booking/{booking}/review', [RentalController::class, 'createReview'])->name('booking.review.create');
+        Route::post('/booking/{booking}/review', [RentalController::class, 'storeReview'])->name('booking.review.store');
+        
+        // ============ RENTAL ROUTES (FOR USERS/TENANTS) ============
+        Route::prefix('rental')->name('rental.')->group(function () {
+            // Search & Browse
+            Route::get('/search', [RentalController::class, 'search'])->name('search');
+            Route::get('/property/{property}', [RentalController::class, 'show'])->name('property.details');
+            
+            // Booking Process
+            Route::get('/apartment/{property}/rent', [RentalController::class, 'rentApartment'])->name('apartment.rent');
+            Route::post('/apartment/{property}/book', [BookingController::class, 'storeApartment'])->name('apartment.book');
+            
+            Route::get('/hostel/{property}/room/{room}/book', [RentalController::class, 'bookRoom'])->name('room.book');
+            Route::post('/hostel/{property}/room/{room}/book', [BookingController::class, 'storeRoom'])->name('room.book.submit');
+            
+            // Availability Check
+            Route::post('/property/{property}/check-availability', [RentalController::class, 'checkAvailability'])
+                ->name('check.availability');
+            
+            // My Bookings
+            Route::get('/my-bookings', [BookingController::class, 'index'])->name('my-bookings');
+            Route::get('/booking/{booking}', [BookingController::class, 'show'])->name('booking.details');
+            Route::post('/booking/{booking}/cancel', [BookingController::class, 'cancel'])->name('booking.cancel');
+            
+            // Reviews
+            Route::post('/property/{property}/review', [RentalController::class, 'storeReview'])->name('review.store');
+            Route::get('/booking/{booking}/payment', [PaymentController::class, 'create'])->name('booking.payment');
+            Route::post('/booking/{booking}/payment', [PaymentController::class, 'store'])->name('booking.payment.store');
+            Route::get('/payment/{payment}/success', [PaymentController::class, 'success'])->name('payment.success');
+            Route::get('/payment/{payment}/cancel', [PaymentController::class, 'cancel'])->name('payment.cancel');
+        });
+    }); // End of 'verified.custom' middleware group
 }); 
 
 // ============ ROLE-SPECIFIC ROUTES ============
-// These are OUTSIDE the 'verified' group so owners can access them without email verification
-// Or keep them inside if you want verification required
+// These are OUTSIDE the 'verified' group to allow access without email verification
+// (You can move them inside the 'verified.custom' group if you want verification required)
 
 // OWNER ROUTES
 Route::middleware(['auth', 'role:OWNER'])->group(function () {
@@ -196,50 +196,37 @@ Route::middleware(['auth', 'role:OWNER'])->group(function () {
             return view('owner.pages.profile');
         })->name('profile');
         
-        // Property Management Routes
-        // Instead of: Route::resource('properties', PropertyController::class);
-        Route::resource('owner/properties', \App\Http\Controllers\Owner\PropertyController::class);
-        // Explicit property routes:
-        Route::get('/properties', [PropertyController::class, 'index'])->name('properties.index');
-        Route::get('/properties/create', [PropertyController::class, 'create'])->name('properties.create');
-        Route::post('/properties', [PropertyController::class, 'store'])->name('properties.store');
-        Route::get('/properties/{property}', [PropertyController::class, 'show'])->name('properties.show');
-        Route::get('/properties/{property}/edit', [PropertyController::class, 'edit'])->name('properties.edit');
-        Route::put('/properties/{property}', [PropertyController::class, 'update'])->name('properties.update');
-        Route::delete('/properties/{property}', [PropertyController::class, 'destroy'])->name('properties.destroy');
-        // Additional property routes
-        Route::post('/properties/{property}/status', [PropertyController::class, 'updateStatus'])
-            ->name('properties.status');
-        
-        Route::get('/properties/{property}/analytics', [PropertyController::class, 'analytics'])
-            ->name('properties.analytics');
+        // ============ OWNER PROPERTY MANAGEMENT ROUTES ============
+        // Property Management Routes - CORRECTED with proper prefix
+        Route::prefix('properties')->name('properties.')->group(function () {
+            Route::get('/', [PropertyController::class, 'index'])->name('index');
+            Route::get('/create', [PropertyController::class, 'create'])->name('create');
+            Route::post('/', [PropertyController::class, 'store'])->name('store');
+            Route::get('/{property}', [PropertyController::class, 'show'])->name('show');
+            Route::get('/{property}/edit', [PropertyController::class, 'edit'])->name('edit');
+            Route::put('/{property}', [PropertyController::class, 'update'])->name('update');
+            Route::delete('/{property}', [PropertyController::class, 'destroy'])->name('destroy');
+            
+            // Additional property routes
+            Route::post('/{property}/status', [PropertyController::class, 'updateStatus'])
+                ->name('status');
+            
+            Route::get('/{property}/analytics', [PropertyController::class, 'analytics'])
+                ->name('analytics');
+            
+            // Room Management Routes
+            Route::prefix('{property}/rooms')->name('rooms.')->group(function () {
+                Route::get('/create', [RoomController::class, 'create'])->name('create');
+                Route::post('/', [RoomController::class, 'store'])->name('store');
+                Route::get('/{room}/edit', [RoomController::class, 'edit'])->name('edit');
+                Route::put('/{room}', [RoomController::class, 'update'])->name('update');
+                Route::delete('/{room}', [RoomController::class, 'destroy'])->name('destroy');
+                Route::post('/{room}/status', [RoomController::class, 'updateStatus'])->name('status');
+            });
+        });
         
         // Commission API route
-       Route::get('/api/commission-rate/{type}', [App\Http\Controllers\Owner\PropertyController::class, 'getCommissionRate']);
-        // Room Management Routes
-        Route::prefix('properties/{property}/rooms')->name('rooms.')->group(function () {
-            Route::get('/create', [RoomController::class, 'create'])->name('create');
-            Route::post('/', [RoomController::class, 'store'])->name('store');
-            Route::get('/{room}/edit', [RoomController::class, 'edit'])->name('edit');
-            Route::put('/{room}', [RoomController::class, 'update'])->name('update');
-            Route::delete('/{room}', [RoomController::class, 'destroy'])->name('destroy');
-            Route::post('/{room}/status', [RoomController::class, 'updateStatus'])->name('status');
-        });
-        // Rental Routes - FIX THIS SECTION
-        Route::prefix('rental')->name('rental.')->group(function () {
-            Route::get('/search', [RentalController::class, 'search'])->name('search');
-            Route::get('/property/{property}', [RentalController::class, 'show'])->name('property.details');
-            
-            // Apartment Booking - SEPARATE GET and POST routes
-            Route::get('/apartment/{property}/rent', [RentalController::class, 'rentApartment'])->name('apartment.rent');
-            Route::post('/apartment/{property}/book', [BookingController::class, 'storeApartment'])->name('apartment.book');
-            
-            // Room Booking - SEPARATE GET and POST routes  
-            Route::get('/hostel/{property}/room/{room}/book', [RentalController::class, 'bookRoom'])->name('room.book');
-            Route::post('/hostel/{property}/room/{room}/book', [BookingController::class, 'storeRoom'])->name('room.book.submit');
-            
-            // Other routes...
-        });
+        Route::get('/api/commission-rate/{type}', [PropertyController::class, 'getCommissionRate']);
     });
 });
 
@@ -307,6 +294,7 @@ Route::middleware(['auth', 'role:FOOD'])->group(function () {
 // LAUNDRY PROVIDER ROUTES
 Route::middleware(['auth', 'role:LAUNDRY'])->group(function () {
     Route::prefix('laundry-provider')->name('laundry-provider.')->group(function () {
+        // Dashboard
         Route::get('/dashboard', function () {
             return view('dashboard.laundry', ['title' => 'Laundry Provider Dashboard']);
         })->name('dashboard');
@@ -318,10 +306,20 @@ Route::middleware(['auth', 'role:LAUNDRY'])->group(function () {
 // SUPERADMIN ROUTES
 Route::middleware(['auth', 'role:SUPERADMIN'])->group(function () {
     Route::prefix('admin')->name('admin.')->group(function () {
+        // Dashboard
         Route::get('/dashboard', function () {
             return view('dashboard.admin', ['title' => 'SuperAdmin Dashboard']);
         })->name('dashboard');
         
         // Add admin routes here
     });
+});
+
+// ============ FALLBACK FOR MISSING ROUTES ============
+// Add this to prevent RouteNotFoundException
+Route::fallback(function () {
+    if (auth()->check()) {
+        return redirect()->route('dashboard');
+    }
+    return redirect()->route('login');
 });

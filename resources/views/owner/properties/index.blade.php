@@ -1,4 +1,4 @@
-@extends('dashboard')
+@extends('owner.layout.owner-layout')
 
 @section('content')
 <div class="space-y-6">

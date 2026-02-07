@@ -17,9 +17,9 @@ return Application::configure(basePath: dirname(__DIR__))
             
             'throttle' => \Illuminate\Routing\Middleware\ThrottleRequests::class,
             
-            // Your custom middleware
+           
             'role' => \App\Http\Middleware\CheckRole::class,
-            
+            'verified.custom' => \App\Http\Middleware\EnsureEmailIsVerified::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
