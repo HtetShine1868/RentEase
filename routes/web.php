@@ -10,6 +10,7 @@ use App\Http\Controllers\RoomController;
 use App\Http\Controllers\BookingController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\RentalController;
+use App\Http\Controllers\FoodServiceController;
 use App\Http\Controllers\VerificationController;
 use Illuminate\Support\Facades\Route;
 
@@ -119,7 +120,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/bookings/{booking}/check-in', [RentalController::class, 'checkInBooking'])->name('bookings.check-in');
         Route::post('/bookings/{booking}/check-out', [RentalController::class, 'checkOutBooking'])->name('bookings.check-out');
         Route::post('/bookings/extend', [RentalController::class, 'extendBooking'])->name('bookings.extend');
-        
+        Route::get('/bookings/{booking}/manage', [BookingController::class, 'manage'])->name('bookings.manage');
         // Reviews
         Route::post('/reviews', [RentalController::class, 'submitReview'])->name('property-ratings.store');
         
@@ -192,23 +193,38 @@ Route::middleware(['auth', 'role:OWNER'])->group(function () {
             return view('owner.pages.earnings.index');
         })->name('earnings.index');
         
-        // Complaints
-        Route::prefix('complaints')->name('complaints.')->group(function () {
-            Route::get('/', [\App\Http\Controllers\Owner\ComplaintController::class, 'index'])
-                ->name('index');
-            
-            Route::get('/statistics', [\App\Http\Controllers\Owner\ComplaintController::class, 'statistics'])
-                ->name('statistics');
-            
-            Route::get('/{complaint}', [\App\Http\Controllers\Owner\ComplaintController::class, 'show'])
-                ->name('show');
-            
-            Route::post('/{complaint}/reply', [\App\Http\Controllers\Owner\ComplaintController::class, 'reply'])
-                ->name('reply');
-            
-            Route::put('/{complaint}/status', [\App\Http\Controllers\Owner\ComplaintController::class, 'updateStatus'])
-                ->name('update-status');
-        });
+// Complaints
+Route::prefix('complaints')->name('complaints.')->group(function () {
+    Route::get('/', [\App\Http\Controllers\Owner\ComplaintController::class, 'index'])
+        ->name('index');
+    
+    Route::get('/{id}', [\App\Http\Controllers\Owner\ComplaintController::class, 'show'])
+        ->name('show');
+    
+    // Assignment routes
+    Route::post('/{complaint}/assign', [\App\Http\Controllers\Owner\ComplaintController::class, 'assign'])
+        ->name('assign');
+    
+    Route::post('/{complaint}/assign-self', [\App\Http\Controllers\Owner\ComplaintController::class, 'assignToSelf'])
+        ->name('assign-self');
+    
+    // Reply and status update
+    Route::post('/{complaint}/reply', [\App\Http\Controllers\Owner\ComplaintController::class, 'reply'])
+        ->name('reply');
+    
+    Route::put('/{complaint}/status', [\App\Http\Controllers\Owner\ComplaintController::class, 'updateStatus'])
+        ->name('update-status');
+    
+    // Export (if you have this method in controller)
+    Route::get('/export', [\App\Http\Controllers\Owner\ComplaintController::class, 'export'])
+        ->name('export');
+    
+    // Statistics (if you have this method)
+    Route::get('/statistics', [\App\Http\Controllers\Owner\ComplaintController::class, 'statistics'])
+        ->name('statistics');
+     Route::put('/{complaint}', [\App\Http\Controllers\Owner\ComplaintController::class, 'update'])
+        ->name('update');
+});
         
         // Notifications
         Route::get('/notifications', function () {

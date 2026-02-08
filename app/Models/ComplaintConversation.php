@@ -14,32 +14,38 @@ class ComplaintConversation extends Model
         'complaint_id',
         'user_id',
         'message',
-        'sender_type',
-        'sender_name',
-        'sender_role'
+        'type',
+        'attachments',
+        'is_read'
     ];
     
-    /**
-     * Get the complaint
-     */
+    protected $casts = [
+        'attachments' => 'array',
+         'is_read' => 'boolean'
+    ];
+    
     public function complaint(): BelongsTo
     {
         return $this->belongsTo(Complaint::class);
     }
     
-    /**
-     * Get the user who sent the message
-     */
+            public function markAsRead()
+        {
+            $this->update(['is_read' => true]);
+        }
+
+        public function markAsUnread()
+        {
+            $this->update(['is_read' => false]);
+        }
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
     
-    /**
-     * Get attachments
-     */
-    public function attachments(): HasMany
+    public function attachmentFiles(): HasMany
     {
-        return $this->hasMany(ComplaintAttachment::class, 'conversation_id');
+        return $this->hasMany(ComplaintAttachment::class, 'complaint_conversation_id');
     }
+    
 }

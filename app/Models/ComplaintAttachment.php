@@ -4,62 +4,55 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\Storage;
 
 class ComplaintAttachment extends Model
 {
     protected $table = 'complaint_attachments';
     
     protected $fillable = [
+        'complaint_conversation_id',
         'complaint_id',
-        'conversation_id',
-        'file_path',
-        'file_name',
-        'file_type',
-        'file_size',
-        'uploaded_by'
+        'original_name',
+        'path',
+        'mime_type',
+        'size',
+        'disk'
     ];
     
-    /**
-     * Get the complaint
-     */
+    public function conversation(): BelongsTo
+    {
+        return $this->belongsTo(ComplaintConversation::class, 'complaint_conversation_id');
+    }
+    
     public function complaint(): BelongsTo
     {
         return $this->belongsTo(Complaint::class);
     }
     
-    /**
-     * Get the conversation
-     */
-    public function conversation(): BelongsTo
+    public function getUrlAttribute(): string
     {
-        return $this->belongsTo(ComplaintConversation::class);
+        return Storage::disk($this->disk)->url($this->path);
     }
     
-    /**
-     * Get file URL
-     */
-    public function getFileUrlAttribute(): string
+    public function getIsImageAttribute(): bool
     {
-        return asset('storage/' . $this->file_path);
+        return str_starts_with($this->mime_type, 'image/');
     }
     
-    /**
-     * Get file size in human readable format
-     */
-    public function getFormattedSizeAttribute(): string
+    public function getIsPdfAttribute(): bool
     {
-        $bytes = $this->file_size;
-        
-        if ($bytes >= 1073741824) {
-            $bytes = number_format($bytes / 1073741824, 2) . ' GB';
-        } elseif ($bytes >= 1048576) {
-            $bytes = number_format($bytes / 1048576, 2) . ' MB';
-        } elseif ($bytes >= 1024) {
-            $bytes = number_format($bytes / 1024, 2) . ' KB';
-        } else {
-            $bytes = $bytes . ' bytes';
-        }
-        
-        return $bytes;
+        return $this->mime_type === 'application/pdf';
+    }
+    
+    public function getFileIconAttribute(): string
+    {
+        return match(true) {
+            $this->is_image => 'fa-image',
+            $this->is_pdf => 'fa-file-pdf',
+            str_contains($this->mime_type, 'word') => 'fa-file-word',
+            str_contains($this->mime_type, 'excel') => 'fa-file-excel',
+            default => 'fa-file'
+        };
     }
 }

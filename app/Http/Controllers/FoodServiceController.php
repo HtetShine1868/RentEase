@@ -5,52 +5,101 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
+use Carbon\Carbon;
 
 class FoodServiceController extends Controller
 {
-    // Get restaurants with filters
-    public function getRestaurants(Request $request)
+    /**
+     * Display the food services dashboard
+     */
+    public function index()
     {
         $user = Auth::user();
-        $userLocation = $this->getUserLocation($user);
+        
+        // Get statistics
+        $totalOrders = DB::table('food_orders')
+            ->where('user_id', $user->id)
+            ->count();
+            
+        $activeSubscriptions = DB::table('food_subscriptions')
+            ->where('user_id', $user->id)
+            ->where('status', 'ACTIVE')
+            ->count();
+            
+        $pendingOrders = DB::table('food_orders')
+            ->where('user_id', $user->id)
+            ->whereIn('status', ['PENDING', 'ACCEPTED', 'PREPARING'])
+            ->count();
+        
+        // Get recent orders
+        $recentOrders = DB::table('food_orders as fo')
+            ->join('service_providers as sp', 'fo.service_provider_id', '=', 'sp.id')
+            ->join('meal_types as mt', 'fo.meal_type_id', '=', 'mt.id')
+            ->where('fo.user_id', $user->id)
+            ->select('fo.*', 'sp.business_name', 'mt.name as meal_type')
+            ->orderBy('fo.created_at', 'desc')
+            ->limit(5)
+            ->get();
+        
+        // Format dates
+        foreach ($recentOrders as $order) {
+            $order->created_at_formatted = Carbon::parse($order->created_at)->format('M d, Y h:i A');
+        }
+        
+        // Get meal types
+        $mealTypes = DB::table('meal_types')->orderBy('display_order')->get();
+        
+        return view('food.index', [
+            'title' => 'Food Services',
+            'totalOrders' => $totalOrders,
+            'activeSubscriptions' => $activeSubscriptions,
+            'pendingOrders' => $pendingOrders,
+            'recentOrders' => $recentOrders,
+            'mealTypes' => $mealTypes
+        ]);
+    }
+    
+    /**
+     * Display restaurants listing
+     */
+    public function restaurants(Request $request)
+    {
+        $user = Auth::user();
         
         $query = DB::table('service_providers as sp')
             ->leftJoin('food_service_configs as fsc', 'sp.id', '=', 'fsc.service_provider_id')
             ->where('sp.service_type', 'FOOD')
             ->where('sp.status', 'ACTIVE');
         
-        // Search filter
-        if ($request->search) {
-            $search = $request->search;
-            $query->where(function($q) use ($search) {
-                $q->where('sp.business_name', 'LIKE', "%{$search}%")
-                  ->orWhere('sp.description', 'LIKE', "%{$search}%")
-                  ->orWhereExists(function($subquery) use ($search) {
-                      $subquery->select(DB::raw(1))
-                              ->from('food_items')
-                              ->whereColumn('food_items.service_provider_id', 'sp.id')
-                              ->where('food_items.name', 'LIKE', "%{$search}%");
-                  });
+        // Apply search
+        if ($request->has('search') && $request->search) {
+            $query->where(function($q) use ($request) {
+                $q->where('sp.business_name', 'LIKE', '%' . $request->search . '%')
+                  ->orWhere('sp.description', 'LIKE', '%' . $request->search . '%');
             });
         }
         
-        // Meal type filter
-        if ($request->meal_type) {
-            $query->whereExists(function($subquery) use ($request) {
-                $subquery->select(DB::raw(1))
-                        ->from('food_items as fi')
-                        ->whereColumn('fi.service_provider_id', 'sp.id')
-                        ->where('fi.meal_type_id', $request->meal_type)
-                        ->where('fi.is_available', true);
+        // Apply meal type filter
+        if ($request->has('meal_type') && $request->meal_type) {
+            $query->whereExists(function($q) use ($request) {
+                $q->select(DB::raw(1))
+                  ->from('food_items as fi')
+                  ->whereColumn('fi.service_provider_id', 'sp.id')
+                  ->where('fi.meal_type_id', $request->meal_type)
+                  ->where('fi.is_available', true);
             });
         }
         
-        // Calculate distance if user location exists
+        // Get user location
+        $userLocation = $this->getUserLocation($user);
+        
         if ($userLocation['latitude'] && $userLocation['longitude']) {
             $query->selectRaw('
                 sp.*,
                 fsc.opening_time,
                 fsc.closing_time,
+                fsc.supports_subscription,
                 (6371 * acos(cos(radians(?)) * cos(radians(sp.latitude)) * cos(radians(sp.longitude) - radians(?)) + sin(radians(?)) * sin(radians(sp.latitude)))) as distance_km,
                 fsc.avg_preparation_minutes + (fsc.delivery_buffer_minutes * (6371 * acos(cos(radians(?)) * cos(radians(sp.latitude)) * cos(radians(sp.longitude) - radians(?)) + sin(radians(?)) * sin(radians(sp.latitude))))) as estimated_delivery_minutes',
                 [
@@ -59,15 +108,14 @@ class FoodServiceController extends Controller
                 ]
             );
         } else {
-            $query->selectRaw('sp.*, fsc.opening_time, fsc.closing_time, 5.0 as distance_km, 45 as estimated_delivery_minutes');
+            $query->selectRaw('sp.*, fsc.opening_time, fsc.closing_time, fsc.supports_subscription, 5.0 as distance_km, 45 as estimated_delivery_minutes');
         }
         
-        // Sorting
-        switch ($request->sort) {
+        // Apply sorting
+        $sortBy = $request->get('sort', 'rating');
+        switch ($sortBy) {
             case 'distance':
-                if ($userLocation['latitude'] && $userLocation['longitude']) {
-                    $query->orderBy('distance_km');
-                }
+                $query->orderBy('distance_km');
                 break;
             case 'delivery_time':
                 $query->orderBy('estimated_delivery_minutes');
@@ -75,72 +123,75 @@ class FoodServiceController extends Controller
             case 'total_orders':
                 $query->orderByDesc('sp.total_orders');
                 break;
-            case 'rating':
             default:
                 $query->orderByDesc('sp.rating');
         }
         
         $restaurants = $query->paginate(12);
         
-        return response()->json([
+        $mealTypes = DB::table('meal_types')->orderBy('display_order')->get();
+        
+        return view('food.restaurants', [
+            'title' => 'Browse Restaurants',
             'restaurants' => $restaurants,
-            'meal_types' => DB::table('meal_types')->orderBy('display_order')->get()
+            'mealTypes' => $mealTypes,
+            'filters' => $request->only(['search', 'meal_type', 'sort'])
         ]);
     }
     
-    // Get restaurant menu
-    public function getRestaurantMenu($restaurantId)
+    /**
+     * Show a specific restaurant
+     */
+    public function restaurant($id)
     {
         $restaurant = DB::table('service_providers as sp')
             ->leftJoin('food_service_configs as fsc', 'sp.id', '=', 'fsc.service_provider_id')
-            ->where('sp.id', $restaurantId)
+            ->where('sp.id', $id)
             ->where('sp.service_type', 'FOOD')
             ->select('sp.*', 'fsc.*')
             ->first();
             
         if (!$restaurant) {
-            return response()->json(['error' => 'Restaurant not found'], 404);
+            return redirect()->route('food.restaurants')->with('error', 'Restaurant not found.');
         }
         
         $menuItems = DB::table('food_items as fi')
             ->join('meal_types as mt', 'fi.meal_type_id', '=', 'mt.id')
-            ->where('fi.service_provider_id', $restaurantId)
+            ->where('fi.service_provider_id', $id)
             ->where('fi.is_available', true)
             ->select('fi.*', 'mt.name as meal_type_name')
             ->orderBy('mt.display_order')
             ->orderBy('fi.name')
             ->get();
         
-        // Group items by meal type
-        $menuItemsByType = $menuItems->groupBy('meal_type_id');
-        
-        return response()->json([
+        return view('food.restaurant-show', [
+            'title' => $restaurant->business_name,
             'restaurant' => $restaurant,
-            'menu_items' => $menuItems,
-            'menu_by_type' => $menuItemsByType
+            'menuItems' => $menuItems
         ]);
     }
     
-    // Get user's food orders
-    public function getUserOrders(Request $request)
+    /**
+     * Show user's orders
+     */
+    public function orders(Request $request)
     {
         $user = Auth::user();
         
         $query = DB::table('food_orders as fo')
             ->join('service_providers as sp', 'fo.service_provider_id', '=', 'sp.id')
             ->join('meal_types as mt', 'fo.meal_type_id', '=', 'mt.id')
-            ->leftJoin('food_subscriptions as fs', 'fo.subscription_id', '=', 'fs.id')
             ->where('fo.user_id', $user->id);
         
-        if ($request->status) {
+        if ($request->has('status') && $request->status && $request->status != 'all') {
             $query->where('fo.status', $request->status);
         }
         
         $orders = $query->select('fo.*', 'sp.business_name', 'mt.name as meal_type')
-            ->orderByDesc('fo.created_at')
+            ->orderBy('fo.created_at', 'desc')
             ->paginate(10);
         
-        // Get order items for each order
+        // Get order items
         foreach ($orders as $order) {
             $order->items = DB::table('food_order_items as foi')
                 ->join('food_items as fi', 'foi.food_item_id', '=', 'fi.id')
@@ -148,14 +199,54 @@ class FoodServiceController extends Controller
                 ->select('fi.name', 'foi.quantity', 'foi.unit_price')
                 ->get();
             
-            $order->created_at_formatted = \Carbon\Carbon::parse($order->created_at)->format('M d, Y h:i A');
+            $order->created_at_formatted = Carbon::parse($order->created_at)->format('M d, Y h:i A');
         }
         
-        return response()->json(['orders' => $orders]);
+        return view('food.orders', [
+            'title' => 'My Food Orders',
+            'orders' => $orders,
+            'statusFilter' => $request->get('status', 'all')
+        ]);
     }
     
-    // Get user's subscriptions
-    public function getUserSubscriptions()
+    /**
+     * Show order details
+     */
+    public function orderDetails($id)
+    {
+        $user = Auth::user();
+        
+        $order = DB::table('food_orders as fo')
+            ->join('service_providers as sp', 'fo.service_provider_id', '=', 'sp.id')
+            ->join('meal_types as mt', 'fo.meal_type_id', '=', 'mt.id')
+            ->where('fo.id', $id)
+            ->where('fo.user_id', $user->id)
+            ->select('fo.*', 'sp.business_name', 'mt.name as meal_type')
+            ->first();
+            
+        if (!$order) {
+            return redirect()->route('food.orders')->with('error', 'Order not found.');
+        }
+        
+        $orderItems = DB::table('food_order_items as foi')
+            ->join('food_items as fi', 'foi.food_item_id', '=', 'fi.id')
+            ->where('foi.food_order_id', $id)
+            ->select('fi.name', 'foi.quantity', 'foi.unit_price', 'foi.total_price')
+            ->get();
+        
+        $order->created_at_formatted = Carbon::parse($order->created_at)->format('M d, Y h:i A');
+        
+        return view('food.order-show', [
+            'title' => 'Order #' . $order->order_reference,
+            'order' => $order,
+            'orderItems' => $orderItems
+        ]);
+    }
+    
+    /**
+     * Show user's subscriptions
+     */
+    public function subscriptions()
     {
         $user = Auth::user();
         
@@ -164,172 +255,318 @@ class FoodServiceController extends Controller
             ->join('meal_types as mt', 'fs.meal_type_id', '=', 'mt.id')
             ->where('fs.user_id', $user->id)
             ->select('fs.*', 'sp.business_name', 'mt.name as meal_type')
-            ->orderByDesc('fs.created_at')
+            ->orderBy('fs.created_at', 'desc')
             ->get();
         
-        return response()->json(['subscriptions' => $subscriptions]);
+        // Format dates and delivery days
+        $days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+        foreach ($subscriptions as $sub) {
+            $sub->start_date_formatted = Carbon::parse($sub->start_date)->format('M d, Y');
+            $sub->end_date_formatted = Carbon::parse($sub->end_date)->format('M d, Y');
+            
+            // Parse delivery days bitmask
+            $deliveryDays = [];
+            for ($i = 0; $i < 7; $i++) {
+                if ($sub->delivery_days & (1 << $i)) {
+                    $deliveryDays[] = $days[$i];
+                }
+            }
+            $sub->delivery_days_text = implode(', ', $deliveryDays);
+        }
+        
+        return view('food.subscriptions', [
+            'title' => 'My Food Subscriptions',
+            'subscriptions' => $subscriptions
+        ]);
     }
     
-    // Create food order
-    public function createOrder(Request $request)
+    /**
+     * Show create subscription form
+     */
+    public function createSubscription(Request $request)
     {
-        $user = Auth::user();
-        $userLocation = $this->getUserLocation($user);
+        $restaurantId = $request->get('restaurant_id');
         
-        $request->validate([
+        $restaurants = DB::table('service_providers as sp')
+            ->leftJoin('food_service_configs as fsc', 'sp.id', '=', 'fsc.service_provider_id')
+            ->where('sp.service_type', 'FOOD')
+            ->where('sp.status', 'ACTIVE')
+            ->where('fsc.supports_subscription', true)
+            ->select('sp.id', 'sp.business_name')
+            ->get();
+        
+        $mealTypes = DB::table('meal_types')->orderBy('display_order')->get();
+        
+        return view('food.subscription-create', [
+            'title' => 'Create Subscription',
+            'restaurants' => $restaurants,
+            'mealTypes' => $mealTypes,
+            'selectedRestaurantId' => $restaurantId
+        ]);
+    }
+    
+    /**
+     * Store a new subscription
+     */
+    public function storeSubscription(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
             'service_provider_id' => 'required|exists:service_providers,id',
-            'items' => 'required|array|min:1',
-            'items.*.food_item_id' => 'required|exists:food_items,id',
-            'items.*.quantity' => 'required|integer|min:1',
-            'order_type' => 'required|in:PAY_PER_EAT,SUBSCRIPTION_MEAL',
-            'meal_date' => 'required|date|after_or_equal:today',
             'meal_type_id' => 'required|exists:meal_types,id',
-            'delivery_instructions' => 'nullable|string'
+            'start_date' => 'required|date|after_or_equal:today',
+            'end_date' => 'required|date|after:start_date',
+            'delivery_time' => 'required',
+            'delivery_days' => 'required|array|min:1',
         ]);
         
-        DB::beginTransaction();
+        if ($validator->fails()) {
+            return redirect()->back()
+                ->withErrors($validator)
+                ->withInput();
+        }
+        
+        $user = Auth::user();
+        
+        // Calculate delivery days bitmask
+        $deliveryDaysMask = 0;
+        foreach ($request->delivery_days as $dayIndex) {
+            $deliveryDaysMask |= (1 << $dayIndex);
+        }
+        
+        // Get service provider for pricing
+        $serviceProvider = DB::table('service_providers')
+            ->where('id', $request->service_provider_id)
+            ->first();
+            
+        if (!$serviceProvider) {
+            return redirect()->back()->with('error', 'Service provider not found.');
+        }
+        
+        // Calculate total price (simplified - you might want to calculate based on actual menu items)
+        $daysCount = Carbon::parse($request->start_date)->diffInDays(Carbon::parse($request->end_date)) + 1;
+        $deliveryDaysCount = count($request->delivery_days);
+        $weeklyPrice = 500; // Example price
+        $totalPrice = ($daysCount / 7) * $weeklyPrice;
         
         try {
-            // Get service provider
-            $serviceProvider = DB::table('service_providers')
-                ->where('id', $request->service_provider_id)
-                ->where('service_type', 'FOOD')
-                ->first();
+            $subscriptionId = DB::table('food_subscriptions')->insertGetId([
+                'user_id' => $user->id,
+                'service_provider_id' => $request->service_provider_id,
+                'meal_type_id' => $request->meal_type_id,
+                'start_date' => $request->start_date,
+                'end_date' => $request->end_date,
+                'delivery_time' => $request->delivery_time,
+                'delivery_days' => $deliveryDaysMask,
+                'daily_price' => $weeklyPrice / $deliveryDaysCount,
+                'total_price' => $totalPrice,
+                'status' => 'ACTIVE',
+                'created_at' => now(),
+                'updated_at' => now()
+            ]);
+            
+            return redirect()->route('food.subscriptions')
+                ->with('success', 'Subscription created successfully!');
                 
-            if (!$serviceProvider) {
-                throw new \Exception('Service provider not found');
-            }
-            
-            // Calculate distance
-            $distance = $this->calculateDistance(
-                $serviceProvider->latitude,
-                $serviceProvider->longitude,
-                $userLocation['latitude'],
-                $userLocation['longitude']
-            );
-            
-            // Generate order reference
-            $orderReference = 'FOOD-' . strtoupper(uniqid());
-            
+        } catch (\Exception $e) {
+            return redirect()->back()
+                ->with('error', 'Failed to create subscription. Please try again.')
+                ->withInput();
+        }
+    }
+    
+    /**
+     * Place a new food order
+     */
+    public function placeOrder(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'service_provider_id' => 'required|exists:service_providers,id',
+            'items' => 'required|array|min:1',
+            'meal_date' => 'required|date|after_or_equal:today',
+            'meal_type_id' => 'required|exists:meal_types,id',
+        ]);
+        
+        if ($validator->fails()) {
+            return redirect()->back()
+                ->withErrors($validator)
+                ->withInput();
+        }
+        
+        $user = Auth::user();
+        
+        try {
             // Calculate total amount
             $baseAmount = 0;
             $commissionRate = 0;
-            $deliveryFee = $this->calculateDeliveryFee($distance);
             
-            foreach ($request->items as $item) {
-                $foodItem = DB::table('food_items')->where('id', $item['food_item_id'])->first();
-                
-                // Check availability
-                if (!$foodItem->is_available) {
-                    throw new \Exception("{$foodItem->name} is not available");
+            foreach ($request->items as $itemData) {
+                $foodItem = DB::table('food_items')
+                    ->where('id', $itemData['food_item_id'])
+                    ->first();
+                    
+                if (!$foodItem || !$foodItem->is_available) {
+                    return redirect()->back()
+                        ->with('error', "Item {$foodItem->name} is not available.")
+                        ->withInput();
                 }
                 
-                if ($foodItem->daily_quantity && ($foodItem->sold_today + $item['quantity']) > $foodItem->daily_quantity) {
-                    throw new \Exception("Only {$foodItem->daily_quantity -> $foodItem->sold_today} {$foodItem->name} left today");
-                }
+                $baseAmount += $foodItem->base_price * $itemData['quantity'];
                 
-                $baseAmount += $foodItem->base_price * $item['quantity'];
-                
-                // Use the item's commission rate
                 if ($foodItem->commission_rate > $commissionRate) {
                     $commissionRate = $foodItem->commission_rate;
                 }
-                
-                // Update sold count
-                DB::table('food_items')
-                    ->where('id', $foodItem->id)
-                    ->increment('sold_today', $item['quantity']);
             }
             
             $commissionAmount = ($baseAmount * $commissionRate) / 100;
+            $deliveryFee = 20; // Fixed delivery fee for example
             $totalAmount = $baseAmount + $commissionAmount + $deliveryFee;
+            
+            // Generate order reference
+            $orderReference = 'FOOD-' . strtoupper(uniqid());
             
             // Create order
             $orderId = DB::table('food_orders')->insertGetId([
                 'order_reference' => $orderReference,
                 'user_id' => $user->id,
-                'service_provider_id' => $serviceProvider->id,
-                'order_type' => $request->order_type,
+                'service_provider_id' => $request->service_provider_id,
+                'order_type' => 'PAY_PER_EAT',
                 'meal_date' => $request->meal_date,
                 'meal_type_id' => $request->meal_type_id,
-                'delivery_address' => $userLocation['address'] ?? '',
-                'delivery_latitude' => $userLocation['latitude'],
-                'delivery_longitude' => $userLocation['longitude'],
-                'distance_km' => $distance,
-                'delivery_instructions' => $request->delivery_instructions,
-                'estimated_delivery_time' => now()->addMinutes(30 + ($distance * 15)),
                 'base_amount' => $baseAmount,
                 'delivery_fee' => $deliveryFee,
                 'commission_amount' => $commissionAmount,
                 'total_amount' => $totalAmount,
                 'status' => 'PENDING',
+                'estimated_delivery_time' => now()->addMinutes(30),
                 'created_at' => now(),
                 'updated_at' => now()
             ]);
             
             // Create order items
-            foreach ($request->items as $item) {
-                $foodItem = DB::table('food_items')->where('id', $item['food_item_id'])->first();
-                
+            foreach ($request->items as $itemData) {
                 DB::table('food_order_items')->insert([
                     'food_order_id' => $orderId,
-                    'food_item_id' => $item['food_item_id'],
-                    'quantity' => $item['quantity'],
-                    'unit_price' => $foodItem->base_price,
-                    'special_instructions' => $item['special_instructions'] ?? null,
+                    'food_item_id' => $itemData['food_item_id'],
+                    'quantity' => $itemData['quantity'],
+                    'unit_price' => DB::table('food_items')->where('id', $itemData['food_item_id'])->value('base_price'),
                     'created_at' => now()
                 ]);
             }
             
             // Create payment record
-            $paymentReference = 'PAY-' . strtoupper(uniqid());
-            
             DB::table('payments')->insert([
-                'payment_reference' => $paymentReference,
+                'payment_reference' => 'PAY-' . strtoupper(uniqid()),
                 'user_id' => $user->id,
                 'payable_type' => 'FOOD_ORDER',
                 'payable_id' => $orderId,
                 'amount' => $totalAmount,
                 'commission_amount' => $commissionAmount,
-                'payment_method' => 'BANK_TRANSFER',
                 'status' => 'PENDING',
                 'created_at' => now(),
                 'updated_at' => now()
             ]);
             
-            // Send notification
-            DB::table('notifications')->insert([
-                'user_id' => $user->id,
-                'type' => 'ORDER',
-                'title' => 'Food Order Placed',
-                'message' => "Your food order #{$orderReference} has been placed successfully.",
-                'related_entity_type' => 'FOOD_ORDER',
-                'related_entity_id' => $orderId,
-                'created_at' => now()
-            ]);
-            
-            DB::commit();
-            
-            return response()->json([
-                'success' => true,
-                'order_id' => $orderId,
-                'order_reference' => $orderReference,
-                'payment_reference' => $paymentReference
-            ]);
-            
+            return redirect()->route('food.orders')
+                ->with('success', 'Order placed successfully!');
+                
         } catch (\Exception $e) {
-            DB::rollBack();
-            return response()->json([
-                'success' => false,
-                'error' => $e->getMessage()
-            ], 400);
+            return redirect()->back()
+                ->with('error', 'Failed to place order. Please try again.')
+                ->withInput();
         }
     }
     
-    // Helper methods
+    /**
+     * Cancel an order
+     */
+    public function cancelOrder($id)
+    {
+        $user = Auth::user();
+        
+        $order = DB::table('food_orders')
+            ->where('id', $id)
+            ->where('user_id', $user->id)
+            ->first();
+            
+        if (!$order) {
+            return redirect()->back()->with('error', 'Order not found.');
+        }
+        
+        if (!in_array($order->status, ['PENDING', 'ACCEPTED'])) {
+            return redirect()->back()->with('error', 'Cannot cancel order at this stage.');
+        }
+        
+        DB::table('food_orders')
+            ->where('id', $id)
+            ->update([
+                'status' => 'CANCELLED',
+                'updated_at' => now()
+            ]);
+            
+        return redirect()->back()->with('success', 'Order cancelled successfully.');
+    }
+    
+    /**
+     * Pause a subscription
+     */
+    public function pauseSubscription($id)
+    {
+        $user = Auth::user();
+        
+        $subscription = DB::table('food_subscriptions')
+            ->where('id', $id)
+            ->where('user_id', $user->id)
+            ->first();
+            
+        if (!$subscription) {
+            return redirect()->back()->with('error', 'Subscription not found.');
+        }
+        
+        if ($subscription->status !== 'ACTIVE') {
+            return redirect()->back()->with('error', 'Only active subscriptions can be paused.');
+        }
+        
+        DB::table('food_subscriptions')
+            ->where('id', $id)
+            ->update([
+                'status' => 'PAUSED',
+                'updated_at' => now()
+            ]);
+            
+        return redirect()->back()->with('success', 'Subscription paused successfully.');
+    }
+    
+    /**
+     * Cancel a subscription
+     */
+    public function cancelSubscription($id)
+    {
+        $user = Auth::user();
+        
+        $subscription = DB::table('food_subscriptions')
+            ->where('id', $id)
+            ->where('user_id', $user->id)
+            ->first();
+            
+        if (!$subscription) {
+            return redirect()->back()->with('error', 'Subscription not found.');
+        }
+        
+        DB::table('food_subscriptions')
+            ->where('id', $id)
+            ->update([
+                'status' => 'CANCELLED',
+                'updated_at' => now()
+            ]);
+            
+        return redirect()->back()->with('success', 'Subscription cancelled successfully.');
+    }
+    
+    /**
+     * Helper method to get user location
+     */
     private function getUserLocation($user)
     {
-        // Get user's default address or current location
         $address = DB::table('user_addresses')
             ->where('user_id', $user->id)
             ->where('is_default', true)
@@ -337,60 +574,16 @@ class FoodServiceController extends Controller
             
         if ($address) {
             return [
-                'latitude' => $address->latitude,
-                'longitude' => $address->longitude,
-                'address' => "{$address->address_line1}, {$address->city}, {$address->state}"
+                'latitude' => $address->latitude ?? 23.8103,
+                'longitude' => $address->longitude ?? 90.4125,
+                'address' => $address->address_line1 . ', ' . $address->city . ', ' . $address->state
             ];
         }
         
-        // Return default location (could be based on booking location)
-        $booking = DB::table('bookings')
-            ->where('user_id', $user->id)
-            ->whereIn('status', ['CONFIRMED', 'CHECKED_IN'])
-            ->latest()
-            ->first();
-            
-        if ($booking) {
-            $property = DB::table('properties')->where('id', $booking->property_id)->first();
-            if ($property) {
-                return [
-                    'latitude' => $property->latitude,
-                    'longitude' => $property->longitude,
-                    'address' => $property->address
-                ];
-            }
-        }
-        
-        // Default to Dhaka coordinates if nothing found
         return [
             'latitude' => 23.8103,
             'longitude' => 90.4125,
             'address' => 'Dhaka, Bangladesh'
         ];
-    }
-    
-    private function calculateDistance($lat1, $lon1, $lat2, $lon2)
-    {
-        $earthRadius = 6371; // kilometers
-        
-        $dLat = deg2rad($lat2 - $lat1);
-        $dLon = deg2rad($lon2 - $lon1);
-        
-        $a = sin($dLat/2) * sin($dLat/2) +
-             cos(deg2rad($lat1)) * cos(deg2rad($lat2)) *
-             sin($dLon/2) * sin($dLon/2);
-        
-        $c = 2 * atan2(sqrt($a), sqrt(1-$a));
-        
-        return $earthRadius * $c;
-    }
-    
-    private function calculateDeliveryFee($distance)
-    {
-        // Base fee + per km charge
-        $baseFee = 20;
-        $perKmFee = 5;
-        
-        return $baseFee + ($distance * $perKmFee);
     }
 }

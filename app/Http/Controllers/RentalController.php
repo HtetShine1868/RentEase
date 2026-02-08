@@ -556,7 +556,7 @@ class RentalController extends Controller
             ->orderBy('created_at', 'desc')
             ->paginate(15);
         
-        return view('rental.complaints', compact('complaints'));
+        return view('rental.partials.complaint-modal', compact('complaints'));
     }
     
     /**

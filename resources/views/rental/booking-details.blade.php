@@ -8,13 +8,13 @@
     <nav class="bg-white shadow" aria-label="Breadcrumb">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
             <div class="flex items-center space-x-2">
-                <a href="{{ route('rental.search') }}" class="text-sm font-medium text-gray-500 hover:text-gray-700">
+                <a href="{{ route('properties.search') }}" class="text-sm font-medium text-gray-500 hover:text-gray-700">
                     Search
                 </a>
                 <svg class="h-5 w-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
                     <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
                 </svg>
-                <a href="{{ route('rental.my-bookings') }}" 
+                <a href="{{ route('properties.my-bookings') }}" 
                    class="text-sm font-medium text-gray-500 hover:text-gray-700">
                     My Bookings
                 </a>

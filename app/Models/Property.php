@@ -210,4 +210,16 @@ class Property extends Model
             'inactive' => self::where('owner_id', $ownerId)->where('status', 'INACTIVE')->count(),
         ];
     }
+        /**
+     * Get the property ratings for this property
+     */
+    public function propertyRatings()
+    {
+        return $this->hasMany(PropertyRating::class, 'property_id');
+    }
+
+    /**
+     * Alias for propertyRatings (for compatibility)
+     */
+
 }

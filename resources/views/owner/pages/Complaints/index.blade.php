@@ -10,349 +10,197 @@
     @include('owner.components.empty-states')
 
     <!-- Header with Stats -->
-    <div class="bg-white rounded-xl border border-gray-200 p-6">
-        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-            <div>
-                <h1 class="text-2xl font-bold text-gray-900">Complaint Management</h1>
-                <p class="text-gray-600 mt-1">Address and resolve customer complaints efficiently</p>
+<!-- Header with Stats -->
+<div class="bg-white rounded-xl border border-gray-200 p-6">
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900">Complaint Management</h1>
+            <p class="text-gray-600 mt-1">Address and resolve customer complaints efficiently</p>
+        </div>
+        
+        <!-- Quick Stats -->
+        <div class="flex gap-6">
+            <div class="text-center">
+                <p class="text-sm text-gray-500">Total</p>
+                <p class="text-2xl font-bold text-gray-900 mt-1">{{ $stats['total'] }}</p>
             </div>
-            
-            <!-- Quick Stats -->
-            <div class="flex gap-6">
-                <div class="text-center">
-                    <p class="text-sm text-gray-500">Total</p>
-                    <p class="text-2xl font-bold text-gray-900 mt-1">24</p>
-                </div>
-                <div class="text-center">
-                    <p class="text-sm text-gray-500">Pending</p>
-                    <p class="text-2xl font-bold text-yellow-600 mt-1">8</p>
-                </div>
-                <div class="text-center">
-                    <p class="text-sm text-gray-500">Resolved</p>
-                    <p class="text-2xl font-bold text-green-600 mt-1">14</p>
-                </div>
-                <div class="text-center">
-                    <p class="text-sm text-gray-500">Escalated</p>
-                    <p class="text-2xl font-bold text-red-600 mt-1">2</p>
-                </div>
+            <div class="text-center">
+                <p class="text-sm text-gray-500">Open</p>
+                <p class="text-2xl font-bold text-yellow-600 mt-1">{{ $stats['open'] }}</p>
+            </div>
+            <div class="text-center">
+                <p class="text-sm text-gray-500">In Progress</p>
+                <p class="text-2xl font-bold text-blue-600 mt-1">{{ $stats['in_progress'] }}</p>
+            </div>
+            <div class="text-center">
+                <p class="text-sm text-gray-500">High Priority</p>
+                <p class="text-2xl font-bold text-red-600 mt-1">{{ $stats['high_priority'] ?? $stats['high'] ?? 0 }}</p>
             </div>
         </div>
     </div>
-
+</div>
     <!-- Main Content Grid -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <!-- Left Column: Complaint List -->
         <div class="lg:col-span-2">
-            <!-- Filters -->
-            <div class="bg-white rounded-xl border border-gray-200 p-6 mb-6">
-                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
-                    <h2 class="text-lg font-semibold text-gray-900">All Complaints</h2>
-                    
-                    <div class="flex items-center gap-3">
-                        <!-- Filter by Status -->
-                        <div class="flex items-center gap-2">
-                            <span class="text-sm text-gray-600">Filter:</span>
-                            <div class="flex gap-1">
-                                <button class="px-3 py-1.5 text-xs font-medium rounded-lg border border-gray-300 hover:bg-gray-50 bg-white text-gray-700">
-                                    All
-                                </button>
-                                <button class="px-3 py-1.5 text-xs font-medium rounded-lg border border-yellow-300 bg-yellow-50 text-yellow-700">
-                                    Pending
-                                </button>
-                                <button class="px-3 py-1.5 text-xs font-medium rounded-lg border border-gray-300 hover:bg-gray-50 bg-white text-gray-700">
-                                    In Progress
-                                </button>
-                                <button class="px-3 py-1.5 text-xs font-medium rounded-lg border border-gray-300 hover:bg-gray-50 bg-white text-gray-700">
-                                    Resolved
-                                </button>
-                            </div>
-                        </div>
+<!-- Filters -->
+<!-- Left Column: Complaint List -->
+<div class="lg:col-span-2">
+    <!-- Filters -->
+    <div class="bg-white rounded-xl border border-gray-200 p-6 mb-6">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
+            <h2 class="text-lg font-semibold text-gray-900">All Complaints</h2>
+            
+            <div class="flex items-center gap-3">
+                <!-- Filter by Status -->
+                <div class="flex items-center gap-2">
+                    <span class="text-sm text-gray-600">Filter:</span>
+                    <div class="flex gap-1">
+                        @php
+                            $currentStatus = request('status', 'all');
+                        @endphp
                         
-                        <!-- Sort Button -->
-                        <button class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors">
-                            <i class="fas fa-sort-amount-down mr-2"></i> Sort
-                        </button>
+                        <a href="{{ route('owner.complaints.index', ['status' => 'all'] + request()->except(['status', 'page'])) }}" 
+                           class="px-3 py-1.5 text-xs font-medium rounded-lg border {{ $currentStatus == 'all' ? 'border-purple-300 bg-purple-50 text-purple-700' : 'border-gray-300 hover:bg-gray-50 bg-white text-gray-700' }}">
+                            All
+                        </a>
+                        <a href="{{ route('owner.complaints.index', ['status' => 'OPEN'] + request()->except(['status', 'page'])) }}" 
+                           class="px-3 py-1.5 text-xs font-medium rounded-lg border {{ $currentStatus == 'OPEN' ? 'border-yellow-300 bg-yellow-50 text-yellow-700' : 'border-gray-300 hover:bg-gray-50 bg-white text-gray-700' }}">
+                            Open
+                        </a>
+                        <a href="{{ route('owner.complaints.index', ['status' => 'IN_PROGRESS'] + request()->except(['status', 'page'])) }}" 
+                           class="px-3 py-1.5 text-xs font-medium rounded-lg border {{ $currentStatus == 'IN_PROGRESS' ? 'border-blue-300 bg-blue-50 text-blue-700' : 'border-gray-300 hover:bg-gray-50 bg-white text-gray-700' }}">
+                            In Progress
+                        </a>
+                        <a href="{{ route('owner.complaints.index', ['status' => 'RESOLVED'] + request()->except(['status', 'page'])) }}" 
+                           class="px-3 py-1.5 text-xs font-medium rounded-lg border {{ $currentStatus == 'RESOLVED' ? 'border-green-300 bg-green-50 text-green-700' : 'border-gray-300 hover:bg-gray-50 bg-white text-gray-700' }}">
+                            Resolved
+                        </a>
                     </div>
-                </div>
-
-                <!-- Search -->
-                <div class="relative mb-4">
-                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <i class="fas fa-search text-gray-400"></i>
-                    </div>
-                    <input type="search" 
-                           placeholder="Search complaints by user, property, or issue..." 
-                           class="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500">
-                </div>
-
-                <!-- Complaint List -->
-                <div class="space-y-4 max-h-[600px] overflow-y-auto pr-2" id="complaint-list">
-                    <!-- Complaint Item 1 - Pending -->
-                    <div class="bg-white border border-gray-200 rounded-xl p-5 hover:shadow-md transition-all duration-200 cursor-pointer complaint-item"
-                         data-id="1"
-                         onclick="selectComplaint(1)">
-                        <div class="flex items-start justify-between">
-                            <div class="flex-1">
-                                <div class="flex items-center gap-3 mb-3">
-                                    <span class="px-2.5 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800">
-                                        <i class="fas fa-clock mr-1"></i> Pending
-                                    </span>
-                                    <span class="px-2.5 py-1 text-xs font-medium rounded-full bg-red-100 text-red-800">
-                                        <i class="fas fa-exclamation-triangle mr-1"></i> High Priority
-                                    </span>
-                                    <span class="text-xs text-gray-500 ml-auto">
-                                        <i class="far fa-clock mr-1"></i> 2 hours ago
-                                    </span>
-                                </div>
-                                
-                                <h3 class="text-lg font-semibold text-gray-900 mb-2">Water leakage in bathroom</h3>
-                                
-                                <div class="flex items-center gap-4 text-sm text-gray-600 mb-3">
-                                    <span class="flex items-center">
-                                        <i class="fas fa-user mr-2 text-gray-400"></i>
-                                        John Doe • Room 101
-                                    </span>
-                                    <span class="flex items-center">
-                                        <i class="fas fa-building mr-2 text-gray-400"></i>
-                                        City Hostel
-                                    </span>
-                                    <span class="flex items-center">
-                                        <i class="fas fa-calendar-alt mr-2 text-gray-400"></i>
-                                        Complaint #CMP-001
-                                    </span>
-                                </div>
-                                
-                                <p class="text-gray-600 line-clamp-2 mb-3">
-                                    Water is leaking from the ceiling in the bathroom. It's creating a puddle on the floor and the ceiling paint is peeling. Needs immediate attention.
-                                </p>
-                                
-                                <div class="flex items-center justify-between">
-                                    <div class="flex items-center gap-3">
-                                        <div class="flex items-center">
-                                            <div class="w-6 h-6 rounded-full bg-purple-100 flex items-center justify-center mr-2">
-                                                <i class="fas fa-camera text-purple-600 text-xs"></i>
-                                            </div>
-                                            <span class="text-xs text-gray-600">3 photos</span>
-                                        </div>
-                                        <div class="flex items-center">
-                                            <div class="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center mr-2">
-                                                <i class="far fa-comment text-blue-600 text-xs"></i>
-                                            </div>
-                                            <span class="text-xs text-gray-600">2 replies</span>
-                                        </div>
-                                    </div>
-                                    
-                                    <button class="px-3 py-1.5 text-sm font-medium text-purple-700 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors">
-                                        Take Action
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Complaint Item 2 - In Progress -->
-                    <div class="bg-white border border-gray-200 rounded-xl p-5 hover:shadow-md transition-all duration-200 cursor-pointer complaint-item"
-                         data-id="2"
-                         onclick="selectComplaint(2)">
-                        <div class="flex items-start justify-between">
-                            <div class="flex-1">
-                                <div class="flex items-center gap-3 mb-3">
-                                    <span class="px-2.5 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">
-                                        <i class="fas fa-tools mr-1"></i> In Progress
-                                    </span>
-                                    <span class="px-2.5 py-1 text-xs font-medium rounded-full bg-orange-100 text-orange-800">
-                                        <i class="fas fa-exclamation-circle mr-1"></i> Medium Priority
-                                    </span>
-                                    <span class="text-xs text-gray-500 ml-auto">
-                                        <i class="far fa-clock mr-1"></i> 1 day ago
-                                    </span>
-                                </div>
-                                
-                                <h3 class="text-lg font-semibold text-gray-900 mb-2">Air conditioner not working</h3>
-                                
-                                <div class="flex items-center gap-4 text-sm text-gray-600 mb-3">
-                                    <span class="flex items-center">
-                                        <i class="fas fa-user mr-2 text-gray-400"></i>
-                                        Sarah Smith • Unit 302
-                                    </span>
-                                    <span class="flex items-center">
-                                        <i class="fas fa-home mr-2 text-gray-400"></i>
-                                        Sunshine Apartments
-                                    </span>
-                                    <span class="flex items-center">
-                                        <i class="fas fa-calendar-alt mr-2 text-gray-400"></i>
-                                        Complaint #CMP-002
-                                    </span>
-                                </div>
-                                
-                                <p class="text-gray-600 line-clamp-2 mb-3">
-                                    The AC unit in the living room stopped working yesterday. Room temperature is uncomfortable, especially during daytime.
-                                </p>
-                                
-                                <div class="flex items-center justify-between">
-                                    <div class="flex items-center gap-3">
-                                        <div class="flex items-center">
-                                            <div class="w-6 h-6 rounded-full bg-purple-100 flex items-center justify-center mr-2">
-                                                <i class="fas fa-camera text-purple-600 text-xs"></i>
-                                            </div>
-                                            <span class="text-xs text-gray-600">1 photo</span>
-                                        </div>
-                                        <div class="flex items-center">
-                                            <div class="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center mr-2">
-                                                <i class="far fa-comment text-blue-600 text-xs"></i>
-                                            </div>
-                                            <span class="text-xs text-gray-600">4 replies</span>
-                                        </div>
-                                    </div>
-                                    
-                                    <div class="flex items-center gap-2">
-                                        <span class="text-xs text-gray-500">Assigned to:</span>
-                                        <div class="flex items-center">
-                                            <div class="w-6 h-6 rounded-full bg-green-100 flex items-center justify-center mr-1">
-                                                <i class="fas fa-user-cog text-green-600 text-xs"></i>
-                                            </div>
-                                            <span class="text-xs font-medium text-gray-700">Maintenance Team</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Complaint Item 3 - Resolved -->
-                    <div class="bg-white border border-gray-200 rounded-xl p-5 hover:shadow-md transition-all duration-200 cursor-pointer complaint-item"
-                         data-id="3"
-                         onclick="selectComplaint(3)">
-                        <div class="flex items-start justify-between">
-                            <div class="flex-1">
-                                <div class="flex items-center gap-3 mb-3">
-                                    <span class="px-2.5 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
-                                        <i class="fas fa-check-circle mr-1"></i> Resolved
-                                    </span>
-                                    <span class="text-xs text-gray-500 ml-auto">
-                                        <i class="far fa-clock mr-1"></i> 3 days ago
-                                    </span>
-                                </div>
-                                
-                                <h3 class="text-lg font-semibold text-gray-900 mb-2">WiFi connectivity issues</h3>
-                                
-                                <div class="flex items-center gap-4 text-sm text-gray-600 mb-3">
-                                    <span class="flex items-center">
-                                        <i class="fas fa-user mr-2 text-gray-400"></i>
-                                        Mike Johnson • Room 105
-                                    </span>
-                                    <span class="flex items-center">
-                                        <i class="fas fa-bed mr-2 text-gray-400"></i>
-                                        City Hostel
-                                    </span>
-                                    <span class="flex items-center">
-                                        <i class="fas fa-calendar-alt mr-2 text-gray-400"></i>
-                                        Complaint #CMP-003
-                                    </span>
-                                </div>
-                                
-                                <p class="text-gray-600 line-clamp-2 mb-3">
-                                    Internet connection keeps dropping in my room. Unable to attend online classes properly.
-                                </p>
-                                
-                                <div class="flex items-center justify-between">
-                                    <div class="flex items-center gap-3">
-                                        <div class="flex items-center">
-                                            <div class="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center mr-2">
-                                                <i class="far fa-comment text-blue-600 text-xs"></i>
-                                            </div>
-                                            <span class="text-xs text-gray-600">6 replies</span>
-                                        </div>
-                                        <div class="flex items-center text-green-600">
-                                            <i class="fas fa-star text-sm mr-1"></i>
-                                            <span class="text-xs font-medium">4.5/5 Rating</span>
-                                        </div>
-                                    </div>
-                                    
-                                    <button class="px-3 py-1.5 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
-                                        View Resolution
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Complaint Item 4 - Escalated -->
-                    <div class="bg-white border border-gray-200 rounded-xl p-5 hover:shadow-md transition-all duration-200 cursor-pointer complaint-item"
-                         data-id="4"
-                         onclick="selectComplaint(4)">
-                        <div class="flex items-start justify-between">
-                            <div class="flex-1">
-                                <div class="flex items-center gap-3 mb-3">
-                                    <span class="px-2.5 py-1 text-xs font-medium rounded-full bg-red-100 text-red-800">
-                                        <i class="fas fa-flag mr-1"></i> Escalated
-                                    </span>
-                                    <span class="px-2.5 py-1 text-xs font-medium rounded-full bg-red-100 text-red-800">
-                                        <i class="fas fa-exclamation-triangle mr-1"></i> High Priority
-                                    </span>
-                                    <span class="text-xs text-gray-500 ml-auto">
-                                        <i class="far fa-clock mr-1"></i> 5 days ago
-                                    </span>
-                                </div>
-                                
-                                <h3 class="text-lg font-semibold text-gray-900 mb-2">Noise complaint from neighbors</h3>
-                                
-                                <div class="flex items-center gap-4 text-sm text-gray-600 mb-3">
-                                    <span class="flex items-center">
-                                        <i class="fas fa-user mr-2 text-gray-400"></i>
-                                        Emma Wilson • Unit 401
-                                    </span>
-                                    <span class="flex items-center">
-                                        <i class="fas fa-home mr-2 text-gray-400"></i>
-                                        Luxury Villa
-                                    </span>
-                                    <span class="flex items-center">
-                                        <i class="fas fa-calendar-alt mr-2 text-gray-400"></i>
-                                        Complaint #CMP-004
-                                    </span>
-                                </div>
-                                
-                                <p class="text-gray-600 line-clamp-2 mb-3">
-                                    Loud music from adjacent unit every night. Affecting sleep and work. Multiple complaints already made.
-                                </p>
-                                
-                                <div class="flex items-center justify-between">
-                                    <div class="flex items-center gap-3">
-                                        <div class="flex items-center">
-                                            <div class="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center mr-2">
-                                                <i class="far fa-comment text-blue-600 text-xs"></i>
-                                            </div>
-                                            <span class="text-xs text-gray-600">8 replies</span>
-                                        </div>
-                                        <div class="flex items-center text-red-600">
-                                            <i class="fas fa-exclamation-circle text-sm mr-1"></i>
-                                            <span class="text-xs font-medium">Escalated to Admin</span>
-                                        </div>
-                                    </div>
-                                    
-                                    <button class="px-3 py-1.5 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors">
-                                        <i class="fas fa-headset mr-1"></i> Contact Admin
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Load More -->
-                <div class="text-center mt-6 pt-6 border-t border-gray-200">
-                    <button class="px-6 py-2.5 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors">
-                        <i class="fas fa-sync-alt mr-2"></i> Load More Complaints
-                    </button>
                 </div>
             </div>
+        </div>
+
+        <!-- Search Form -->
+        <form method="GET" action="{{ route('owner.complaints.index') }}" class="relative mb-4">
+            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <i class="fas fa-search text-gray-400"></i>
+            </div>
+            <input type="search" 
+                   name="search"
+                   value="{{ request('search') }}"
+                   placeholder="Search complaints by user, property, or issue..." 
+                   class="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500">
+            <button type="submit" class="hidden">Search</button>
+        </form>
+    </div>
+
+    <!-- Complaint List -->
+    <div class="bg-white rounded-xl border border-gray-200 p-6">
+        @if($complaints->count() > 0)
+            <div class="space-y-4 max-h-[600px] overflow-y-auto pr-2" id="complaint-list">
+                @foreach($complaints as $complaint)
+                <div class="bg-white border border-gray-200 rounded-xl p-5 hover:shadow-md transition-all duration-200 cursor-pointer complaint-item"
+                     data-id="{{ $complaint->id }}"
+                     onclick="selectComplaint({{ $complaint->id }})"
+                     id="complaint-{{ $complaint->id }}">
+                    <div class="flex items-start justify-between">
+                        <div class="flex-1">
+                            <div class="flex items-center gap-3 mb-3">
+                                <span class="px-2.5 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800">
+                                    <i class="fas fa-clock mr-1"></i> {{ $complaint->status }}
+                                </span>
+                                <span class="px-2.5 py-1 text-xs font-medium rounded-full bg-red-100 text-red-800">
+                                    <i class="fas fa-exclamation-triangle mr-1"></i> {{ $complaint->priority }}
+                                </span>
+                                <span class="text-xs text-gray-500 ml-auto">
+                                    <i class="far fa-clock mr-1"></i> {{ $complaint->created_at->diffForHumans() }}
+                                </span>
+                            </div>
+                            
+                            <h3 class="text-lg font-semibold text-gray-900 mb-2">{{ $complaint->title }}</h3>
+                            
+                            <div class="flex items-center gap-4 text-sm text-gray-600 mb-3 flex-wrap">
+                                <span class="flex items-center">
+                                    <i class="fas fa-user mr-2 text-gray-400"></i>
+                                    {{ $complaint->user->name ?? 'Unknown User' }}
+                                </span>
+                                <span class="flex items-center">
+                                    <i class="fas {{ $complaint->related_type == 'PROPERTY' ? 'fa-home' : 'fa-store' }} mr-2 text-gray-400"></i>
+                                    {{ $complaint->related_type }} #{{ $complaint->related_id }}
+                                </span>
+                                <span class="flex items-center">
+                                    <i class="fas fa-hashtag mr-2 text-gray-400"></i>
+                                    {{ $complaint->complaint_reference }}
+                                </span>
+                            </div>
+                            
+                            <p class="text-gray-600 line-clamp-2 mb-3">
+                                {{ Str::limit($complaint->description, 150) }}
+                            </p>
+                            
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-3">
+                                    @if($complaint->conversations && $complaint->conversations->count() > 0)
+                                    <div class="flex items-center">
+                                        <div class="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center mr-2">
+                                            <i class="far fa-comment text-blue-600 text-xs"></i>
+                                        </div>
+                                        <span class="text-xs text-gray-600">{{ $complaint->conversations->count() }} replies</span>
+                                    </div>
+                                    @endif
+                                </div>
+                                
+                                @if(!$complaint->assigned_to)
+                                <button onclick="event.stopPropagation(); assignToSelf({{ $complaint->id }})" 
+                                        class="px-3 py-1.5 text-sm font-medium text-purple-700 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors">
+                                    Take Action
+                                </button>
+                                @elseif($complaint->assigned_to == auth()->id())
+                                <span class="px-3 py-1.5 text-sm font-medium text-green-700 bg-green-50 rounded-lg">
+                                    <i class="fas fa-user-check mr-1"></i> Assigned to you
+                                </span>
+                                @else
+                                <span class="px-3 py-1.5 text-sm font-medium text-gray-700 bg-gray-50 rounded-lg">
+                                    <i class="fas fa-user-cog mr-1"></i> {{ $complaint->assignedUser->name ?? 'Assigned' }}
+                                </span>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                @endforeach
+            </div>
+
+            <!-- Pagination -->
+            @if($complaints->hasPages())
+            <div class="mt-6 pt-6 border-t border-gray-200">
+                {{ $complaints->links() }}
+            </div>
+            @endif
+        @else
+            <!-- Empty State -->
+            <div class="text-center py-12">
+                <div class="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <i class="fas fa-comment-slash text-gray-400 text-3xl"></i>
+                </div>
+                <h3 class="text-xl font-semibold text-gray-700 mb-3">No Complaints Found</h3>
+                <p class="text-gray-500 mb-6">There are no complaints matching your criteria</p>
+                <a href="{{ route('owner.complaints.index') }}" 
+                   class="px-6 py-2.5 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition-colors">
+                    <i class="fas fa-sync-alt mr-2"></i> Reset Filters
+                </a>
+            </div>
+        @endif
+    </div>
+</div>
         </div>
 
         <!-- Right Column: Complaint Detail View -->
         <div class="lg:col-span-1">
             <div class="bg-white rounded-xl border border-gray-200 p-6 sticky top-6" id="complaint-detail">
                 <!-- Default State -->
-                <div id="default-detail" class="text-center py-12">
+                <div id="default-detail" class="text-center py-12 {{ $selectedComplaint ? 'hidden' : '' }}">
                     <div class="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
                         <i class="fas fa-comments text-gray-400 text-3xl"></i>
                     </div>
@@ -360,18 +208,19 @@
                     <p class="text-gray-500">Choose a complaint from the list to view details and take action</p>
                 </div>
 
-                <!-- Complaint Detail Content (Hidden by default) -->
-                <div id="detail-content" class="hidden">
+                <!-- Complaint Detail Content -->
+                <div id="detail-content" class="{{ $selectedComplaint ? '' : 'hidden' }}">
+                    @if($selectedComplaint)
                     <!-- Header -->
                     <div class="flex items-center justify-between mb-6 pb-6 border-b border-gray-200">
                         <div>
-                            <h2 class="text-xl font-bold text-gray-900" id="detail-title">Water leakage in bathroom</h2>
+                            <h2 class="text-xl font-bold text-gray-900" id="detail-title">{{ $selectedComplaint->title }}</h2>
                             <div class="flex items-center gap-2 mt-2">
-                                <span class="px-2.5 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800" id="detail-status">
-                                    <i class="fas fa-clock mr-1"></i> Pending
+                                <span class="px-2.5 py-1 text-xs font-medium rounded-full {{ $selectedComplaint->status_badge_class }}" id="detail-status">
+                                    <i class="fas {{ $selectedComplaint->status_icon }} mr-1"></i> {{ $selectedComplaint->status_text }}
                                 </span>
-                                <span class="px-2.5 py-1 text-xs font-medium rounded-full bg-red-100 text-red-800" id="detail-priority">
-                                    <i class="fas fa-exclamation-triangle mr-1"></i> High Priority
+                                <span class="px-2.5 py-1 text-xs font-medium rounded-full {{ $selectedComplaint->priority_badge_class }}" id="detail-priority">
+                                    <i class="fas {{ $selectedComplaint->priority_icon }} mr-1"></i> {{ $selectedComplaint->priority_text }}
                                 </span>
                             </div>
                         </div>
@@ -382,7 +231,7 @@
 
                     <!-- User & Property Info -->
                     <div class="bg-gray-50 rounded-xl p-4 mb-6">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="grid grid-cols-1 gap-4">
                             <!-- User Info -->
                             <div>
                                 <h4 class="text-sm font-medium text-gray-700 mb-2">Complainant</h4>
@@ -391,22 +240,38 @@
                                         <i class="fas fa-user text-purple-600"></i>
                                     </div>
                                     <div>
-                                        <p class="font-medium text-gray-900" id="detail-user">John Doe</p>
-                                        <p class="text-sm text-gray-500" id="detail-room">Room 101</p>
+                                        <p class="font-medium text-gray-900" id="detail-user">{{ $selectedComplaint->user->name }}</p>
+                                        <p class="text-sm text-gray-500" id="detail-user-email">{{ $selectedComplaint->user->email }}</p>
                                     </div>
                                 </div>
                             </div>
                             
-                            <!-- Property Info -->
+                            <!-- Related Entity Info -->
                             <div>
-                                <h4 class="text-sm font-medium text-gray-700 mb-2">Property</h4>
+                                <h4 class="text-sm font-medium text-gray-700 mb-2">
+                                    @if($selectedComplaint->related_type == 'PROPERTY')
+                                        Property
+                                    @elseif($selectedComplaint->related_type == 'SERVICE_PROVIDER')
+                                        Service Provider
+                                    @else
+                                        Related To
+                                    @endif
+                                </h4>
                                 <div class="flex items-center">
-                                    <div class="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center mr-3">
-                                        <i class="fas fa-bed text-blue-600"></i>
+                                    <div class="w-10 h-10 rounded-lg {{ $selectedComplaint->related_type == 'PROPERTY' ? 'bg-blue-100' : 'bg-green-100' }} flex items-center justify-center mr-3">
+                                        <i class="fas {{ $selectedComplaint->related_type == 'PROPERTY' ? ($selectedComplaint->property && $selectedComplaint->property->type == 'HOSTEL' ? 'fa-bed' : 'fa-home') : 'fa-store' }} {{ $selectedComplaint->related_type == 'PROPERTY' ? 'text-blue-600' : 'text-green-600' }}"></i>
                                     </div>
                                     <div>
-                                        <p class="font-medium text-gray-900" id="detail-property">City Hostel</p>
-                                        <p class="text-sm text-gray-500" id="detail-id">Complaint #CMP-001</p>
+                                        <p class="font-medium text-gray-900" id="detail-related">
+                                            @if($selectedComplaint->related_type == 'PROPERTY' && $selectedComplaint->property)
+                                                {{ $selectedComplaint->property->name }}
+                                            @elseif($selectedComplaint->related_type == 'SERVICE_PROVIDER' && $selectedComplaint->serviceProvider)
+                                                {{ $selectedComplaint->serviceProvider->business_name }}
+                                            @else
+                                                {{ $selectedComplaint->related_type }}
+                                            @endif
+                                        </p>
+                                        <p class="text-sm text-gray-500" id="detail-id">{{ $selectedComplaint->complaint_reference }}</p>
                                     </div>
                                 </div>
                             </div>
@@ -415,25 +280,43 @@
                         <!-- Timeline -->
                         <div class="mt-4 pt-4 border-t border-gray-200">
                             <h4 class="text-sm font-medium text-gray-700 mb-3">Timeline</h4>
-                            <div class="space-y-3">
+                            <div class="space-y-3" id="timeline">
+                                <!-- Created -->
                                 <div class="flex items-start">
                                     <div class="flex-shrink-0 w-8 h-8 rounded-full bg-green-100 flex items-center justify-center mr-3">
                                         <i class="fas fa-plus text-green-600 text-xs"></i>
                                     </div>
                                     <div>
                                         <p class="text-sm font-medium text-gray-900">Complaint Filed</p>
-                                        <p class="text-xs text-gray-500">Jan 15, 2024 • 10:30 AM</p>
+                                        <p class="text-xs text-gray-500">{{ $selectedComplaint->created_at->format('M d, Y • h:i A') }}</p>
                                     </div>
                                 </div>
+                                
+                                <!-- Assigned -->
+                                @if($selectedComplaint->assigned_to)
                                 <div class="flex items-start">
                                     <div class="flex-shrink-0 w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center mr-3">
                                         <i class="fas fa-user-cog text-blue-600 text-xs"></i>
                                     </div>
                                     <div>
-                                        <p class="text-sm font-medium text-gray-900">Assigned to Maintenance</p>
-                                        <p class="text-xs text-gray-500">Jan 15, 2024 • 11:15 AM</p>
+                                        <p class="text-sm font-medium text-gray-900">Assigned to {{ $selectedComplaint->assignee->name ?? 'Team Member' }}</p>
+                                        <p class="text-xs text-gray-500">{{ $selectedComplaint->updated_at->format('M d, Y • h:i A') }}</p>
                                     </div>
                                 </div>
+                                @endif
+                                
+                                <!-- Status Updates -->
+                                @foreach($selectedComplaint->statusHistory as $history)
+                                <div class="flex items-start">
+                                    <div class="flex-shrink-0 w-8 h-8 rounded-full bg-yellow-100 flex items-center justify-center mr-3">
+                                        <i class="fas fa-history text-yellow-600 text-xs"></i>
+                                    </div>
+                                    <div>
+                                        <p class="text-sm font-medium text-gray-900">Status changed to {{ $history->status }}</p>
+                                        <p class="text-xs text-gray-500">{{ $history->created_at->format('M d, Y • h:i A') }}</p>
+                                    </div>
+                                </div>
+                                @endforeach
                             </div>
                         </div>
                     </div>
@@ -442,146 +325,135 @@
                     <div class="mb-6">
                         <h4 class="text-sm font-medium text-gray-700 mb-3">Description</h4>
                         <div class="bg-gray-50 rounded-lg p-4">
-                            <p class="text-gray-700" id="detail-description">
-                                Water is leaking from the ceiling in the bathroom. It's creating a puddle on the floor and the ceiling paint is peeling. Needs immediate attention.
-                            </p>
+                            <p class="text-gray-700 whitespace-pre-line" id="detail-description">{{ $selectedComplaint->description }}</p>
                         </div>
                         
                         <!-- Attachments -->
+                        @if($selectedComplaint->attachments && count($selectedComplaint->attachments) > 0)
                         <div class="mt-4">
                             <h5 class="text-sm font-medium text-gray-700 mb-2">Attachments</h5>
                             <div class="grid grid-cols-3 gap-2">
-                                <div class="border border-gray-200 rounded-lg overflow-hidden">
+                                @foreach($selectedComplaint->attachments as $attachment)
+                                <a href="{{ Storage::url($attachment->path) }}" 
+                                   target="_blank"
+                                   class="border border-gray-200 rounded-lg overflow-hidden hover:border-purple-300 transition-colors">
                                     <div class="h-20 bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center">
+                                        @if(in_array(pathinfo($attachment->path, PATHINFO_EXTENSION), ['jpg', 'jpeg', 'png', 'gif']))
                                         <i class="fas fa-image text-blue-400 text-xl"></i>
-                                    </div>
-                                    <div class="p-2">
-                                        <p class="text-xs text-gray-600 truncate">leakage_1.jpg</p>
-                                    </div>
-                                </div>
-                                <div class="border border-gray-200 rounded-lg overflow-hidden">
-                                    <div class="h-20 bg-gradient-to-br from-green-50 to-green-100 flex items-center justify-center">
-                                        <i class="fas fa-image text-green-400 text-xl"></i>
-                                    </div>
-                                    <div class="p-2">
-                                        <p class="text-xs text-gray-600 truncate">damage_2.jpg</p>
-                                    </div>
-                                </div>
-                                <div class="border border-gray-200 rounded-lg overflow-hidden">
-                                    <div class="h-20 bg-gradient-to-br from-purple-50 to-purple-100 flex items-center justify-center">
+                                        @elseif(in_array(pathinfo($attachment->path, PATHINFO_EXTENSION), ['mp4', 'avi', 'mov']))
                                         <i class="fas fa-video text-purple-400 text-xl"></i>
+                                        @else
+                                        <i class="fas fa-file text-gray-400 text-xl"></i>
+                                        @endif
                                     </div>
                                     <div class="p-2">
-                                        <p class="text-xs text-gray-600 truncate">video_1.mp4</p>
+                                        <p class="text-xs text-gray-600 truncate">{{ basename($attachment->path) }}</p>
                                     </div>
-                                </div>
+                                </a>
+                                @endforeach
                             </div>
                         </div>
+                        @endif
                     </div>
 
                     <!-- Conversation Thread -->
                     <div class="mb-6">
                         <h4 class="text-sm font-medium text-gray-700 mb-4">Conversation</h4>
                         <div class="space-y-4 max-h-64 overflow-y-auto pr-2" id="conversation-thread">
-                            <!-- User Message -->
+                            @foreach($selectedComplaint->replies as $reply)
                             <div class="flex items-start gap-3">
-                                <div class="flex-shrink-0 w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center">
-                                    <i class="fas fa-user text-purple-600 text-xs"></i>
+                                <div class="flex-shrink-0 w-8 h-8 rounded-full {{ $reply->user_id == auth()->id() ? 'bg-green-100' : 'bg-purple-100' }} flex items-center justify-center">
+                                    <i class="fas {{ $reply->user_id == auth()->id() ? 'fa-user-tie' : 'fa-user' }} {{ $reply->user_id == auth()->id() ? 'text-green-600' : 'text-purple-600' }} text-xs"></i>
                                 </div>
                                 <div class="flex-1">
-                                    <div class="bg-gray-100 rounded-lg p-3">
-                                        <p class="text-sm text-gray-700">When can this be fixed? It's getting worse.</p>
+                                    <div class="{{ $reply->user_id == auth()->id() ? 'bg-green-50 border border-green-100' : 'bg-gray-100' }} rounded-lg p-3">
+                                        <p class="text-sm text-gray-700 whitespace-pre-line">{{ $reply->message }}</p>
+                                        @if($reply->attachments && count($reply->attachments) > 0)
+                                        <div class="mt-2">
+                                            @foreach($reply->attachments as $attachment)
+                                            <a href="{{ Storage::url($attachment) }}" target="_blank" class="inline-flex items-center text-xs text-blue-600 hover:text-blue-800 mr-3">
+                                                <i class="fas fa-paperclip mr-1"></i> {{ basename($attachment) }}
+                                            </a>
+                                            @endforeach
+                                        </div>
+                                        @endif
                                     </div>
-                                    <p class="text-xs text-gray-500 mt-1">John Doe • 2 hours ago</p>
+                                    <p class="text-xs text-gray-500 mt-1">
+                                        {{ $reply->user->name }} • {{ $reply->created_at->diffForHumans() }}
+                                    </p>
                                 </div>
                             </div>
-                            
-                            <!-- Owner Reply -->
-                            <div class="flex items-start gap-3">
-                                <div class="flex-shrink-0 w-8 h-8 rounded-full bg-green-100 flex items-center justify-center">
-                                    <i class="fas fa-user-tie text-green-600 text-xs"></i>
-                                </div>
-                                <div class="flex-1">
-                                    <div class="bg-green-50 border border-green-100 rounded-lg p-3">
-                                        <p class="text-sm text-gray-700">We've assigned a plumber. They'll visit within 2 hours.</p>
-                                    </div>
-                                    <p class="text-xs text-gray-500 mt-1">You • 1 hour ago</p>
-                                </div>
-                            </div>
-                            
-                            <!-- System Message -->
-                            <div class="flex items-start gap-3">
-                                <div class="flex-shrink-0 w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
-                                    <i class="fas fa-robot text-blue-600 text-xs"></i>
-                                </div>
-                                <div class="flex-1">
-                                    <div class="bg-blue-50 border border-blue-100 rounded-lg p-3">
-                                        <p class="text-sm text-gray-700">Maintenance team has been notified and is on the way.</p>
-                                    </div>
-                                    <p class="text-xs text-gray-500 mt-1">System • 45 minutes ago</p>
-                                </div>
-                            </div>
+                            @endforeach
                         </div>
                     </div>
 
                     <!-- Reply Box -->
                     <div class="border-t border-gray-200 pt-6">
                         <h4 class="text-sm font-medium text-gray-700 mb-3">Reply to Complaint</h4>
-                        <div class="space-y-3">
-                            <textarea id="reply-textarea" 
-                                      rows="3" 
-                                      placeholder="Type your response here..." 
-                                      class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 resize-none"></textarea>
-                            
-                            <div class="flex items-center justify-between">
-                                <div class="flex items-center gap-3">
-                                    <button class="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg">
-                                        <i class="fas fa-paperclip"></i>
-                                    </button>
-                                    <button class="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg">
-                                        <i class="fas fa-image"></i>
-                                    </button>
-                                    <button class="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg">
-                                        <i class="fas fa-smile"></i>
-                                    </button>
+                        <form id="reply-form" method="POST" action="{{ route('owner.complaints.reply', $selectedComplaint->id) }}" enctype="multipart/form-data">
+                            @csrf
+                            <div class="space-y-3">
+                                <textarea id="reply-textarea" 
+                                          name="message"
+                                          rows="3" 
+                                          placeholder="Type your response here..." 
+                                          class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 resize-none"></textarea>
+                                
+                                <!-- Attachment Input -->
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center gap-3">
+                                        <label for="attachment-upload" class="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg cursor-pointer">
+                                            <i class="fas fa-paperclip"></i>
+                                            <input type="file" 
+                                                   id="attachment-upload" 
+                                                   name="attachments[]"
+                                                   multiple
+                                                   class="hidden"
+                                                   onchange="updateAttachmentPreview()">
+                                        </label>
+                                        <div id="attachment-preview" class="text-xs text-gray-500"></div>
+                                    </div>
+                                    
+                                    <div class="flex items-center gap-3">
+                                        <select name="status" 
+                                                id="status-select"
+                                                class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500">
+                                            <option value="">Update Status</option>
+                                            <option value="IN_PROGRESS" {{ $selectedComplaint->status == 'IN_PROGRESS' ? 'selected' : '' }}>Mark as In Progress</option>
+                                            <option value="RESOLVED" {{ $selectedComplaint->status == 'RESOLVED' ? 'selected' : '' }}>Mark as Resolved</option>
+                                            <option value="CLOSED" {{ $selectedComplaint->status == 'CLOSED' ? 'selected' : '' }}>Close Complaint</option>
+                                        </select>
+                                        
+                                        <button type="submit" 
+                                                class="px-4 py-2 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition-colors">
+                                            <i class="fas fa-paper-plane mr-2"></i> Send
+                                        </button>
+                                    </div>
                                 </div>
                                 
-                                <div class="flex items-center gap-3">
-                                    <select class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500">
-                                        <option value="">Update Status</option>
-                                        <option value="in_progress">Mark as In Progress</option>
-                                        <option value="resolved">Mark as Resolved</option>
-                                        <option value="escalated">Escalate to Admin</option>
-                                    </select>
-                                    
-                                    <button onclick="sendReply()" 
-                                            class="px-4 py-2 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition-colors">
-                                        <i class="fas fa-paper-plane mr-2"></i> Send
+                                <!-- Quick Actions -->
+                                <div class="grid grid-cols-2 gap-2 mt-4">
+                                    <button type="button" onclick="useQuickReply('We have assigned our maintenance team. They will contact you shortly.')"
+                                            class="px-3 py-2 text-sm text-left text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
+                                        <i class="fas fa-tools mr-1"></i> Assigned to Maintenance
+                                    </button>
+                                    <button type="button" onclick="useQuickReply('Thank you for reporting. We are looking into this matter.')"
+                                            class="px-3 py-2 text-sm text-left text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
+                                        <i class="fas fa-thumbs-up mr-1"></i> Acknowledged
+                                    </button>
+                                    <button type="button" onclick="useQuickReply('Can you please provide more details about the issue?')"
+                                            class="px-3 py-2 text-sm text-left text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
+                                        <i class="fas fa-question-circle mr-1"></i> Need More Info
+                                    </button>
+                                    <button type="button" onclick="useQuickReply('The issue has been resolved. Please confirm if everything is working now.')"
+                                            class="px-3 py-2 text-sm text-left text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
+                                        <i class="fas fa-check-circle mr-1"></i> Issue Resolved
                                     </button>
                                 </div>
                             </div>
-                            
-                            <!-- Quick Actions -->
-                            <div class="grid grid-cols-2 gap-2 mt-4">
-                                <button onclick="useQuickReply('We have assigned our maintenance team. They will contact you shortly.')"
-                                        class="px-3 py-2 text-sm text-left text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
-                                    <i class="fas fa-tools mr-1"></i> Assigned to Maintenance
-                                </button>
-                                <button onclick="useQuickReply('Thank you for reporting. We are looking into this matter.')"
-                                        class="px-3 py-2 text-sm text-left text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
-                                    <i class="fas fa-thumbs-up mr-1"></i> Acknowledged
-                                </button>
-                                <button onclick="useQuickReply('Can you please provide more details about the issue?')"
-                                        class="px-3 py-2 text-sm text-left text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
-                                    <i class="fas fa-question-circle mr-1"></i> Need More Info
-                                </button>
-                                <button onclick="useQuickReply('The issue has been resolved. Please confirm if everything is working now.')"
-                                        class="px-3 py-2 text-sm text-left text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
-                                    <i class="fas fa-check-circle mr-1"></i> Issue Resolved
-                                </button>
-                            </div>
-                        </div>
+                        </form>
                     </div>
+                    @endif
                 </div>
             </div>
         </div>
@@ -590,170 +462,130 @@
 
 <script>
 // Complaint Management Functions
-let selectedComplaintId = null;
+let selectedComplaintId = {{ $selectedComplaint ? $selectedComplaint->id : 'null' }};
 
 function selectComplaint(complaintId) {
-    selectedComplaintId = complaintId;
-    
-    // Remove active class from all items
-    document.querySelectorAll('.complaint-item').forEach(item => {
-        item.classList.remove('border-purple-500', 'bg-purple-50');
-        item.classList.add('border-gray-200');
-    });
-    
-    // Add active class to selected item
-    const selectedItem = document.querySelector(`.complaint-item[data-id="${complaintId}"]`);
-    if (selectedItem) {
-        selectedItem.classList.remove('border-gray-200');
-        selectedItem.classList.add('border-purple-500', 'bg-purple-50');
-        
-        // Scroll into view if needed
-        selectedItem.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    }
-    
-    // Load complaint details
-    loadComplaintDetails(complaintId);
-}
-
-function loadComplaintDetails(complaintId) {
-    Loading.show('Loading complaint details...');
-    
-    // Hide default, show detail content
-    document.getElementById('default-detail').classList.add('hidden');
-    document.getElementById('detail-content').classList.remove('hidden');
-    
-    // Simulate API call with dummy data
-    setTimeout(() => {
-        // This would be replaced with actual API data
-        const complaints = {
-            1: {
-                title: 'Water leakage in bathroom',
-                status: 'Pending',
-                priority: 'High',
-                user: 'John Doe',
-                room: 'Room 101',
-                property: 'City Hostel',
-                id: 'Complaint #CMP-001',
-                description: 'Water is leaking from the ceiling in the bathroom. It\'s creating a puddle on the floor and the ceiling paint is peeling. Needs immediate attention.'
-            },
-            2: {
-                title: 'Air conditioner not working',
-                status: 'In Progress',
-                priority: 'Medium',
-                user: 'Sarah Smith',
-                room: 'Unit 302',
-                property: 'Sunshine Apartments',
-                id: 'Complaint #CMP-002',
-                description: 'The AC unit in the living room stopped working yesterday. Room temperature is uncomfortable, especially during daytime.'
-            },
-            3: {
-                title: 'WiFi connectivity issues',
-                status: 'Resolved',
-                priority: 'Low',
-                user: 'Mike Johnson',
-                room: 'Room 105',
-                property: 'City Hostel',
-                id: 'Complaint #CMP-003',
-                description: 'Internet connection keeps dropping in my room. Unable to attend online classes properly.'
-            },
-            4: {
-                title: 'Noise complaint from neighbors',
-                status: 'Escalated',
-                priority: 'High',
-                user: 'Emma Wilson',
-                room: 'Unit 401',
-                property: 'Luxury Villa',
-                id: 'Complaint #CMP-004',
-                description: 'Loud music from adjacent unit every night. Affecting sleep and work. Multiple complaints already made.'
-            }
-        };
-        
-        const complaint = complaints[complaintId];
-        
-        if (complaint) {
-            // Update UI with complaint data
-            document.getElementById('detail-title').textContent = complaint.title;
-            document.getElementById('detail-status').innerHTML = `<i class="fas fa-${getStatusIcon(complaint.status)} mr-1"></i> ${complaint.status}`;
-            document.getElementById('detail-status').className = `px-2.5 py-1 text-xs font-medium rounded-full ${getStatusClass(complaint.status)}`;
-            document.getElementById('detail-priority').innerHTML = `<i class="fas fa-exclamation-${complaint.priority === 'High' ? 'triangle' : 'circle'} mr-1"></i> ${complaint.priority} Priority`;
-            document.getElementById('detail-user').textContent = complaint.user;
-            document.getElementById('detail-room').textContent = complaint.room;
-            document.getElementById('detail-property').textContent = complaint.property;
-            document.getElementById('detail-id').textContent = complaint.id;
-            document.getElementById('detail-description').textContent = complaint.description;
-        }
-        
-        Loading.hide();
-        Toast.success('Details Loaded', `Complaint #${complaintId} details loaded successfully.`);
-    }, 800);
+    // Navigate to the complaint detail page
+    window.location.href = `{{ route('owner.complaints.index') }}?complaint=${complaintId}`;
 }
 
 function closeDetail() {
-    selectedComplaintId = null;
-    
-    // Remove active class from all items
-    document.querySelectorAll('.complaint-item').forEach(item => {
-        item.classList.remove('border-purple-500', 'bg-purple-50');
-        item.classList.add('border-gray-200');
-    });
-    
-    // Hide detail, show default
-    document.getElementById('detail-content').classList.add('hidden');
-    document.getElementById('default-detail').classList.remove('hidden');
+    // Navigate back to complaint list
+    window.location.href = `{{ route('owner.complaints.index') }}`;
 }
 
-function sendReply() {
-    const textarea = document.getElementById('reply-textarea');
-    const message = textarea.value.trim();
-    
-    if (!message) {
-        Toast.error('Empty Message', 'Please type a message before sending.');
-        textarea.focus();
+function assignToSelf(complaintId) {
+    if (!confirm('Do you want to assign this complaint to yourself?')) {
         return;
     }
     
-    if (!selectedComplaintId) {
-        Toast.error('No Complaint Selected', 'Please select a complaint first.');
-        return;
-    }
+    Loading.show('Assigning complaint...');
     
-    Loading.show('Sending reply...');
-    
-    // Simulate API call
-    setTimeout(() => {
-        // Add message to conversation thread
-        const thread = document.getElementById('conversation-thread');
-        const newMessage = document.createElement('div');
-        newMessage.className = 'flex items-start gap-3';
-        newMessage.innerHTML = `
-            <div class="flex-shrink-0 w-8 h-8 rounded-full bg-green-100 flex items-center justify-center">
-                <i class="fas fa-user-tie text-green-600 text-xs"></i>
-            </div>
-            <div class="flex-1">
-                <div class="bg-green-50 border border-green-100 rounded-lg p-3">
-                    <p class="text-sm text-gray-700">${message}</p>
-                </div>
-                <p class="text-xs text-gray-500 mt-1">You • Just now</p>
-            </div>
-        `;
-        thread.appendChild(newMessage);
-        
-        // Clear textarea
-        textarea.value = '';
-        
-        // Scroll to bottom
-        thread.scrollTop = thread.scrollHeight;
-        
-        Loading.hide();
-        Toast.success('Reply Sent', 'Your response has been sent successfully.');
-        
-        // Update status if changed
-        const statusSelect = document.querySelector('select');
-        if (statusSelect.value) {
-            updateComplaintStatus(statusSelect.value);
-            statusSelect.value = '';
+    // CORRECTED: Pass the complaintId to the route helper
+fetch(`{{ route('owner.complaints.assign-self', ':id') }}`.replace(':id', complaintId), {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+            'Accept': 'application/json'
+        },
+        body: JSON.stringify({})
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            Toast.success('Success', data.message);
+            setTimeout(() => {
+                window.location.reload();
+            }, 1500);
+        } else {
+            Toast.error('Error', data.message);
+            Loading.hide();
         }
-    }, 1000);
+    })
+    .catch(error => {
+        Toast.error('Error', 'Failed to assign complaint');
+        Loading.hide();
+    });
+}
+// Simple alert-based functions (temporary)
+window.Loading = {
+    show: function() { 
+        console.log('Loading...'); 
+    },
+    hide: function() { 
+        console.log('Loading complete'); 
+    }
+};
+
+window.Toast = {
+    success: function(title, msg) { 
+        alert(title + ': ' + msg); 
+    },
+    error: function(title, msg) { 
+        alert('ERROR: ' + title + ': ' + msg); 
+    }
+};
+function updateComplaintStatus(complaintId, status) {
+    Loading.show('Updating status...');
+    
+    // FIXED: Use direct URL construction
+    fetch(`/owner/complaints/${complaintId}`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+            'Accept': 'application/json'
+        },
+        body: JSON.stringify({
+            status: status
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            Toast.success('Success', 'Status updated successfully');
+            // Update UI
+            updateStatusBadge(complaintId, status);
+        } else {
+            Toast.error('Error', data.message || 'Failed to update status');
+        }
+        Loading.hide();
+    })
+    .catch(error => {
+        Toast.error('Error', 'Failed to update status');
+        Loading.hide();
+    });
+}
+function updateStatusBadge(complaintId, status) {
+    const complaintItem = document.querySelector(`#complaint-${complaintId}`);
+    if (complaintItem) {
+        const statusMap = {
+            'PENDING': { text: 'Pending', icon: 'clock', class: 'bg-yellow-100 text-yellow-800' },
+            'IN_PROGRESS': { text: 'In Progress', icon: 'tools', class: 'bg-blue-100 text-blue-800' },
+            'RESOLVED': { text: 'Resolved', icon: 'check-circle', class: 'bg-green-100 text-green-800' },
+            'CLOSED': { text: 'Closed', icon: 'check-circle', class: 'bg-green-100 text-green-800' }
+        };
+        
+        const newStatus = statusMap[status];
+        if (newStatus) {
+            // Update status badge
+            const statusBadge = complaintItem.querySelector('.bg-yellow-100, .bg-blue-100, .bg-green-100');
+            if (statusBadge) {
+                statusBadge.innerHTML = `<i class="fas ${newStatus.icon} mr-1"></i> ${newStatus.text}`;
+                statusBadge.className = `px-2.5 py-1 text-xs font-medium rounded-full ${newStatus.class}`;
+            }
+            
+            // If also viewing detail, update detail badge
+            if (selectedComplaintId == complaintId) {
+                const detailBadge = document.getElementById('detail-status');
+                if (detailBadge) {
+                    detailBadge.innerHTML = `<i class="fas ${newStatus.icon} mr-1"></i> ${newStatus.text}`;
+                    detailBadge.className = `px-2.5 py-1 text-xs font-medium rounded-full ${newStatus.class}`;
+                }
+            }
+        }
+    }
 }
 
 function useQuickReply(text) {
@@ -762,111 +594,61 @@ function useQuickReply(text) {
     textarea.focus();
 }
 
-function updateComplaintStatus(status) {
-    if (!selectedComplaintId) return;
+function updateAttachmentPreview() {
+    const input = document.getElementById('attachment-upload');
+    const preview = document.getElementById('attachment-preview');
     
-    const statusMap = {
-        'in_progress': { text: 'In Progress', icon: 'tools', class: 'bg-blue-100 text-blue-800' },
-        'resolved': { text: 'Resolved', icon: 'check-circle', class: 'bg-green-100 text-green-800' },
-        'escalated': { text: 'Escalated', icon: 'flag', class: 'bg-red-100 text-red-800' }
-    };
-    
-    const newStatus = statusMap[status];
-    if (newStatus) {
-        // Update detail view
-        const statusBadge = document.getElementById('detail-status');
-        statusBadge.innerHTML = `<i class="fas fa-${newStatus.icon} mr-1"></i> ${newStatus.text}`;
-        statusBadge.className = `px-2.5 py-1 text-xs font-medium rounded-full ${newStatus.class}`;
-        
-        // Update list view
-        const complaintItem = document.querySelector(`.complaint-item[data-id="${selectedComplaintId}"]`);
-        if (complaintItem) {
-            const statusSpan = complaintItem.querySelector('.bg-yellow-100, .bg-blue-100, .bg-green-100, .bg-red-100');
-            if (statusSpan) {
-                statusSpan.innerHTML = `<i class="fas fa-${newStatus.icon} mr-1"></i> ${newStatus.text}`;
-                statusSpan.className = `px-2.5 py-1 text-xs font-medium rounded-full ${newStatus.class}`;
-            }
-        }
-        
-        Toast.success('Status Updated', `Complaint marked as ${newStatus.text.toLowerCase()}.`);
+    if (input.files.length > 0) {
+        preview.textContent = `${input.files.length} file(s) selected`;
+    } else {
+        preview.textContent = '';
     }
 }
 
-// Helper functions
-function getStatusIcon(status) {
-    const icons = {
-        'Pending': 'clock',
-        'In Progress': 'tools',
-        'Resolved': 'check-circle',
-        'Escalated': 'flag'
-    };
-    return icons[status] || 'question-circle';
-}
+// Handle form submission
+document.getElementById('reply-form')?.addEventListener('submit', function(e) {
+    const textarea = document.getElementById('reply-textarea');
+    const message = textarea.value.trim();
+    
+    if (!message) {
+        e.preventDefault();
+        Toast.error('Empty Message', 'Please type a message before sending.');
+        textarea.focus();
+    }
+});
 
-function getStatusClass(status) {
-    const classes = {
-        'Pending': 'bg-yellow-100 text-yellow-800',
-        'In Progress': 'bg-blue-100 text-blue-800',
-        'Resolved': 'bg-green-100 text-green-800',
-        'Escalated': 'bg-red-100 text-red-800'
-    };
-    return classes[status] || 'bg-gray-100 text-gray-800';
-}
+// Handle status change from detail view
+document.getElementById('status-select')?.addEventListener('change', function() {
+    if (this.value && selectedComplaintId) {
+        updateComplaintStatus(selectedComplaintId, this.value);
+        this.value = '';
+    }
+});
+
+// Search functionality
+const searchInput = document.querySelector('input[name="search"]');
+searchInput?.addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+        this.form.submit();
+    }
+});
 
 // Initialize
 document.addEventListener('DOMContentLoaded', function() {
-    // Search functionality
-    const searchInput = document.querySelector('input[type="search"]');
-    searchInput.addEventListener('input', function() {
-        const searchTerm = this.value.toLowerCase();
-        const items = document.querySelectorAll('.complaint-item');
-        
-        items.forEach(item => {
-            const text = item.textContent.toLowerCase();
-            if (text.includes(searchTerm)) {
-                item.classList.remove('hidden');
-            } else {
-                item.classList.add('hidden');
-            }
-        });
-    });
-    
-    // Filter buttons
-    document.querySelectorAll('.flex.gap-1 button').forEach(button => {
-        button.addEventListener('click', function() {
-            // Remove active class from all buttons
-            this.parentNode.querySelectorAll('button').forEach(btn => {
-                btn.classList.remove('border-yellow-300', 'bg-yellow-50', 'text-yellow-700');
-                btn.classList.add('border-gray-300', 'bg-white', 'text-gray-700');
-            });
-            
-            // Add active class to clicked button
-            this.classList.remove('border-gray-300', 'bg-white', 'text-gray-700');
-            this.classList.add('border-yellow-300', 'bg-yellow-50', 'text-yellow-700');
-            
-            // Filter complaints by status
-            const filterText = this.textContent;
-            filterComplaints(filterText);
-        });
-    });
-});
-
-function filterComplaints(filter) {
-    const items = document.querySelectorAll('.complaint-item');
-    
-    items.forEach(item => {
-        if (filter === 'All') {
-            item.classList.remove('hidden');
-        } else {
-            const status = item.querySelector('.px-2\\.5')?.textContent || '';
-            if (status.includes(filter)) {
-                item.classList.remove('hidden');
-            } else {
-                item.classList.add('hidden');
-            }
+    // Highlight selected complaint in list
+    if (selectedComplaintId) {
+        const selectedItem = document.querySelector(`#complaint-${selectedComplaintId}`);
+        if (selectedItem) {
+            selectedItem.classList.add('border-purple-500', 'bg-purple-50');
+            selectedItem.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }
-    });
-}
+    }
+    
+    // Auto-focus search if there's a search term
+    if (searchInput && searchInput.value) {
+        searchInput.focus();
+    }
+});
 </script>
 
 <style>
@@ -979,6 +761,33 @@ textarea:focus {
 
 .bg-green-100 {
     border-left: 3px solid #22c55e;
+}
+
+/* Loading overlay */
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.9);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+}
+
+.loading-spinner {
+    width: 50px;
+    height: 50px;
+    border: 3px solid #e5e7eb;
+    border-top-color: #8b5cf6;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
 }
 </style>
 @endsection
