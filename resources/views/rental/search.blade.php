@@ -16,7 +16,7 @@
         <!-- Search & Filters -->
         <div class="bg-white rounded-lg shadow p-6 mb-6">
             <!-- Search Bar -->
-            <form method="GET" action="{{ route('rental.search') }}" class="mb-6">
+            <form method="GET" action="{{ route('properties.search') }}" class="mb-6">
                 <div class="relative">
                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                         <svg class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -35,7 +35,7 @@
             </form>
 
             <!-- Filters -->
-            <form method="GET" action="{{ route('rental.search') }}" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
+            <form method="GET" action="{{ route('properties.search') }}" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
                 
                 <!-- Property Type -->
                 <div>
@@ -105,7 +105,7 @@
                         </a>
                     @endif
                     <div class="space-x-2">
-                        <a href="{{ route('rental.search') }}" 
+                        <a href="{{ route('properties.search') }}" 
                            class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50">
                             Reset
                         </a>
@@ -317,7 +317,7 @@
 
                                     <!-- Actions -->
                                     <div class="flex justify-between items-center pt-3 border-t border-gray-100">
-                                        <a href="{{ route('rental.property.details', $property) }}" 
+                                        <a href="{{ route('properties.show', $property) }}" 
                                            class="inline-flex items-center text-indigo-600 hover:text-indigo-500 font-medium text-sm">
                                             View Details
                                             <svg class="h-4 w-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -326,7 +326,7 @@
                                         </a>
                                         
                                         @if($property->type === 'APARTMENT')
-                                            <a href="{{ route('rental.apartment.rent', $property) }}" 
+                                            <a href="{{ route('properties.rent', $property) }}" 
                                                class="inline-flex items-center px-3 py-1 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">
                                                 Rent Now
                                             </a>
@@ -365,7 +365,7 @@
                             @endif
                         </p>
                         @if(request()->anyFilled(['search', 'type', 'min_price', 'max_price', 'city', 'gender_policy']))
-                            <a href="{{ route('rental.search') }}" 
+                            <a href="{{ route('properties.search') }}" 
                                class="mt-6 inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700">
                                 Clear all filters
                             </a>

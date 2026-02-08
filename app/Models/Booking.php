@@ -43,6 +43,21 @@ class Booking extends Model
     {
         return $this->belongsTo(Property::class);
     }
+        /**
+     * Get the property rating for this booking
+     */
+    public function propertyRating()
+    {
+        return $this->hasOne(PropertyRating::class, 'booking_id');
+    }
+
+    /**
+     * Get all property ratings (if multiple were possible)
+     */
+    public function propertyRatings()
+    {
+        return $this->hasMany(PropertyRating::class, 'booking_id');
+    }
 
     public function room()
     {

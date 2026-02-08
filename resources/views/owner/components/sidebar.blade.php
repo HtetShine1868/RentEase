@@ -1,488 +1,187 @@
-<aside id="owner-sidebar" 
-       x-data="{
-           sidebarOpen: false,
-           mobileOpen: false,
-           activeMenu: @php
-               if (request()->routeIs('owner.dashboard')) {
-                   echo "'dashboard'";
-               } elseif (request()->routeIs('owner.properties.*')) {
-                   echo "'properties'";
-               } elseif (request()->routeIs('owner.bookings.*')) {
-                   echo "'bookings'";
-               } elseif (request()->routeIs('owner.earnings.*')) {
-                   echo "'earnings'";
-               } elseif (request()->routeIs('owner.complaints.*')) {
-                   echo "'complaints'";
-               } else {
-                   echo "''";
-               }
-           @endphp,
-           stats: {
-               activeProperties: 8,
-               monthlyEarnings: 2450,
-               pendingBookings: 4,
-               notifications: 5,
-               complaints: 3
-           },
-           init() {
-               // Set active menu based on current route using Blade
-               this.setActiveMenuFromPath();
-               
-               // Listen for route changes
-               window.addEventListener('popstate', () => {
-                   this.setActiveMenuFromPath();
-               });
-           },
-           setActiveMenuFromPath() {
-               const path = window.location.pathname;
-               
-               // Check for patterns
-               if (path.includes('/owner/properties')) {
-                   this.activeMenu = 'properties';
-               } else if (path.includes('/owner/bookings')) {
-                   this.activeMenu = 'bookings';
-               } else if (path.includes('/owner/earnings')) {
-                   this.activeMenu = 'earnings';
-               } else if (path.includes('/owner/complaints')) {
-                   this.activeMenu = 'complaints';
-               } else if (path.includes('/owner/dashboard') || path === '/owner' || path === '/owner/') {
-                   this.activeMenu = 'dashboard';
-               }
-           },
-           loadStats() {
-               // Fetch real stats from API
-               fetch('/api/owner/stats')
-                   .then(response => response.json())
-                   .then(data => this.stats = data);
-           },
-           toggleSidebar() {
-               this.sidebarOpen = !this.sidebarOpen;
-               localStorage.setItem('sidebarCollapsed', this.sidebarOpen);
-           },
-           isActive(menu) {
-               return this.activeMenu === menu;
-           }
-       }"
-       :class="{ 
-           '-translate-x-full md:translate-x-0': !mobileOpen,
-           'translate-x-0': mobileOpen,
-           'w-20 md:w-20': sidebarOpen && window.innerWidth >= 768,
-           'w-64 md:w-72': !sidebarOpen || window.innerWidth < 768
-       }"
-       class="bg-gradient-to-b from-gray-900 via-gray-900 to-gray-800 text-white flex-shrink-0 transform transition-all duration-300 z-50 fixed md:relative h-screen overflow-y-auto shadow-2xl"
-       style="scrollbar-width: thin; scrollbar-color: #4b5563 #1f2937;">
-    
-    <!-- Animated Background -->
-    <div class="absolute inset-0 bg-gradient-to-br from-blue-900/10 to-purple-900/10 pointer-events-none"></div>
-    
-    <!-- Sidebar Content -->
-    <div class="relative z-10">
-        <!-- Sidebar Header with Toggle -->
-        <div class="p-6 border-b border-gray-800/50">
-            <div class="flex items-center justify-between">
-                <div class="flex items-center space-x-3 transition-all duration-300" :class="{ 'justify-center': sidebarOpen && window.innerWidth >= 768 }">
-                    <div class="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-lg group hover:shadow-blue-500/25 transition-all duration-300">
-                        <i class="fas fa-home text-white text-lg group-hover:scale-110 transition-transform"></i>
-                    </div>
-                    <div x-show="!sidebarOpen || window.innerWidth < 768" x-transition:enter="transition ease-out duration-300" 
-                         x-transition:enter-start="opacity-0 transform -translate-x-4" 
-                         x-transition:enter-end="opacity-100 transform translate-x-0">
-                        <h2 class="text-xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">RentEase</h2>
-                        <p class="text-gray-400 text-sm flex items-center">
-                            <span class="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse"></span>
-                            Owner Dashboard
-                        </p>
-                    </div>
-                </div>
-                
-                <!-- Desktop Toggle Button -->
-                <button @click="toggleSidebar()" 
-                        x-show="window.innerWidth >= 768 && !sidebarOpen" 
-                        class="hidden md:flex items-center justify-center w-8 h-8 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-400 hover:text-white transition-all duration-200 group"
-                        x-transition:enter="transition ease-out duration-300"
-                        x-transition:leave="transition ease-in duration-200">
-                    <i class="fas fa-chevron-left text-sm group-hover:scale-110"></i>
-                </button>
-                
-                <!-- Mobile Close Button -->
-                <button @click="mobileOpen = false" 
-                        x-show="mobileOpen" 
-                        class="md:hidden flex items-center justify-center w-8 h-8 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-400 hover:text-white transition-all">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            
-            <!-- Collapsed Logo -->
-            <div x-show="sidebarOpen && window.innerWidth >= 768" 
-                 x-transition:enter="transition ease-out duration-300"
-                 x-transition:enter-start="opacity-0 scale-90"
-                 x-transition:enter-end="opacity-100 scale-100"
-                 class="mt-4 flex justify-center">
-                <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-lg">
+<aside id="owner-sidebar" class="bg-gradient-to-b from-gray-900 to-gray-800 text-white w-64 md:w-72 flex-shrink-0 transform -translate-x-full md:translate-x-0 transition-all duration-300 z-40 fixed md:relative h-screen overflow-y-auto shadow-xl">
+    <!-- Sidebar Header with Logo and Close Button -->
+    <div class="p-6 border-b border-gray-700 bg-gray-900 relative">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-3 group flex-1">
+                <div class="w-12 h-12 rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 flex items-center justify-center shadow-lg group-hover:from-blue-600 group-hover:to-blue-700 transition-all duration-300">
                     <i class="fas fa-home text-white text-xl"></i>
                 </div>
+                <div class="flex-1">
+                    <h2 class="text-xl font-bold bg-gradient-to-r from-blue-400 to-blue-300 bg-clip-text text-transparent">RentEase</h2>
+                    <p class="text-gray-400 text-sm flex items-center">
+                        <span class="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse"></span>
+                        Owner Dashboard
+                    </p>
+                </div>
+            </div>
+            
+            <!-- Close button for desktop -->
+            <button id="sidebar-close-desktop" class="hidden md:flex items-center justify-center w-8 h-8 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-400 hover:text-white transition-all duration-200 ml-2" title="Collapse sidebar">
+                <i class="fas fa-chevron-left text-sm"></i>
+            </button>
+            
+            <!-- Close button for mobile -->
+            <button id="sidebar-close-mobile" class="md:hidden flex items-center justify-center w-8 h-8 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-400 hover:text-white transition-all duration-200 ml-2" title="Close sidebar">
+                <i class="fas fa-times text-sm"></i>
+            </button>
+        </div>
+    </div>
+    
+    <!-- User Profile Quick Info -->
+    <div class="px-6 py-4 border-b border-gray-700 bg-gray-850">
+        <div class="flex items-center space-x-3">
+            <div class="relative">
+                <div class="w-10 h-10 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center overflow-hidden shadow-md">
+                    <i class="fas fa-user text-white"></i>
+                </div>
+                <div class="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-gray-900"></div>
+            </div>
+            <div class="flex-1 min-w-0">
+                <p class="font-medium truncate">{{ Auth::user()->name ?? 'Owner' }}</p>
+                <p class="text-xs text-gray-400 truncate">{{ Auth::user()->email ?? 'owner@rentease.com' }}</p>
             </div>
         </div>
-        
-        <!-- User Profile (Expanded only) -->
-        <div x-show="!sidebarOpen || window.innerWidth < 768" 
-             x-transition:enter="transition ease-out duration-300"
-             x-transition:leave="transition ease-in duration-200"
-             class="p-4 border-b border-gray-800/50">
-            <div class="flex items-center space-x-3 group cursor-pointer">
-                <div class="relative">
-                    <div class="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center shadow-lg group-hover:shadow-blue-500/25 transition-all">
-                        <i class="fas fa-user text-white"></i>
-                    </div>
-                    <div class="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-gray-900"></div>
-                </div>
-                <div class="flex-1 min-w-0">
-                    <p class="font-medium truncate text-sm">{{ Auth::user()->name ?? 'Owner' }}</p>
-                    <p class="text-xs text-gray-400 truncate">Property Manager</p>
-                </div>
-                <i class="fas fa-chevron-right text-gray-500 text-xs group-hover:text-white transition-colors"></i>
-            </div>
-        </div>
-        
-        <!-- Navigation Menu -->
-        <div class="p-4 sidebar-menu">
+    </div>
+    
+    <!-- Navigation Menu -->
+    <div class="p-4 sidebar-menu">
+        <div class="mb-6">
+            <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 px-3">MAIN NAVIGATION</h3>
             <ul class="space-y-1">
-                <!-- Dashboard -->
                 <li>
                     <a href="{{ route('owner.dashboard') }}" 
-                       @click="activeMenu = 'dashboard'; mobileOpen = false"
-                       :class="{
-                           'bg-gradient-to-r from-blue-900/50 to-purple-900/30 border-l-4 border-blue-500 shadow-lg': isActive('dashboard'),
-                           'hover:bg-gray-800/50': !isActive('dashboard')
-                       }"
-                       class="flex items-center p-3 rounded-xl transition-all duration-200 group">
-                        <div class="relative">
-                            <i class="fas fa-tachometer-alt w-6 mr-3 text-gray-400 group-hover:text-blue-400 transition-colors duration-200"
-                               :class="{ 'text-blue-400': isActive('dashboard') }"></i>
-                            <div x-show="isActive('dashboard')" 
-                                 class="absolute -inset-1 bg-blue-500/20 blur-md rounded-full"></div>
+                       class="flex items-center p-3 rounded-xl hover:bg-gray-800 transition-all duration-200 group {{ request()->routeIs('owner.dashboard') ? 'bg-gray-800 shadow-md border-l-4 border-blue-500' : '' }} hover:shadow-md hover:-translate-y-0.5">
+                        <div class="w-9 h-9 rounded-lg bg-gradient-to-r from-blue-500/20 to-blue-600/20 flex items-center justify-center mr-3 group-hover:from-blue-500/30 group-hover:to-blue-600/30 transition-all">
+                            <i class="fas fa-tachometer-alt text-blue-400 group-hover:text-blue-300 {{ request()->routeIs('owner.dashboard') ? 'text-blue-300' : '' }}"></i>
                         </div>
-                        <span x-show="!sidebarOpen || window.innerWidth < 768" 
-                              x-transition:enter="transition ease-out duration-300"
-                              x-transition:enter-start="opacity-0 -translate-x-4"
-                              x-transition:enter-end="opacity-100 translate-x-0"
-                              class="font-medium"
-                              :class="{ 'text-white': isActive('dashboard'), 'text-gray-300': !isActive('dashboard') }">
-                            Dashboard
-                        </span>
+                        <span class="font-medium">Dashboard</span>
+                        <div class="ml-auto">
+                            <div class="w-2 h-2 rounded-full bg-blue-500 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                        </div>
                     </a>
                 </li>
                 
-                <!-- My Properties -->
                 <li>
                     <a href="{{ route('owner.properties.index') }}" 
-                       @click="activeMenu = 'properties'; mobileOpen = false"
-                       :class="{
-                           'bg-gradient-to-r from-blue-900/50 to-purple-900/30 border-l-4 border-blue-500 shadow-lg': isActive('properties'),
-                           'hover:bg-gray-800/50': !isActive('properties')
-                       }"
-                       class="flex items-center p-3 rounded-xl transition-all duration-200 group">
-                        <div class="relative">
-                            <i class="fas fa-building w-6 mr-3 text-gray-400 group-hover:text-green-400 transition-colors duration-200"
-                               :class="{ 'text-green-400': isActive('properties') }"></i>
-                            <div x-show="isActive('properties')" 
-                                 class="absolute -inset-1 bg-green-500/20 blur-md rounded-full"></div>
+                       class="flex items-center p-3 rounded-xl hover:bg-gray-800 transition-all duration-200 group {{ request()->routeIs('owner.properties.*') ? 'bg-gray-800 shadow-md border-l-4 border-green-500' : '' }} hover:shadow-md hover:-translate-y-0.5">
+                        <div class="w-9 h-9 rounded-lg bg-gradient-to-r from-green-500/20 to-emerald-600/20 flex items-center justify-center mr-3 group-hover:from-green-500/30 group-hover:to-emerald-600/30 transition-all">
+                            <i class="fas fa-building text-green-400 group-hover:text-green-300 {{ request()->routeIs('owner.properties.*') ? 'text-green-300' : '' }}"></i>
                         </div>
-                        <span x-show="!sidebarOpen || window.innerWidth < 768" 
-                              x-transition:enter="transition ease-out duration-300"
-                              class="font-medium flex-1"
-                              :class="{ 'text-white': isActive('properties'), 'text-gray-300': !isActive('properties') }">
-                            My Properties
-                        </span>
-                        <span x-show="(!sidebarOpen || window.innerWidth < 768) && stats.activeProperties > 0"
-                              class="ml-auto bg-gradient-to-r from-green-500 to-emerald-600 text-xs px-2 py-1 rounded-full font-bold shadow-lg">
-                            <span x-text="stats.activeProperties"></span>
+                        <span class="font-medium">My Properties</span>
+                        <span class="ml-auto bg-green-500/20 text-green-400 text-xs px-2 py-1 rounded-lg font-medium">
+                            {{ $propertiesCount ?? '8' }}
                         </span>
                     </a>
                 </li>
                 
-                <!-- Bookings -->
                 <li>
                     <a href="{{ route('owner.bookings.index') }}" 
-                       @click="activeMenu = 'bookings'; mobileOpen = false"
-                       :class="{
-                           'bg-gradient-to-r from-blue-900/50 to-purple-900/30 border-l-4 border-blue-500 shadow-lg': isActive('bookings'),
-                           'hover:bg-gray-800/50': !isActive('bookings')
-                       }"
-                       class="flex items-center p-3 rounded-xl transition-all duration-200 group">
-                        <div class="relative">
-                            <i class="fas fa-calendar-check w-6 mr-3 text-gray-400 group-hover:text-yellow-400 transition-colors duration-200"
-                               :class="{ 'text-yellow-400': isActive('bookings') }"></i>
-                            <div x-show="isActive('bookings')" 
-                                 class="absolute -inset-1 bg-yellow-500/20 blur-md rounded-full"></div>
+                       class="flex items-center p-3 rounded-xl hover:bg-gray-800 transition-all duration-200 group {{ request()->routeIs('owner.bookings.*') ? 'bg-gray-800 shadow-md border-l-4 border-yellow-500' : '' }} hover:shadow-md hover:-translate-y-0.5">
+                        <div class="w-9 h-9 rounded-lg bg-gradient-to-r from-yellow-500/20 to-amber-600/20 flex items-center justify-center mr-3 group-hover:from-yellow-500/30 group-hover:to-amber-600/30 transition-all">
+                            <i class="fas fa-calendar-check text-yellow-400 group-hover:text-yellow-300 {{ request()->routeIs('owner.bookings.*') ? 'text-yellow-300' : '' }}"></i>
                         </div>
-                        <span x-show="!sidebarOpen || window.innerWidth < 768" 
-                              x-transition:enter="transition ease-out duration-300"
-                              class="font-medium flex-1"
-                              :class="{ 'text-white': isActive('bookings'), 'text-gray-300': !isActive('bookings') }">
-                            Bookings
-                        </span>
-                        <span x-show="(!sidebarOpen || window.innerWidth < 768) && stats.pendingBookings > 0"
-                              class="ml-auto bg-gradient-to-r from-yellow-500 to-amber-600 text-xs px-2 py-1 rounded-full font-bold shadow-lg">
-                                <span x-show="(!sidebarOpen || window.innerWidth < 768) && stats.pendingBookings > 0"
-                                    class="ml-auto bg-gradient-to-r from-yellow-500 to-amber-600 text-xs px-2 py-1 rounded-full font-bold shadow-lg">
-                                    <span x-text="stats.pendingBookings"></span>
-                                </span>
+                        <span class="font-medium">Bookings</span>
+                        <span class="ml-auto flex items-center">
+                            <span class="bg-yellow-500 text-white text-xs px-2 py-1 rounded-lg font-medium mr-2 shadow-sm">
+                                {{ $pendingBookings ?? '12' }}
+                            </span>
+                            <i class="fas fa-chevron-right text-xs text-gray-500 opacity-0 group-hover:opacity-100 transition-opacity"></i>
                         </span>
                     </a>
                 </li>
                 
-                <!-- Earnings -->
-                <li>
-                    <a href="{{ route('owner.earnings.index') }}" 
-                       @click="activeMenu = 'earnings'; mobileOpen = false"
-                       :class="{
-                           'bg-gradient-to-r from-blue-900/50 to-purple-900/30 border-l-4 border-blue-500 shadow-lg': isActive('earnings'),
-                           'hover:bg-gray-800/50': !isActive('earnings')
-                       }"
-                       class="flex items-center p-3 rounded-xl transition-all duration-200 group">
-                        <div class="relative">
-                            <i class="fas fa-chart-line w-6 mr-3 text-gray-400 group-hover:text-emerald-400 transition-colors duration-200"
-                               :class="{ 'text-emerald-400': isActive('earnings') }"></i>
-                            <div x-show="isActive('earnings')" 
-                                 class="absolute -inset-1 bg-emerald-500/20 blur-md rounded-full"></div>
-                        </div>
-                        <span x-show="!sidebarOpen || window.innerWidth < 768" 
-                              x-transition:enter="transition ease-out duration-300"
-                              class="font-medium flex-1"
-                              :class="{ 'text-white': isActive('earnings'), 'text-gray-300': !isActive('earnings') }">
-                            Earnings
-                        </span>
-                        <span x-show="!sidebarOpen || window.innerWidth < 768"
-                              class="ml-auto text-xs px-2 py-1 rounded-full font-bold bg-gradient-to-r from-emerald-500 to-green-600 shadow-lg">
-                          $<span x-text="stats.monthlyEarnings"></span>
-                        </span>
-                    </a>
-                </li>
-                
-                <!-- Complaints -->
                 <li>
                     <a href="{{ route('owner.complaints.index') }}" 
-                       @click="activeMenu = 'complaints'; mobileOpen = false"
-                       :class="{
-                           'bg-gradient-to-r from-blue-900/50 to-purple-900/30 border-l-4 border-blue-500 shadow-lg': isActive('complaints'),
-                           'hover:bg-gray-800/50': !isActive('complaints')
-                       }"
-                       class="flex items-center p-3 rounded-xl transition-all duration-200 group">
-                        <div class="relative">
-                            <i class="fas fa-exclamation-circle w-6 mr-3 text-gray-400 group-hover:text-red-400 transition-colors duration-200"
-                               :class="{ 'text-red-400': isActive('complaints') }"></i>
-                            <div x-show="isActive('complaints')" 
-                                 class="absolute -inset-1 bg-red-500/20 blur-md rounded-full"></div>
+                       class="flex items-center p-3 rounded-xl hover:bg-gray-800 transition-all duration-200 group {{ request()->routeIs('owner.complaints.*') ? 'bg-gray-800 shadow-md border-l-4 border-red-500' : '' }} hover:shadow-md hover:-translate-y-0.5">
+                        <div class="w-9 h-9 rounded-lg bg-gradient-to-r from-red-500/20 to-rose-600/20 flex items-center justify-center mr-3 group-hover:from-red-500/30 group-hover:to-rose-600/30 transition-all">
+                            <i class="fas fa-exclamation-circle text-red-400 group-hover:text-red-300 {{ request()->routeIs('owner.complaints.*') ? 'text-red-300' : '' }}"></i>
                         </div>
-                        <span x-show="!sidebarOpen || window.innerWidth < 768" 
-                              x-transition:enter="transition ease-out duration-300"
-                              class="font-medium flex-1"
-                              :class="{ 'text-white': isActive('complaints'), 'text-gray-300': !isActive('complaints') }">
-                            Complaints
-                        </span>
-                        <span x-show="(!sidebarOpen || window.innerWidth < 768) && stats.complaints > 0"
-                              class="ml-auto bg-gradient-to-r from-red-500 to-pink-600 text-xs px-2 py-1 rounded-full font-bold shadow-lg">
-                            <span x-text="stats.complaints"></span>
+                        <span class="font-medium">Complaints</span>
+                        <span class="ml-auto bg-red-500 text-white text-xs px-2 py-1 rounded-lg font-medium shadow-sm animate-pulse">
+                            {{ $pendingComplaints ?? '3' }}
                         </span>
                     </a>
                 </li>
                 
-                <!-- Notifications -->
                 <li>
                     <a href="{{ route('owner.notifications') }}" 
-                       @click="mobileOpen = false"
-                       class="flex items-center p-3 rounded-xl hover:bg-gray-800/50 transition-all duration-200 group">
-                        <div class="relative">
-                            <i class="fas fa-bell w-6 mr-3 text-gray-400 group-hover:text-purple-400 transition-colors duration-200"></i>
-                            <div x-show="stats.notifications > 0" 
-                                 class="absolute -top-1 -right-1 w-5 h-5 bg-gradient-to-r from-purple-500 to-pink-600 rounded-full flex items-center justify-center text-xs animate-pulse">
-                                <span x-text="stats.notifications"></span>
-                            </div>
+                       class="flex items-center p-3 rounded-xl hover:bg-gray-800 transition-all duration-200 group hover:shadow-md hover:-translate-y-0.5">
+                        <div class="w-9 h-9 rounded-lg bg-gradient-to-r from-indigo-500/20 to-violet-600/20 flex items-center justify-center mr-3 group-hover:from-indigo-500/30 group-hover:to-violet-600/30 transition-all">
+                            <i class="fas fa-bell text-indigo-400 group-hover:text-indigo-300"></i>
                         </div>
-                        <span x-show="!sidebarOpen || window.innerWidth < 768" 
-                              x-transition:enter="transition ease-out duration-300"
-                              class="font-medium text-gray-300">
-                            Notifications
-                        </span>
-                        <span x-show="(!sidebarOpen || window.innerWidth < 768) && stats.notifications > 0"
-                              class="ml-auto bg-gradient-to-r from-purple-500 to-pink-600 text-xs px-2 py-1 rounded-full font-bold shadow-lg animate-pulse">
-                            <span x-text="stats.notifications"></span>
+                        <span class="font-medium">Notifications</span>
+                        <span class="ml-auto bg-yellow-500 text-white text-xs px-2 py-1 rounded-lg font-medium shadow-sm">
+                            {{ $unreadNotifications ?? '5' }}
                         </span>
                     </a>
                 </li>
-        
             </ul>
-            
-            <!-- Statistics Card -->
-            <div x-show="!sidebarOpen || window.innerWidth < 768" 
-                 x-transition:enter="transition ease-out duration-300"
-                 x-transition:enter-start="opacity-0 translate-y-4"
-                 x-transition:enter-end="opacity-100 translate-y-0"
-                 class="mt-8 p-4 bg-gradient-to-br from-gray-800/80 to-gray-900/80 backdrop-blur-sm rounded-2xl border border-gray-700/50 shadow-2xl">
-                <div class="flex items-center justify-between mb-4">
-                    <h3 class="text-sm font-semibold text-gray-300 flex items-center">
-                        <i class="fas fa-chart-bar mr-2 text-blue-400"></i>
-                        QUICK STATS
-                    </h3>
-                    <button @click="loadStats()" 
-                            class="text-gray-400 hover:text-white transition-colors"
-                            title="Refresh stats">
-                        <i class="fas fa-sync-alt text-xs"></i>
-                    </button>
-                </div>
-                <div class="space-y-3">
-                    <!-- Active Properties -->
-                    <div class="flex justify-between items-center group cursor-pointer" 
-                         @click="activeMenu = 'properties'; window.location.href = '{{ route('owner.properties.index') }}'">
-                        <div class="flex items-center">
-                            <div class="w-2 h-2 rounded-full bg-blue-500 mr-2 group-hover:animate-pulse"></div>
-                            <span class="text-gray-300 group-hover:text-white transition-colors">Active Properties</span>
-                        </div>
-                        <span class="font-bold text-blue-400 group-hover:scale-110 transition-transform">
-                            <span x-text="stats.activeProperties"></span>
-                        </span>
-                    </div>
-                    
-                    <!-- Monthly Earnings -->
-                    <div class="flex justify-between items-center group cursor-pointer"
-                         @click="activeMenu = 'earnings'; window.location.href = '{{ route('owner.earnings.index') }}'">
-                        <div class="flex items-center">
-                            <div class="w-2 h-2 rounded-full bg-green-500 mr-2 group-hover:animate-pulse"></div>
-                            <span class="text-gray-300 group-hover:text-white transition-colors">Monthly Earnings</span>
-                        </div>
-                        <span class="font-bold text-green-400 group-hover:scale-110 transition-transform">
-                            $<span x-text="stats.monthlyEarnings"></span>
-                        </span>
-                    </div>
-                    
-                    <!-- Pending Bookings -->
-                    <div class="flex justify-between items-center group cursor-pointer"
-                         @click="activeMenu = 'bookings'; window.location.href = '{{ route('owner.bookings.index') }}'">
-                        <div class="flex items-center">
-                            <div class="w-2 h-2 rounded-full bg-yellow-500 mr-2 group-hover:animate-pulse"></div>
-                            <span class="text-gray-300 group-hover:text-white transition-colors">Pending Bookings</span>
-                        </div>
-                        <span class="font-bold text-yellow-400 group-hover:scale-110 transition-transform">
-                           <span x-text="stats.pendingBookings"></span>
-                        </span>
-                    </div>
-                    
-                    <!-- Occupancy Rate -->
-                    <div class="flex justify-between items-center">
-                        <div class="flex items-center">
-                            <div class="w-2 h-2 rounded-full bg-purple-500 mr-2"></div>
-                            <span class="text-gray-300">Occupancy Rate</span>
-                        </div>
-                        <div class="flex items-center">
-                            <div class="w-16 h-2 bg-gray-700 rounded-full overflow-hidden mr-2">
-                                <div class="h-full bg-gradient-to-r from-purple-500 to-pink-500 rounded-full" style="width: 83%"></div>
-                            </div>
-                            <span class="font-bold text-purple-400">83%</span>
-                        </div>
-                    </div>
-                </div>
+        </div>
+        
+        <!-- Quick Actions -->
+        <div class="mb-6">
+            <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 px-3">QUICK ACTIONS</h3>
+            <div class="grid grid-cols-2 gap-2">
+                <button onclick="window.location.href='{{ route('owner.properties.create') }}'" 
+                        class="p-3 bg-gradient-to-r from-blue-600 to-blue-700 rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5 group">
+                    <i class="fas fa-plus text-white text-sm mb-1 block"></i>
+                    <span class="text-xs font-medium">Add Property</span>
+                </button>
+                <button onclick="window.location.href='{{ route('owner.bookings.index') }}'" 
+                        class="p-3 bg-gradient-to-r from-green-600 to-emerald-700 rounded-lg hover:from-green-700 hover:to-emerald-800 transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5 group">
+                    <i class="fas fa-calendar-plus text-white text-sm mb-1 block"></i>
+                    <span class="text-xs font-medium">New Booking</span>
+                </button>
             </div>
-            
-            <!-- Logout Button -->
-            <div class="mt-6 pt-4 border-t border-gray-800/50">
-                <a href="#" 
-                   onclick="event.preventDefault(); document.getElementById('logout-form').submit();" 
-                   class="flex items-center p-3 rounded-xl hover:bg-gradient-to-r from-red-900/30 to-pink-900/20 transition-all duration-200 group">
-                    <div class="relative">
-                        <i class="fas fa-sign-out-alt w-6 mr-3 text-red-400 group-hover:text-red-300 transition-colors duration-200"></i>
-                        <div class="absolute -inset-1 bg-red-500/10 blur-md rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                    </div>
-                    <span x-show="!sidebarOpen || window.innerWidth < 768" 
-                          x-transition:enter="transition ease-out duration-300"
-                          class="font-medium text-red-400 group-hover:text-red-300 transition-colors">
-                        Logout
-                    </span>
-                </a>
+        </div>
+        
+        <!-- Logout Button -->
+        <div class="mt-auto">
+            <a href="#" onclick="event.preventDefault(); document.getElementById('logout-form').submit();" 
+               class="flex items-center justify-center p-3 rounded-xl bg-gradient-to-r from-gray-800 to-gray-850 hover:from-red-900/30 hover:to-red-800/30 border border-gray-700 hover:border-red-700 transition-all duration-200 group">
+                <div class="w-9 h-9 rounded-lg bg-red-500/10 flex items-center justify-center mr-3 group-hover:bg-red-500/20">
+                    <i class="fas fa-sign-out-alt text-red-400 group-hover:text-red-300"></i>
+                </div>
+                <span class="font-medium text-gray-300 group-hover:text-red-300">Logout</span>
                 <form id="logout-form" action="{{ route('logout') }}" method="POST" class="hidden">
                     @csrf
                 </form>
-            </div>
+            </a>
         </div>
     </div>
 </aside>
 
 <!-- Mobile Sidebar Overlay -->
-<div id="sidebar-overlay" 
-     x-show="mobileOpen"
-     @click="mobileOpen = false"
-     class="fixed inset-0 bg-black bg-opacity-70 backdrop-blur-sm z-40 md:hidden transition-opacity duration-300"
-     x-transition:enter="transition ease-out duration-300"
-     x-transition:enter-start="opacity-0"
-     x-transition:enter-end="opacity-100"
-     x-transition:leave="transition ease-in duration-200"
-     x-transition:leave-start="opacity-100"
-     x-transition:leave-end="opacity-0"
-     style="display: none;"></div>
+<div id="sidebar-overlay" class="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm z-30 md:hidden transition-opacity duration-300" onclick="toggleSidebar()" style="display: none;"></div>
 
-<!-- Add Alpine.js CDN if not already included -->
-<script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+<!-- Hamburger Button for Mobile - FIXED POSITION -->
+<button id="hamburger-button" 
+        class="md:hidden fixed top-4 left-4 z-50 w-10 h-10 rounded-lg bg-gray-900 text-white flex items-center justify-center shadow-lg hover:bg-gray-800 transition-all duration-200"
+        aria-label="Toggle sidebar"
+        style="display: none;">
+    <i class="fas fa-bars text-lg"></i>
+</button>
 
-<script>
-    // Initialize sidebar state from localStorage
-    document.addEventListener('DOMContentLoaded', function() {
-        const sidebarCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
-        const sidebarElement = document.querySelector('#owner-sidebar');
-        if (sidebarElement && sidebarElement.__x) {
-            const app = sidebarElement.__x;
-            if (window.innerWidth >= 768) {
-                app.$data.sidebarOpen = sidebarCollapsed;
-            }
-        }
-        
-        // Add resize listener
-        window.addEventListener('resize', function() {
-            const sidebarElement = document.querySelector('#owner-sidebar');
-            if (sidebarElement && sidebarElement.__x) {
-                const app = sidebarElement.__x;
-                if (window.innerWidth < 768) {
-                    app.$data.sidebarOpen = false;
-                }
-            }
-        });
-        
-        // Close mobile sidebar on navigation
-        document.querySelectorAll('#owner-sidebar a').forEach(link => {
-            link.addEventListener('click', function() {
-                if (window.innerWidth < 768) {
-                    const sidebarElement = document.querySelector('#owner-sidebar');
-                    if (sidebarElement && sidebarElement.__x) {
-                        const app = sidebarElement.__x;
-                        app.$data.mobileOpen = false;
-                    }
-                }
-            });
-        });
-    });
-    
-    // Function to toggle sidebar (call from header)
-    function toggleOwnerSidebar() {
-        const sidebarElement = document.querySelector('#owner-sidebar');
-        if (sidebarElement && sidebarElement.__x) {
-            const app = sidebarElement.__x;
-            if (window.innerWidth < 768) {
-                app.$data.mobileOpen = !app.$data.mobileOpen;
-            } else {
-                app.$data.sidebarOpen = !app.$data.sidebarOpen;
-                localStorage.setItem('sidebarCollapsed', app.$data.sidebarOpen);
-            }
-        }
-    }
-</script>
+<!-- Expand/Collapse Button for Desktop (when sidebar is collapsed) -->
+<button id="expand-sidebar-desktop" 
+        class="hidden fixed top-4 left-4 z-50 w-10 h-10 rounded-lg bg-gray-900 text-white flex items-center justify-center shadow-lg hover:bg-gray-800 transition-all duration-200"
+        aria-label="Expand sidebar"
+        style="display: none;">
+    <i class="fas fa-bars text-lg"></i>
+</button>
 
 <style>
-    /* Custom scrollbar */
+    #owner-sidebar {
+        scrollbar-width: thin;
+        scrollbar-color: #4b5563 #1f2937;
+    }
+    
     #owner-sidebar::-webkit-scrollbar {
         width: 6px;
     }
     
     #owner-sidebar::-webkit-scrollbar-track {
-        background: rgba(31, 41, 55, 0.5);
+        background: #1f2937;
         border-radius: 3px;
     }
     
@@ -495,27 +194,337 @@
         background: linear-gradient(to bottom, #2563eb, #7c3aed);
     }
     
-    /* Glow effects */
-    .glow {
-        box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
+    .sidebar-menu li a {
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     }
     
-    /* Smooth transitions */
-    .transition-all {
-        transition-property: all;
-        transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-    }
-    
-    /* Hover effects */
-    .hover-lift:hover {
+    .sidebar-menu li a:hover {
         transform: translateY(-2px);
     }
     
-    /* Gradient text */
-    .gradient-text {
-        background: linear-gradient(to right, #60a5fa, #a78bfa);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
+    /* Glow effect for active items */
+    .sidebar-menu li a.bg-gray-800 {
+        box-shadow: 0 4px 20px -2px rgba(59, 130, 246, 0.2);
+    }
+    
+    /* Collapsed sidebar state */
+    #owner-sidebar.collapsed {
+        width: 0;
+        padding: 0;
+        overflow: hidden;
+        transition: all 0.3s ease;
+    }
+    
+    #owner-sidebar.collapsed .sidebar-menu,
+    #owner-sidebar.collapsed .border-b {
+        display: none;
+    }
+    
+    #owner-sidebar.collapsed .p-6 {
+        padding: 1rem;
+    }
+    
+    #owner-sidebar.collapsed .w-12 {
+        width: 2.5rem;
+        height: 2.5rem;
+    }
+    
+    /* FIX: Prevent hamburger button overlapping with sidebar */
+    #hamburger-button, #expand-sidebar-desktop {
+        z-index: 1000; /* Very high z-index */
+    }
+    
+    /* When sidebar is open, move hamburger button to the right side */
+    #owner-sidebar:not(.-translate-x-full) ~ #hamburger-button {
+        left: calc(16rem + 1rem) !important; /* Move to right of sidebar */
+        transition: left 0.3s ease;
+    }
+    
+    /* FIX: Ensure main content doesn't overlap with hamburger */
+    @media (max-width: 767px) {
+        /* Add padding to main content to avoid hamburger overlap */
+        main, .main-content {
+            padding-top: 4rem !important;
+        }
+        
+        /* Adjust header if you have one */
+        header {
+            padding-left: 4rem !important;
+        }
+    }
+    
+    /* Desktop collapsed state adjustments */
+    @media (min-width: 768px) {
+        #owner-sidebar.collapsed ~ main,
+        #owner-sidebar.collapsed ~ .main-content {
+            margin-left: 0;
+        }
+        
+        #owner-sidebar:not(.collapsed) ~ main,
+        #owner-sidebar:not(.collapsed) ~ .main-content {
+            margin-left: 0;
+        }
+    }
+</style>
+
+<script>
+    // Store sidebar state
+    let sidebarState = {
+        isMobile: window.innerWidth < 768,
+        isOpen: false,
+        isCollapsed: false
+    };
+    
+    // Enhanced mobile sidebar toggle with animation
+    function toggleSidebar() {
+        const sidebar = document.getElementById('owner-sidebar');
+        const overlay = document.getElementById('sidebar-overlay');
+        const hamburger = document.getElementById('hamburger-button');
+        
+        if (sidebar.classList.contains('-translate-x-full')) {
+            // Opening sidebar
+            sidebar.classList.remove('-translate-x-full');
+            sidebar.classList.add('translate-x-0', 'shadow-2xl');
+            overlay.style.display = 'block';
+            setTimeout(() => overlay.style.opacity = '1', 10);
+            
+            // Update state
+            sidebarState.isOpen = true;
+            
+            // Move hamburger to right side of sidebar
+            hamburger.style.left = 'calc(16rem + 1rem)';
+            
+        } else {
+            // Closing sidebar
+            sidebar.classList.add('-translate-x-full');
+            sidebar.classList.remove('translate-x-0', 'shadow-2xl');
+            overlay.style.opacity = '0';
+            
+            // Update state
+            sidebarState.isOpen = false;
+            
+            setTimeout(() => {
+                overlay.style.display = 'none';
+                // Move hamburger back to left
+                hamburger.style.left = '1rem';
+            }, 300);
+        }
+    }
+    
+    // Collapse/Expand sidebar on desktop
+    function toggleDesktopSidebar() {
+        const sidebar = document.getElementById('owner-sidebar');
+        const closeBtn = document.getElementById('sidebar-close-desktop');
+        const expandBtn = document.getElementById('expand-sidebar-desktop');
+        
+        if (sidebar.classList.contains('collapsed')) {
+            // Expand sidebar
+            sidebar.classList.remove('collapsed', 'w-0');
+            sidebar.classList.add('w-64', 'md:w-72');
+            closeBtn.innerHTML = '<i class="fas fa-chevron-left text-sm"></i>';
+            expandBtn.style.display = 'none';
+            sidebarState.isCollapsed = false;
+        } else {
+            // Collapse sidebar
+            sidebar.classList.add('collapsed', 'w-0');
+            sidebar.classList.remove('w-64', 'md:w-72');
+            closeBtn.innerHTML = '<i class="fas fa-chevron-right text-sm"></i>';
+            expandBtn.style.display = 'flex';
+            sidebarState.isCollapsed = true;
+        }
+    }
+    
+    // Initialize everything when DOM is loaded
+    document.addEventListener('DOMContentLoaded', function() {
+        const sidebar = document.getElementById('owner-sidebar');
+        const overlay = document.getElementById('sidebar-overlay');
+        const hamburger = document.getElementById('hamburger-button');
+        const closeMobile = document.getElementById('sidebar-close-mobile');
+        const closeDesktop = document.getElementById('sidebar-close-desktop');
+        const expandDesktop = document.getElementById('expand-sidebar-desktop');
+        
+        // Show hamburger button on mobile
+        if (window.innerWidth < 768) {
+            hamburger.style.display = 'flex';
+            sidebarState.isMobile = true;
+        } else {
+            hamburger.style.display = 'none';
+            sidebarState.isMobile = false;
+        }
+        
+        // Hamburger button click (mobile)
+        hamburger.addEventListener('click', function(e) {
+            e.stopPropagation();
+            e.preventDefault();
+            toggleSidebar();
+        });
+        
+        // Mobile close button
+        closeMobile.addEventListener('click', function(e) {
+            e.stopPropagation();
+            e.preventDefault();
+            toggleSidebar();
+        });
+        
+        // Desktop close button
+        closeDesktop.addEventListener('click', function(e) {
+            e.stopPropagation();
+            e.preventDefault();
+            toggleDesktopSidebar();
+        });
+        
+        // Desktop expand button
+        expandDesktop.addEventListener('click', function(e) {
+            e.stopPropagation();
+            e.preventDefault();
+            toggleDesktopSidebar();
+        });
+        
+        // Close sidebar when clicking overlay
+        overlay.addEventListener('click', function(e) {
+            e.stopPropagation();
+            if (window.innerWidth < 768 && sidebarState.isOpen) {
+                toggleSidebar();
+            }
+        });
+        
+        // Add keyboard shortcut (Ctrl + B) to toggle sidebar
+        document.addEventListener('keydown', function(event) {
+            if ((event.ctrlKey || event.metaKey) && event.key === 'b') {
+                event.preventDefault();
+                if (window.innerWidth < 768) {
+                    toggleSidebar();
+                } else {
+                    toggleDesktopSidebar();
+                }
+            }
+            
+            // Escape key to close sidebar
+            if (event.key === 'Escape') {
+                if (window.innerWidth < 768 && sidebarState.isOpen) {
+                    toggleSidebar();
+                }
+            }
+        });
+        
+        // Auto-hide sidebar on mobile when clicking a link (except logout)
+        document.querySelectorAll('#owner-sidebar a:not([href="#"])').forEach(link => {
+            link.addEventListener('click', function(e) {
+                if (window.innerWidth < 768 && sidebarState.isOpen) {
+                    // Small delay to allow navigation
+                    setTimeout(() => {
+                        toggleSidebar();
+                    }, 100);
+                }
+            });
+        });
+        
+        // Handle window resize
+        let resizeTimeout;
+        window.addEventListener('resize', function() {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(function() {
+                const isMobileNow = window.innerWidth < 768;
+                
+                if (isMobileNow && !sidebarState.isMobile) {
+                    // Switched to mobile
+                    hamburger.style.display = 'flex';
+                    sidebarState.isMobile = true;
+                    
+                    // Ensure sidebar is closed on mobile
+                    if (!sidebar.classList.contains('-translate-x-full')) {
+                        sidebar.classList.add('-translate-x-full');
+                        sidebar.classList.remove('translate-x-0');
+                        overlay.style.display = 'none';
+                        hamburger.style.left = '1rem';
+                        sidebarState.isOpen = false;
+                    }
+                    
+                } else if (!isMobileNow && sidebarState.isMobile) {
+                    // Switched to desktop
+                    hamburger.style.display = 'none';
+                    sidebarState.isMobile = false;
+                    
+                    // Ensure sidebar is visible on desktop
+                    sidebar.classList.remove('-translate-x-full');
+                    sidebar.classList.add('translate-x-0');
+                    overlay.style.display = 'none';
+                    
+                    // Handle collapsed state
+                    if (sidebarState.isCollapsed) {
+                        expandDesktop.style.display = 'flex';
+                    }
+                }
+            }, 100);
+        });
+        
+        // Add ripple effect to buttons
+        function addRippleEffect(element, e) {
+            const ripple = document.createElement('span');
+            const rect = element.getBoundingClientRect();
+            const size = Math.max(rect.width, rect.height);
+            const x = e.clientX - rect.left - size / 2;
+            const y = e.clientY - rect.top - size / 2;
+            
+            ripple.style.cssText = `
+                position: absolute;
+                border-radius: 50%;
+                background: rgba(255, 255, 255, 0.3);
+                transform: scale(0);
+                animation: ripple-animation 0.6s linear;
+                width: ${size}px;
+                height: ${size}px;
+                left: ${x}px;
+                top: ${y}px;
+                pointer-events: none;
+            `;
+            
+            element.style.position = 'relative';
+            element.style.overflow = 'hidden';
+            element.appendChild(ripple);
+            
+            setTimeout(() => ripple.remove(), 600);
+        }
+        
+        // Add ripple to all interactive elements
+        document.querySelectorAll('#owner-sidebar button, #owner-sidebar a, #hamburger-button, #expand-sidebar-desktop').forEach(element => {
+            element.addEventListener('click', function(e) {
+                if (this.id === 'logout-form' || this.getAttribute('href') === '#') {
+                    return; // Skip for logout form
+                }
+                addRippleEffect(this, e);
+            });
+        });
+        
+        // Force initial position check
+        setTimeout(() => {
+            if (window.innerWidth < 768 && hamburger.style.display === 'flex') {
+                hamburger.style.left = '1rem';
+            }
+        }, 100);
+    });
+</script>
+
+<style>
+    @keyframes ripple-animation {
+        to {
+            transform: scale(4);
+            opacity: 0;
+        }
+    }
+    
+    /* Smooth transitions */
+    #hamburger-button, #expand-sidebar-desktop {
+        transition: left 0.3s ease, transform 0.2s ease, opacity 0.2s ease;
+    }
+    
+    #hamburger-button:hover, #expand-sidebar-desktop:hover {
+        transform: scale(1.05);
+    }
+    
+    /* Fix for any content that might overlap */
+    .main-content-container {
+        position: relative;
+        z-index: 1;
     }
 </style>

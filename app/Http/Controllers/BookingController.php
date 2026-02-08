@@ -173,4 +173,5 @@ class BookingController extends Controller
         
         return back()->with('success', 'Booking cancelled successfully.');
     }
+    
 }

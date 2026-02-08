@@ -378,9 +378,9 @@
                 @endif
 
                 <!-- Find Properties -->
-                <a href="{{ route('rental.search') }}" 
-                   @click.prevent="navigate('{{ route('rental.search') }}')"
-                   :class="currentPage === 'rental' ? 'bg-gray-800 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white'"
+                <a href="{{ route('properties.search') }}" 
+                   @click.prevent="navigate('{{ route('properties.search') }}')"
+                   :class="currentPage === 'properties' ? 'bg-gray-800 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white'"
                    class="group flex items-center px-3 py-3 rounded-md sidebar-transition">
                     <i class="fas fa-search text-lg w-6 text-center"></i>
                     <span class="ml-3 truncate sidebar-text">Find Properties</span>

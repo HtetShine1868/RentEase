@@ -146,7 +146,7 @@
                     </div>
                 </div>
                 <!-- USING EXISTING ROUTE: rental.index (properties doesn't exist) -->
-                <a href="{{ route('rental.search') }}" 
+                <a href="{{ route('properties.search') }}" 
                    class="inline-flex items-center text-blue-600 hover:text-blue-700 font-medium">
                     Start Searching <i class="fas fa-arrow-right ml-2"></i>
                 </a>

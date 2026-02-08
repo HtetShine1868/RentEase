@@ -10,6 +10,7 @@ use App\Models\Complaint;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
 
 class RentalController extends Controller
 {
@@ -217,17 +218,210 @@ class RentalController extends Controller
         }
     }
     
-    public function storeReview(Request $request, Property $property)
+  /**
+     * Show user's rental dashboard (Main Method)
+     */
+    public function index()
     {
-        $request->validate([
-            'booking_id' => 'required|exists:bookings,id,user_id,' . Auth::id(),
-            'cleanliness_rating' => 'required|integer|min:1|max:5',
-            'location_rating' => 'required|integer|min:1|max:5',
-            'value_rating' => 'required|integer|min:1|max:5',
-            'service_rating' => 'required|integer|min:1|max:5',
-            'comment' => 'nullable|string|max:1000',
+        $user = Auth::user();
+        
+        // Current bookings (CHECKED_IN or CONFIRMED with future check_out)
+        $currentBookings = Booking::with(['property', 'room', 'payments'])
+            ->where('user_id', $user->id)
+            ->where(function($query) {
+                $query->where('status', 'CHECKED_IN')
+                      ->orWhere(function($q) {
+                          $q->where('status', 'CONFIRMED')
+                            ->whereDate('check_out', '>=', now());
+                      });
+            })
+            ->whereDate('check_out', '>=', now())
+            ->orderBy('check_in', 'desc')
+            ->get()
+            ->filter(function($booking) {
+                return Carbon::parse($booking->check_out)->isFuture();
+            });
+        
+        // Upcoming bookings (CONFIRMED with future check_in)
+        $upcomingBookings = Booking::with(['property', 'room'])
+            ->where('user_id', $user->id)
+            ->where('status', 'CONFIRMED')
+            ->whereDate('check_in', '>', now())
+            ->orderBy('check_in', 'asc')
+            ->get();
+        
+        // Past bookings
+        $pastBookings = Booking::with(['property', 'room', 'payments'])
+            ->where('user_id', $user->id)
+            ->where(function($query) {
+                $query->where('status', 'CHECKED_OUT')
+                      ->orWhere('status', 'CANCELLED')
+                      ->orWhere(function($q) {
+                          $q->whereIn('status', ['CHECKED_IN', 'CONFIRMED'])
+                            ->whereDate('check_out', '<', now());
+                      });
+            })
+            ->orderBy('check_out', 'desc')
+            ->paginate(10);
+        
+        // Bookings that can be reviewed (checked out within last 30 days and not reviewed)
+        $reviewableBookings = Booking::with(['property'])
+            ->where('user_id', $user->id)
+            ->where('status', 'CHECKED_OUT')
+            ->where('check_out', '>=', now()->subDays(30))
+            ->whereDoesntHave('propertyRating', function($query) use ($user) {
+                $query->where('user_id', $user->id);
+            })
+            ->orderBy('check_out', 'desc')
+            ->get();
+        
+        // Recent complaints
+        $complaints = Complaint::where('user_id', $user->id)
+            ->orderBy('created_at', 'desc')
+            ->limit(5)
+            ->get();
+        
+        return view('rental.index', compact(
+            'currentBookings',
+            'upcomingBookings',
+            'pastBookings',
+            'reviewableBookings',
+            'complaints'
+        ));
+    }
+    
+    /**
+     * Check-in to a booking
+     */
+    public function checkInBooking(Booking $booking)
+    {
+        if ($booking->user_id !== Auth::id()) {
+            abort(403);
+        }
+        
+        if ($booking->status !== 'CONFIRMED') {
+            return redirect()->back()->with('error', 'Only confirmed bookings can be checked in.');
+        }
+        
+        if (now()->lt(Carbon::parse($booking->check_in))) {
+            return redirect()->back()->with('error', 'Check-in is only allowed on or after the check-in date.');
+        }
+        
+        $booking->update([
+            'status' => 'CHECKED_IN',
+            'updated_at' => now()
         ]);
         
+        return redirect()->back()->with('success', 'Successfully checked in!');
+    }
+    
+    /**
+     * Check-out from a booking
+     */
+    public function checkOutBooking(Booking $booking)
+    {
+        if ($booking->user_id !== Auth::id()) {
+            abort(403);
+        }
+        
+        if ($booking->status !== 'CHECKED_IN') {
+            return redirect()->back()->with('error', 'Only checked-in bookings can be checked out.');
+        }
+        
+        $booking->update([
+            'status' => 'CHECKED_OUT',
+            'updated_at' => now()
+        ]);
+        
+        // If it's a room booking, make room available
+        if ($booking->room_id) {
+            $booking->room()->update(['status' => 'AVAILABLE']);
+        }
+        
+        return redirect()->back()->with('success', 'Successfully checked out!');
+    }
+    
+    /**
+     * Extend booking stay
+     */
+    public function extendBooking(Request $request)
+    {
+        $request->validate([
+            'booking_id' => 'required|exists:bookings,id',
+            'new_check_out' => 'required|date|after:today'
+        ]);
+        
+        $booking = Booking::where('user_id', Auth::id())->findOrFail($request->booking_id);
+        
+        // Check if booking is active
+        if (!in_array($booking->status, ['CHECKED_IN', 'CONFIRMED']) || 
+            Carbon::parse($booking->check_out)->isPast()) {
+            return redirect()->back()->with('error', 'Cannot extend inactive or expired booking.');
+        }
+        
+        $newCheckOut = Carbon::parse($request->new_check_out);
+        $oldCheckOut = Carbon::parse($booking->check_out);
+        
+        if ($newCheckOut->lte($oldCheckOut)) {
+            return redirect()->back()->with('error', 'New check-out date must be after current check-out date.');
+        }
+        
+        // Calculate extension days and cost
+        $extensionDays = $oldCheckOut->diffInDays($newCheckOut);
+        $dailyPrice = $booking->room ? $booking->room->total_price : $booking->property->total_price;
+        $extensionCost = $extensionDays * $dailyPrice;
+        
+        // Update booking
+        $booking->update([
+            'check_out' => $newCheckOut,
+            'updated_at' => now()
+        ]);
+        
+        // Create payment record for extension
+        Payment::create([
+            'payment_reference' => 'EXT-' . strtoupper(uniqid()),
+            'user_id' => Auth::id(),
+            'payable_type' => 'BOOKING',
+            'payable_id' => $booking->id,
+            'amount' => $extensionCost,
+            'commission_amount' => 0, // No commission on extensions
+            'payment_method' => 'BANK_TRANSFER',
+            'status' => 'PENDING',
+            'created_at' => now()
+        ]);
+        
+        return redirect()->back()->with('success', 'Booking extended successfully! Please complete the payment for the extension.');
+    }
+    
+    /**
+     * Submit a review for a property
+     */
+    public function submitReview(Request $request)
+    {
+        $request->validate([
+            'booking_id' => 'required|exists:bookings,id',
+            'property_id' => 'required|exists:properties,id',
+            'cleanliness_rating' => 'required|integer|between:1,5',
+            'location_rating' => 'required|integer|between:1,5',
+            'value_rating' => 'required|integer|between:1,5',
+            'service_rating' => 'required|integer|between:1,5',
+            'comment' => 'nullable|string|max:1000'
+        ]);
+        
+        $booking = Booking::where('user_id', Auth::id())
+            ->where('status', 'CHECKED_OUT')
+            ->findOrFail($request->booking_id);
+        
+        // Check if already reviewed
+        $existingReview = PropertyRating::where('booking_id', $booking->id)
+            ->where('user_id', Auth::id())
+            ->first();
+            
+        if ($existingReview) {
+            return redirect()->back()->with('error', 'You have already reviewed this property.');
+        }
+        
+        // Calculate overall rating
         $overallRating = (
             $request->cleanliness_rating + 
             $request->location_rating + 
@@ -235,10 +429,11 @@ class RentalController extends Controller
             $request->service_rating
         ) / 4;
         
+        // Create review
         PropertyRating::create([
             'user_id' => Auth::id(),
-            'property_id' => $property->id,
-            'booking_id' => $request->booking_id,
+            'property_id' => $request->property_id,
+            'booking_id' => $booking->id,
             'cleanliness_rating' => $request->cleanliness_rating,
             'location_rating' => $request->location_rating,
             'value_rating' => $request->value_rating,
@@ -246,151 +441,133 @@ class RentalController extends Controller
             'overall_rating' => $overallRating,
             'comment' => $request->comment,
             'is_approved' => true,
+            'created_at' => now()
         ]);
         
-        return back()->with('success', 'Thank you for your review!');
-    }
-        /**
-     * Show user's rental dashboard
-     */
-    public function myRental()
-    {
-        $user = Auth::user();
-        
-        // Get current active bookings
-        $currentBookings = Booking::where('user_id', $user->id)
-            ->whereIn('status', ['CONFIRMED', 'CHECKED_IN'])
-            ->whereDate('check_out', '>=', now())
-            ->with(['property.images', 'room', 'payments'])
-            ->latest()
-            ->get();
-        
-        // Get upcoming bookings
-        $upcomingBookings = Booking::where('user_id', $user->id)
-            ->where('status', 'CONFIRMED')
-            ->whereDate('check_in', '>', now())
-            ->with(['property.primaryImage', 'room'])
-            ->latest()
-            ->get();
-        
-        // Get past bookings
-        $pastBookings = Booking::where('user_id', $user->id)
-            ->where(function($query) {
-                $query->where('status', 'CHECKED_OUT')
-                      ->orWhere('status', 'CANCELLED')
-                      ->orWhereDate('check_out', '<', now());
-            })
-            ->with(['property.primaryImage', 'room', 'payments'])
-            ->latest()
-            ->paginate(10);
-        
-        // Get user complaints
-        $complaints = Complaint::where('user_id', $user->id)
-            ->where('complaint_type', 'PROPERTY')
-            ->with(['property'])
-            ->latest()
-            ->limit(5)
-            ->get();
-        
-        // Check if user can review past bookings
-        $reviewableBookings = Booking::where('user_id', $user->id)
-            ->where('status', 'CHECKED_OUT')
-            ->whereDate('check_out', '>=', now()->subDays(30)) // Can review within 30 days
-            ->whereDoesntHave('property.reviews', function($query) use ($user) {
-                $query->where('user_id', $user->id);
-            })
-            ->with('property')
-            ->get();
-        
-        return view('rental.index', compact(
-            'currentBookings',
-            'upcomingBookings',
-            'pastBookings',
-            'complaints',
-            'reviewableBookings'
-        ));
+        return redirect()->back()->with('success', 'Thank you for your review!');
     }
     
     /**
-     * Submit a complaint for a rental
+     * Submit a complaint
      */
-    public function storeComplaint(Request $request, Booking $booking)
+    public function submitComplaint(Request $request)
     {
-        if ($booking->user_id !== Auth::id()) {
-            abort(403);
-        }
-        
         $request->validate([
+            'booking_id' => 'nullable|exists:bookings,id',
             'title' => 'required|string|max:200',
-            'description' => 'required|string|max:1000',
-            'priority' => 'required|in:LOW,MEDIUM,HIGH,URGENT',
+            'description' => 'required|string',
+            'complaint_type' => 'required|in:PROPERTY,FOOD_SERVICE,LAUNDRY_SERVICE,USER,SYSTEM',
+            'related_type' => 'required|in:PROPERTY,SERVICE_PROVIDER,USER',
+            'related_id' => 'required|integer',
+            'priority' => 'required|in:LOW,MEDIUM,HIGH,URGENT'
         ]);
         
-        $complaint = Complaint::create([
-            'complaint_reference' => 'CMP-' . strtoupper(uniqid()),
+        // Generate unique complaint reference
+        $complaintReference = 'COMP-' . strtoupper(uniqid());
+        
+        Complaint::create([
+            'complaint_reference' => $complaintReference,
             'user_id' => Auth::id(),
-            'complaint_type' => 'PROPERTY',
-            'related_id' => $booking->property_id,
-            'related_type' => 'PROPERTY',
+            'complaint_type' => $request->complaint_type,
+            'related_id' => $request->related_id,
+            'related_type' => $request->related_type,
             'title' => $request->title,
             'description' => $request->description,
             'priority' => $request->priority,
             'status' => 'OPEN',
+            'created_at' => now()
         ]);
         
-        // If booking is provided, link it
-        if ($booking) {
-            $complaint->update([
-                'related_id' => $booking->property_id,
-                'related_type' => 'PROPERTY',
-            ]);
-        }
-        
-        return back()->with('success', 'Complaint submitted successfully!');
+        return redirect()->back()->with('success', 'Complaint submitted successfully. We will get back to you soon.');
     }
     
     /**
-     * Check-in to a booking
+     * Show booking details
      */
-    public function checkIn(Booking $booking)
+    public function showBooking(Booking $booking)
     {
         if ($booking->user_id !== Auth::id()) {
             abort(403);
         }
         
-        if ($booking->status !== 'CONFIRMED') {
-            return back()->with('error', 'Only confirmed bookings can be checked in.');
-        }
+        $booking->load([
+            'property.images',
+            'room',
+            'payments',
+            'propertyRating' => function($query) {
+                $query->where('user_id', Auth::id());
+            }
+        ]);
         
-        if (now()->lt($booking->check_in)) {
-            return back()->with('error', 'Check-in is only allowed on or after the check-in date.');
-        }
-        
-        $booking->update(['status' => 'CHECKED_IN']);
-        
-        return back()->with('success', 'Successfully checked in!');
+        return view('rental.booking-details', compact('booking'));
     }
     
     /**
-     * Check-out from a booking
+     * Cancel a booking
      */
-    public function checkOut(Booking $booking)
+    public function cancelBooking(Booking $booking)
     {
         if ($booking->user_id !== Auth::id()) {
             abort(403);
         }
         
-        if ($booking->status !== 'CHECKED_IN') {
-            return back()->with('error', 'Only checked-in bookings can be checked out.');
+        if (!in_array($booking->status, ['CONFIRMED', 'PENDING'])) {
+            return redirect()->back()->with('error', 'Only pending or confirmed bookings can be cancelled.');
         }
         
-        $booking->update(['status' => 'CHECKED_OUT']);
+        $booking->update([
+            'status' => 'CANCELLED',
+            'updated_at' => now()
+        ]);
         
-        // If it's a room booking, make room available
+        // Make room available if it's a hostel booking
         if ($booking->room_id) {
             $booking->room()->update(['status' => 'AVAILABLE']);
         }
         
-        return back()->with('success', 'Successfully checked out!');
+        // Refund logic would go here
+        // Payment::where('payable_id', $booking->id)
+        //        ->where('payable_type', 'BOOKING')
+        //        ->update(['status' => 'REFUNDED']);
+        
+        return redirect()->route('rental.index')->with('success', 'Booking cancelled successfully.');
+    }
+    
+    /**
+     * Show booking invoice
+     */
+    public function showInvoice(Booking $booking)
+    {
+        if ($booking->user_id !== Auth::id()) {
+            abort(403);
+        }
+        
+        $booking->load(['property', 'room', 'payments']);
+        
+        return view('rental.invoice', compact('booking'));
+    }
+    
+    /**
+     * Show all complaints
+     */
+    public function complaints()
+    {
+        $complaints = Complaint::where('user_id', Auth::id())
+            ->orderBy('created_at', 'desc')
+            ->paginate(15);
+        
+        return view('rental.complaints', compact('complaints'));
+    }
+    
+    /**
+     * Show single complaint
+     */
+    public function showComplaint(Complaint $complaint)
+    {
+        if ($complaint->user_id !== Auth::id()) {
+            abort(403);
+        }
+        
+        return view('rental.complaint-details', compact('complaint'));
     }
 }
