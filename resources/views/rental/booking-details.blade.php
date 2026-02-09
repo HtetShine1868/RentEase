@@ -1,37 +1,34 @@
 @extends('layouts.app')
 
-@section('title', 'Booking Details - ' . $booking->booking_reference)
+@section('title', 'Booking Details')
 
 @section('content')
 <div class="min-h-screen bg-gray-50">
-    <!-- Breadcrumb -->
-    <nav class="bg-white shadow" aria-label="Breadcrumb">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-            <div class="flex items-center space-x-2">
-                <a href="{{ route('properties.search') }}" class="text-sm font-medium text-gray-500 hover:text-gray-700">
-                    Search
+    <!-- Header -->
+    <div class="bg-white shadow">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-900">Booking Details</h1>
+                    <p class="mt-2 text-gray-600">Manage your stay, submit reviews, and extend if needed</p>
+                </div>
+                <a href="{{ route('rental.index') }}" 
+                   class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
+                    <svg class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                    </svg>
+                    Back to Dashboard
                 </a>
-                <svg class="h-5 w-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
-                    <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
-                </svg>
-                <a href="{{ route('properties.my-bookings') }}" 
-                   class="text-sm font-medium text-gray-500 hover:text-gray-700">
-                    My Bookings
-                </a>
-                <svg class="h-5 w-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
-                    <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
-                </svg>
-                <span class="text-sm font-medium text-gray-900">{{ $booking->booking_reference }}</span>
             </div>
         </div>
-    </nav>
+    </div>
 
-    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         @if(session('success'))
             <div class="mb-6 rounded-md bg-green-50 p-4">
                 <div class="flex">
                     <div class="flex-shrink-0">
-                        <svg class="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
+                        <svg class="h-5 w-5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
                             <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
                         </svg>
                     </div>
@@ -46,7 +43,7 @@
             <div class="mb-6 rounded-md bg-red-50 p-4">
                 <div class="flex">
                     <div class="flex-shrink-0">
-                        <svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                        <svg class="h-5 w-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
                             <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
                         </svg>
                     </div>
@@ -57,409 +54,313 @@
             </div>
         @endif
 
-        @if(session('info'))
-            <div class="mb-6 rounded-md bg-blue-50 p-4">
-                <div class="flex">
-                    <div class="flex-shrink-0">
-                        <svg class="h-5 w-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
-                        </svg>
-                    </div>
-                    <div class="ml-3">
-                        <p class="text-sm font-medium text-blue-800">{{ session('info') }}</p>
-                    </div>
-                </div>
-            </div>
-        @endif
-
-        <!-- Booking Header -->
-        <div class="bg-white rounded-lg shadow p-6 mb-6">
-            <div class="flex flex-col md:flex-row md:items-center justify-between">
-                <div>
-                    <h1 class="text-2xl font-bold text-gray-900">Booking Details</h1>
-                    <div class="flex items-center mt-2">
-                        <span class="text-sm font-medium px-3 py-1 rounded-full 
-                            @if($booking->status === 'CONFIRMED') bg-green-100 text-green-800
-                            @elseif($booking->status === 'PENDING') bg-yellow-100 text-yellow-800
-                            @elseif($booking->status === 'CHECKED_IN') bg-blue-100 text-blue-800
-                            @elseif($booking->status === 'CANCELLED') bg-red-100 text-red-800
-                            @else bg-gray-100 text-gray-800 @endif">
-                            {{ $booking->status }}
-                        </span>
-                        <span class="ml-4 text-gray-600">Reference: {{ $booking->booking_reference }}</span>
-                    </div>
-                </div>
-                <div class="mt-4 md:mt-0">
-                    <div class="text-right">
-                        <div class="text-2xl font-bold text-gray-900">৳{{ number_format($booking->total_amount, 2) }}</div>
-                        <div class="text-sm text-gray-500">Total amount</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <!-- Left Column -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Main Content -->
             <div class="lg:col-span-2 space-y-6">
-                <!-- Property Details -->
-                <div class="bg-white rounded-lg shadow p-6">
-                    <h3 class="text-lg font-medium text-gray-900 mb-4">Property Information</h3>
-                    <div class="flex items-start">
-                        @if($booking->property->primaryImage)
-                            <img src="{{ Storage::url($booking->property->primaryImage->image_path) }}" 
-                                 alt="{{ $booking->property->name }}"
-                                 class="h-24 w-24 object-cover rounded-lg mr-4">
-                        @elseif($booking->property->images->count() > 0)
-                            <img src="{{ Storage::url($booking->property->images->first()->image_path) }}" 
-                                 alt="{{ $booking->property->name }}"
-                                 class="h-24 w-24 object-cover rounded-lg mr-4">
-                        @else
-                            <div class="h-24 w-24 bg-gray-100 rounded-lg flex items-center justify-center mr-4">
-                                <svg class="h-8 w-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                                </svg>
+                <!-- Property Card -->
+                <div class="bg-white shadow rounded-lg overflow-hidden">
+                    <div class="p-6">
+                        <div class="flex items-start justify-between">
+                            <div class="flex items-start">
+                                <div class="h-16 w-16 bg-gradient-to-r from-indigo-100 to-blue-100 rounded-lg flex items-center justify-center mr-4">
+                                    <svg class="h-8 w-8 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h2 class="text-xl font-bold text-gray-900">{{ $booking->property->name }}</h2>
+                                    <p class="text-gray-600 mt-1">{{ $booking->property->address }}</p>
+                                    <p class="text-sm text-gray-500">{{ $booking->property->city }}, {{ $booking->property->area }}</p>
+                                    <div class="mt-2">
+                                        <span class="px-3 py-1 text-xs font-semibold rounded-full
+                                            @if($booking->status === 'CHECKED_IN') bg-green-100 text-green-800
+                                            @elseif($booking->status === 'CONFIRMED') bg-yellow-100 text-yellow-800
+                                            @else bg-gray-100 text-gray-800 @endif">
+                                            {{ $booking->status }}
+                                        </span>
+                                    </div>
+                                </div>
                             </div>
-                        @endif
-                        <div>
-                            <h4 class="font-medium text-gray-900">{{ $booking->property->name }}</h4>
-                            <p class="text-sm text-gray-600 mt-1">
-                                {{ $booking->property->address }}, {{ $booking->property->area }}, {{ $booking->property->city }}
-                            </p>
-                            <div class="mt-2 flex flex-wrap gap-1">
-                                <span class="px-2 py-1 text-xs font-medium rounded-full 
-                                    {{ $booking->property->type === 'HOSTEL' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800' }}">
-                                    {{ $booking->property->type_name }}
-                                </span>
-                                @if($booking->property->bedrooms)
-                                    <span class="px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800">
-                                        {{ $booking->property->bedrooms }} Beds
-                                    </span>
-                                @endif
-                                @if($booking->property->bathrooms)
-                                    <span class="px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800">
-                                        {{ $booking->property->bathrooms }} Baths
-                                    </span>
-                                @endif
+                            <div class="text-right">
+                                <div class="text-2xl font-bold text-gray-900">৳{{ number_format($booking->total_amount, 2) }}</div>
+                                <div class="text-sm text-gray-500">Total Amount</div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Booking Details -->
-                <div class="bg-white rounded-lg shadow p-6">
-                    <h3 class="text-lg font-medium text-gray-900 mb-4">Booking Details</h3>
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <div class="text-sm text-gray-500">Check-in Date</div>
-                            <div class="font-medium">{{ \Carbon\Carbon::parse($booking->check_in)->format('F d, Y') }}</div>
-                        </div>
-                        <div>
-                            <div class="text-sm text-gray-500">Check-out Date</div>
-                            <div class="font-medium">{{ \Carbon\Carbon::parse($booking->check_out)->format('F d, Y') }}</div>
-                        </div>
-                        <div>
-                            <div class="text-sm text-gray-500">Duration</div>
-                            <div class="font-medium">{{ $booking->duration_days }} days</div>
-                        </div>
-                        <div>
-                            <div class="text-sm text-gray-500">Booked On</div>
-                            <div class="font-medium">{{ $booking->created_at->format('F d, Y h:i A') }}</div>
-                        </div>
+                <!-- Stay Timeline -->
+                <div class="bg-white shadow rounded-lg">
+                    <div class="px-6 py-4 border-b border-gray-200">
+                        <h3 class="text-lg font-semibold text-gray-900">Stay Timeline</h3>
                     </div>
-                    
-                    <!-- Room Details (for hostel bookings) -->
-                    @if($booking->room)
-                        <div class="mt-6 pt-6 border-t border-gray-200">
-                            <h4 class="font-medium text-gray-900 mb-2">Room Information</h4>
-                            <div class="grid grid-cols-2 gap-4">
-                                <div>
-                                    <div class="text-sm text-gray-500">Room Type</div>
-                                    <div class="font-medium">{{ $booking->room->room_type_name }}</div>
+                    <div class="p-6">
+                        <div class="relative">
+                            <!-- Timeline -->
+                            <div class="flex justify-between items-center mb-8">
+                                <div class="text-center">
+                                    <div class="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-2">
+                                        <svg class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                                        </svg>
+                                    </div>
+                                    <div class="text-sm font-semibold text-gray-900">Check-in</div>
+                                    <div class="text-sm text-gray-600">{{ \Carbon\Carbon::parse($booking->check_in)->format('M d, Y') }}</div>
                                 </div>
-                                <div>
-                                    <div class="text-sm text-gray-500">Room Number</div>
-                                    <div class="font-medium">{{ $booking->room->room_number }}</div>
+                                
+                                <div class="flex-1 h-1 bg-gray-200 mx-4"></div>
+                                
+                                <div class="text-center">
+                                    <div class="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center mx-auto mb-2">
+                                        <svg class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                        </svg>
+                                    </div>
+                                    <div class="text-sm font-semibold text-gray-900">Current</div>
+                                    <div class="text-sm text-gray-600">{{ now()->format('M d, Y') }}</div>
                                 </div>
-                                <div>
-                                    <div class="text-sm text-gray-500">Capacity</div>
-                                    <div class="font-medium">{{ $booking->room->capacity }} persons</div>
-                                </div>
-                                <div>
-                                    <div class="text-sm text-gray-500">Floor</div>
-                                    <div class="font-medium">{{ $booking->room->floor_number ?? 'N/A' }}</div>
+                                
+                                <div class="flex-1 h-1 bg-gray-200 mx-4"></div>
+                                
+                                <div class="text-center">
+                                    <div class="w-12 h-12 bg-red-500 rounded-full flex items-center justify-center mx-auto mb-2">
+                                        <svg class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                        </svg>
+                                    </div>
+                                    <div class="text-sm font-semibold text-gray-900">Check-out</div>
+                                    <div class="text-sm text-gray-600">{{ \Carbon\Carbon::parse($booking->check_out)->format('M d, Y') }}</div>
                                 </div>
                             </div>
-                        </div>
-                    @endif
-                </div>
-
-                <!-- Price Breakdown -->
-                <div class="bg-white rounded-lg shadow p-6">
-                    <h3 class="text-lg font-medium text-gray-900 mb-4">Price Breakdown</h3>
-                    <div class="space-y-3">
-                        <div class="flex justify-between">
-                            <span class="text-gray-600">Base Price</span>
-                            <span class="font-medium">
-                                ৳{{ number_format($booking->room_price_per_day * $booking->duration_days, 2) }}
-                            </span>
-                        </div>
-                        <div class="flex justify-between">
-                            <span class="text-gray-600">Commission ({{ $booking->property->commission_rate }}%)</span>
-                            <span class="font-medium">৳{{ number_format($booking->commission_amount, 2) }}</span>
-                        </div>
-                        <div class="border-t border-gray-200 pt-2">
-                            <div class="flex justify-between">
-                                <span class="text-lg font-medium text-gray-900">Total Amount</span>
-                                <span class="text-2xl font-bold text-indigo-600">৳{{ number_format($booking->total_amount, 2) }}</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Payment History -->
-                @if($booking->payments->count() > 0)
-                    <div class="bg-white rounded-lg shadow p-6">
-                        <h3 class="text-lg font-medium text-gray-900 mb-4">Payment History</h3>
-                        <div class="space-y-4">
-                            @foreach($booking->payments as $payment)
-                                <div class="border border-gray-200 rounded-lg p-4">
-                                    <div class="flex justify-between items-start">
-                                        <div>
-                                            <div class="font-medium text-gray-900">{{ $payment->payment_reference }}</div>
-                                            <div class="text-sm text-gray-600 mt-1">
-                                                {{ $payment->created_at->format('M d, Y h:i A') }}
-                                                @if($payment->paid_at)
-                                                    • Paid: {{ $payment->paid_at->format('M d, Y') }}
-                                                @endif
-                                            </div>
-                                            <div class="mt-1">
-                                                <span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium
-                                                    @if($payment->status === 'COMPLETED') bg-green-100 text-green-800
-                                                    @elseif($payment->status === 'PENDING') bg-yellow-100 text-yellow-800
-                                                    @elseif($payment->status === 'FAILED') bg-red-100 text-red-800
-                                                    @else bg-gray-100 text-gray-800 @endif">
-                                                    {{ $payment->status }}
-                                                </span>
-                                                <span class="ml-2 text-sm text-gray-600">
-                                                    {{ $payment->payment_method }}
-                                                </span>
-                                            </div>
-                                            @if($payment->transaction_id)
-                                                <div class="mt-1 text-sm text-gray-600">
-                                                    Transaction: {{ $payment->transaction_id }}
-                                                </div>
-                                            @endif
-                                        </div>
-                                        <div class="text-right">
-                                            <div class="text-lg font-semibold 
-                                                @if($payment->status === 'COMPLETED') text-green-600
-                                                @elseif($payment->status === 'PENDING') text-yellow-600
-                                                @else text-red-600 @endif">
-                                                ৳{{ number_format($payment->amount, 2) }}
-                                            </div>
-                                            <div class="text-sm text-gray-500">
-                                                Commission: ৳{{ number_format($payment->commission_amount, 2) }}
+                            
+                            <!-- Days Counter -->
+                            @php
+                                $totalDays = \Carbon\Carbon::parse($booking->check_out)->diffInDays(\Carbon\Carbon::parse($booking->check_in));
+                                $daysPassed = \Carbon\Carbon::parse(now())->diffInDays(\Carbon\Carbon::parse($booking->check_in));
+                                $daysRemaining = \Carbon\Carbon::parse($booking->check_out)->diffInDays(now());
+                                $progress = min(100, max(0, ($daysPassed / $totalDays) * 100));
+                            @endphp
+                            
+                            <div class="mt-8">
+                                <div class="flex justify-between text-sm mb-2">
+                                    <span class="text-gray-600">Stay Progress</span>
+                                    <span class="font-semibold">{{ $daysPassed }} of {{ $totalDays }} days</span>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-3">
+                                    <div class="bg-gradient-to-r from-green-400 to-blue-500 h-3 rounded-full" style="width: {{ $progress }}%"></div>
+                                </div>
+                                
+                                <!-- Days Remaining Alert -->
+                                @if($daysRemaining <= 3)
+                                    <div class="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+                                        <div class="flex items-center">
+                                            <svg class="h-5 w-5 text-red-400 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.771-.833-2.502 0L4.232 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                                            </svg>
+                                            <div>
+                                                <h4 class="text-sm font-semibold text-red-800">Stay Ending Soon!</h4>
+                                                <p class="text-sm text-red-600">Only {{ $daysRemaining }} days remaining. Extend your stay if needed.</p>
                                             </div>
                                         </div>
                                     </div>
+                                @elseif($daysRemaining <= 7)
+                                    <div class="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                                        <div class="flex items-center">
+                                            <svg class="h-5 w-5 text-yellow-400 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.771-.833-2.502 0L4.232 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                                            </svg>
+                                            <div>
+                                                <h4 class="text-sm font-semibold text-yellow-800">Stay Ending in {{ $daysRemaining }} Days</h4>
+                                                <p class="text-sm text-yellow-600">Consider extending your stay if you need more time.</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Actions Section -->
+                <div class="bg-white shadow rounded-lg">
+                    <div class="px-6 py-4 border-b border-gray-200">
+                        <h3 class="text-lg font-semibold text-gray-900">Manage Your Stay</h3>
+                    </div>
+                    <div class="p-6">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <!-- Check-in Button -->
+                            @if($booking->status === 'CONFIRMED' && now()->toDateString() >= \Carbon\Carbon::parse($booking->check_in)->toDateString())
+                                <form method="POST" action="{{ route('bookings.check-in', $booking) }}">
+                                    @csrf
+                                    <button type="submit" 
+                                            class="w-full flex items-center justify-center px-4 py-3 border border-transparent rounded-lg text-sm font-medium text-white bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 shadow-sm transition duration-300">
+                                        <svg class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                                        </svg>
+                                        Check-in Now
+                                    </button>
+                                </form>
+                            @endif
+                            
+                            <!-- Check-out Button -->
+                            @if($booking->status === 'CHECKED_IN')
+                                <form method="POST" action="{{ route('bookings.check-out', $booking) }}">
+                                    @csrf
+                                    <button type="submit" 
+                                            onclick="return confirm('Are you sure you want to check out? This will end your stay.')"
+                                            class="w-full flex items-center justify-center px-4 py-3 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 shadow-sm transition duration-300">
+                                        <svg class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                                        </svg>
+                                        Check-out
+                                    </button>
+                                </form>
+                            @endif
+                            
+                            <!-- Extend Stay Button -->
+                            @if($booking->status === 'CHECKED_IN' && $daysRemaining <= 7)
+                                <button type="button"
+                                        onclick="openExtendModal({{ $booking->id }}, '{{ addslashes($booking->property->name) }}', {{ $booking->room ? $booking->room->total_price : $booking->property->total_price }})"
+                                        class="w-full flex items-center justify-center px-4 py-3 border border-blue-300 rounded-lg text-sm font-medium text-blue-700 bg-white hover:bg-blue-50 shadow-sm transition duration-300">
+                                    <svg class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                    Extend Stay
+                                </button>
+                            @endif
+                            
+                            <!-- Report Issue Button -->
+                            <button type="button"
+                                    onclick="openComplaintModal({{ $booking->id }}, 'property', {{ $booking->property_id }})"
+                                    class="w-full flex items-center justify-center px-4 py-3 border border-red-300 rounded-lg text-sm font-medium text-red-700 bg-white hover:bg-red-50 shadow-sm transition duration-300">
+                                <svg class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.771-.833-2.502 0L4.232 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                                </svg>
+                                Report Issue
+                            </button>
+                            
+                            <!-- Write Review Button -->
+                            @if($booking->status === 'CHECKED_IN' && !$hasReviewed)
+                                <button type="button"
+                                        onclick="openReviewModal({{ $booking->id }}, '{{ addslashes($booking->property->name) }}')"
+                                        class="w-full flex items-center justify-center px-4 py-3 border border-green-300 rounded-lg text-sm font-medium text-green-700 bg-white hover:bg-green-50 shadow-sm transition duration-300">
+                                    <svg class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                                    </svg>
+                                    Write Review
+                                </button>
+                            @endif
+                            
+                            <!-- View Invoice -->
+                            <a href="{{ route('bookings.invoice', $booking) }}" 
+                               class="w-full flex items-center justify-center px-4 py-3 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 shadow-sm transition duration-300">
+                                <svg class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                                View Invoice
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sidebar -->
+            <div class="space-y-6">
+                <!-- Booking Details -->
+                <div class="bg-white shadow rounded-lg">
+                    <div class="px-6 py-4 border-b border-gray-200">
+                        <h3 class="text-lg font-semibold text-gray-900">Booking Details</h3>
+                    </div>
+                    <div class="p-6">
+                        <dl class="space-y-4">
+                            <div class="flex justify-between">
+                                <dt class="text-sm text-gray-600">Booking Reference:</dt>
+                                <dd class="text-sm font-medium text-gray-900">{{ $booking->booking_reference }}</dd>
+                            </div>
+                            <div class="flex justify-between">
+                                <dt class="text-sm text-gray-600">Booking Date:</dt>
+                                <dd class="text-sm font-medium text-gray-900">{{ \Carbon\Carbon::parse($booking->created_at)->format('M d, Y') }}</dd>
+                            </div>
+                            @if($booking->room)
+                                <div class="flex justify-between">
+                                    <dt class="text-sm text-gray-600">Room:</dt>
+                                    <dd class="text-sm font-medium text-gray-900">{{ $booking->room->room_type }} ({{ $booking->room->room_number }})</dd>
+                                </div>
+                                <div class="flex justify-between">
+                                    <dt class="text-sm text-gray-600">Room Price/Day:</dt>
+                                    <dd class="text-sm font-medium text-gray-900">৳{{ number_format($booking->room_price_per_day, 2) }}</dd>
+                                </div>
+                            @else
+                                <div class="flex justify-between">
+                                    <dt class="text-sm text-gray-600">Property Type:</dt>
+                                    <dd class="text-sm font-medium text-gray-900">{{ $booking->property->type }}</dd>
+                                </div>
+                            @endif
+                            <div class="flex justify-between">
+                                <dt class="text-sm text-gray-600">Duration:</dt>
+                                <dd class="text-sm font-medium text-gray-900">{{ $booking->duration_days }} days</dd>
+                            </div>
+                            <div class="flex justify-between">
+                                <dt class="text-sm text-gray-600">Commission:</dt>
+                                <dd class="text-sm font-medium text-gray-900">৳{{ number_format($booking->commission_amount, 2) }}</dd>
+                            </div>
+                            <div class="pt-4 border-t">
+                                <div class="flex justify-between">
+                                    <dt class="text-base font-semibold text-gray-900">Total Amount:</dt>
+                                    <dd class="text-base font-bold text-gray-900">৳{{ number_format($booking->total_amount, 2) }}</dd>
+                                </div>
+                            </div>
+                        </dl>
+                    </div>
+                </div>
+
+                <!-- Payment Status -->
+                @if($booking->payments->count() > 0)
+                    <div class="bg-white shadow rounded-lg">
+                        <div class="px-6 py-4 border-b border-gray-200">
+                            <h3 class="text-lg font-semibold text-gray-900">Payment Status</h3>
+                        </div>
+                        <div class="p-6">
+                            @foreach($booking->payments as $payment)
+                                <div class="flex justify-between items-center mb-3 pb-3 {{ !$loop->last ? 'border-b' : '' }}">
+                                    <div>
+                                        <div class="text-sm font-medium text-gray-900">{{ $payment->payment_reference }}</div>
+                                        <div class="text-xs text-gray-500">{{ \Carbon\Carbon::parse($payment->created_at)->format('M d, Y') }}</div>
+                                    </div>
+                                    <span class="px-2 py-1 text-xs font-semibold rounded-full
+                                        @if($payment->status === 'COMPLETED') bg-green-100 text-green-800
+                                        @elseif($payment->status === 'PENDING') bg-yellow-100 text-yellow-800
+                                        @elseif($payment->status === 'FAILED') bg-red-100 text-red-800
+                                        @else bg-gray-100 text-gray-800 @endif">
+                                        {{ $payment->status }}
+                                    </span>
                                 </div>
                             @endforeach
                         </div>
                     </div>
                 @endif
-            </div>
 
-            <!-- Right Column -->
-            <div class="space-y-6">
-                <!-- Actions Card -->
-                <div class="bg-white rounded-lg shadow p-6 sticky top-24">
-                    <h3 class="text-lg font-medium text-gray-900 mb-4">Actions</h3>
-                    
-                    <!-- Payment Status -->
-                    @if($booking->status === 'PENDING' && !$booking->isPaid())
-                        <!-- Payment Button -->
-                        <a href="{{ route('rental.booking.payment', $booking) }}" 
-                           class="w-full inline-flex justify-center items-center px-4 py-3 border border-transparent text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 mb-3">
-                            <svg class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-                            </svg>
-                            Make Payment
-                        </a>
-                    @elseif($booking->isPaid())
-                        <div class="w-full inline-flex justify-center items-center px-4 py-3 border border-green-300 text-base font-medium rounded-md text-green-700 bg-green-50 mb-3">
-                            <svg class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                            Payment Completed
-                        </div>
-                    @endif
-                    
-                    <!-- Cancel Booking Button (only for PENDING bookings) -->
-                    @if($booking->status === 'PENDING')
-                        <form method="POST" action="{{ route('rental.booking.cancel', $booking) }}" class="mb-3">
-                            @csrf
-                            @method('DELETE')
-                            <button type="submit" 
-                                    onclick="return confirm('Are you sure you want to cancel this booking? This action cannot be undone.')"
-                                    class="w-full inline-flex justify-center items-center px-4 py-3 border border-gray-300 text-base font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
-                                <svg class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                                </svg>
-                                Cancel Booking
-                            </button>
-                        </form>
-                    @endif
-                    
-                    <!-- View Property -->
-                    <a href="{{ route('rental.property.details', $booking->property) }}" 
-                       class="w-full inline-flex justify-center items-center px-4 py-3 border border-gray-300 text-base font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
-                        <svg class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                        </svg>
-                        View Property
-                    </a>
-                    
-                    <!-- Contact Owner (for active bookings) -->
-                    @if($booking->status === 'CONFIRMED' || $booking->status === 'CHECKED_IN')
-                        <button type="button"
-                                onclick="alert('Owner Contact: {{ $booking->property->owner->phone ?? "Contact details not available" }}')"
-                                class="w-full mt-3 inline-flex justify-center items-center px-4 py-3 border border-blue-300 text-base font-medium rounded-md text-blue-700 bg-blue-50 hover:bg-blue-100">
-                            <svg class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-                            </svg>
-                            Contact Owner
-                        </button>
-                    @endif
-                </div>
-
-                <!-- Contact Information -->
-                <div class="bg-white rounded-lg shadow p-6">
-                    <h3 class="text-lg font-medium text-gray-900 mb-4">Need Help?</h3>
-                    <div class="space-y-3">
-                        <div class="flex items-center">
-                            <svg class="h-5 w-5 text-gray-400 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-                            </svg>
-                            <div>
-                                <div class="text-sm text-gray-500">Support</div>
-                                <div class="font-medium">+880 1234 567890</div>
-                            </div>
-                        </div>
-                        <div class="flex items-center">
-                            <svg class="h-5 w-5 text-gray-400 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                            </svg>
-                            <div>
-                                <div class="text-sm text-gray-500">Email</div>
-                                <div class="font-medium">support@yourdomain.com</div>
-                            </div>
-                        </div>
-                        <div class="flex items-center">
-                            <svg class="h-5 w-5 text-gray-400 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                            <div>
-                                <div class="text-sm text-gray-500">Hours</div>
-                                <div class="font-medium">9:00 AM - 6:00 PM (Daily)</div>
-                            </div>
-                        </div>
+                <!-- Quick Contact -->
+                <div class="bg-white shadow rounded-lg">
+                    <div class="px-6 py-4 border-b border-gray-200">
+                        <h3 class="text-lg font-semibold text-gray-900">Need Help?</h3>
                     </div>
-                </div>
-
-                <!-- Booking Timeline -->
-                <div class="bg-white rounded-lg shadow p-6">
-                    <h3 class="text-lg font-medium text-gray-900 mb-4">Booking Timeline</h3>
-                    <div class="space-y-4">
-                        <!-- Booking Created -->
-                        <div class="flex items-start">
-                            <div class="h-8 w-8 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
-                                <svg class="h-4 w-4 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                    <div class="p-6">
+                        <div class="space-y-3">
+                            <a href="{{ route('complaints.index') }}" 
+                               class="flex items-center text-sm text-indigo-600 hover:text-indigo-900 hover:underline">
+                                <svg class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z" />
                                 </svg>
-                            </div>
-                            <div class="ml-3">
-                                <div class="font-medium text-gray-900">Booking Created</div>
-                                <div class="text-sm text-gray-500">{{ $booking->created_at->format('M d, Y h:i A') }}</div>
-                            </div>
-                        </div>
-                        
-                        <!-- Payment Status -->
-                        @if($booking->isPaid())
-                            <div class="flex items-start">
-                                <div class="h-8 w-8 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
-                                    <svg class="h-4 w-4 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                    </svg>
-                                </div>
-                                <div class="ml-3">
-                                    <div class="font-medium text-gray-900">Payment Confirmed</div>
-                                    <div class="text-sm text-gray-500">
-                                        {{ $booking->payments->where('status', 'COMPLETED')->first()->paid_at->format('M d, Y h:i A') ?? 'Payment completed' }}
-                                    </div>
-                                </div>
-                            </div>
-                        @endif
-                        
-                        <!-- Booking Status -->
-                        @if($booking->status === 'CONFIRMED')
-                            <div class="flex items-start">
-                                <div class="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
-                                    <svg class="h-4 w-4 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                    </svg>
-                                </div>
-                                <div class="ml-3">
-                                    <div class="font-medium text-gray-900">Booking Confirmed</div>
-                                    <div class="text-sm text-gray-500">Ready for check-in</div>
-                                </div>
-                            </div>
-                        @elseif($booking->status === 'CHECKED_IN')
-                            <div class="flex items-start">
-                                <div class="h-8 w-8 rounded-full bg-purple-100 flex items-center justify-center flex-shrink-0">
-                                    <svg class="h-4 w-4 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
-                                    </svg>
-                                </div>
-                                <div class="ml-3">
-                                    <div class="font-medium text-gray-900">Checked In</div>
-                                    <div class="text-sm text-gray-500">Currently staying</div>
-                                </div>
-                            </div>
-                        @elseif($booking->status === 'CHECKED_OUT')
-                            <div class="flex items-start">
-                                <div class="h-8 w-8 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
-                                    <svg class="h-4 w-4 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                    </svg>
-                                </div>
-                                <div class="ml-3">
-                                    <div class="font-medium text-gray-900">Checked Out</div>
-                                    <div class="text-sm text-gray-500">Stay completed</div>
-                                </div>
-                            </div>
-                        @endif
-                    </div>
-                </div>
-
-                <!-- Important Dates -->
-                <div class="bg-white rounded-lg shadow p-6">
-                    <h3 class="text-lg font-medium text-gray-900 mb-4">Important Dates</h3>
-                    <div class="space-y-3">
-                        <div class="flex justify-between items-center">
-                            <span class="text-sm text-gray-600">Check-in Date</span>
-                            <span class="font-medium">{{ \Carbon\Carbon::parse($booking->check_in)->format('M d, Y') }}</span>
-                        </div>
-                        <div class="flex justify-between items-center">
-                            <span class="text-sm text-gray-600">Check-in Time</span>
-                            <span class="font-medium">After 2:00 PM</span>
-                        </div>
-                        <div class="flex justify-between items-center">
-                            <span class="text-sm text-gray-600">Check-out Date</span>
-                            <span class="font-medium">{{ \Carbon\Carbon::parse($booking->check_out)->format('M d, Y') }}</span>
-                        </div>
-                        <div class="flex justify-between items-center">
-                            <span class="text-sm text-gray-600">Check-out Time</span>
-                            <span class="font-medium">Before 12:00 PM</span>
+                                View All Complaints
+                            </a>
+                            <a href="{{ route('rental.index') }}" 
+                               class="flex items-center text-sm text-gray-600 hover:text-gray-900 hover:underline">
+                                <svg class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                                </svg>
+                                Back to Rental Dashboard
+                            </a>
                         </div>
                     </div>
                 </div>
@@ -468,42 +369,7 @@
     </div>
 </div>
 
-<!-- Cancel Booking Modal -->
-<div id="cancelModal" class="hidden fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center p-4">
-    <div class="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
-        <h3 class="text-lg font-medium text-gray-900 mb-4">Cancel Booking</h3>
-        <p class="text-sm text-gray-600 mb-6">Are you sure you want to cancel this booking? This action cannot be undone.</p>
-        <div class="flex justify-end space-x-3">
-            <button type="button" onclick="closeCancelModal()" 
-                    class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
-                Keep Booking
-            </button>
-            <form method="POST" action="{{ route('rental.booking.cancel', $booking) }}" id="cancelForm">
-                @csrf
-                @method('DELETE')
-                <button type="submit" 
-                        class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700">
-                    Cancel Booking
-                </button>
-            </form>
-        </div>
-    </div>
-</div>
+<!-- Include modals from the main rental page -->
+@include('rental.partials.modals')
 
-<script>
-function openCancelModal() {
-    document.getElementById('cancelModal').classList.remove('hidden');
-}
-
-function closeCancelModal() {
-    document.getElementById('cancelModal').classList.add('hidden');
-}
-
-// Close modal when clicking outside
-document.getElementById('cancelModal').addEventListener('click', function(e) {
-    if (e.target === this) {
-        closeCancelModal();
-    }
-});
-</script>
 @endsection

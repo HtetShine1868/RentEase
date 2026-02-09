@@ -6,6 +6,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RoleApplicationController;
 use App\Http\Controllers\Owner\PropertyController;
+use App\Http\Controllers\Owner\ComplaintController; // ADD THIS IMPORT
 use App\Http\Controllers\RoomController;
 use App\Http\Controllers\BookingController;
 use App\Http\Controllers\PaymentController;
@@ -50,21 +51,21 @@ Route::middleware('auth')->group(function () {
         })->name('dashboard.user');
 
         // ============ USER SERVICE ROUTES ============
-    // Food Services
-    Route::prefix('food')->group(function () {
-        Route::get('/', [FoodServiceController::class, 'index'])->name('food.index');
-        Route::get('/restaurants', [FoodServiceController::class, 'restaurants'])->name('food.restaurants');
-        Route::get('/restaurants/{id}', [FoodServiceController::class, 'restaurant'])->name('food.restaurant.show');
-        Route::get('/orders', [FoodServiceController::class, 'orders'])->name('food.orders');
-        Route::get('/orders/{id}', [FoodServiceController::class, 'orderDetails'])->name('food.order.show');
-        Route::get('/subscriptions', [FoodServiceController::class, 'subscriptions'])->name('food.subscriptions');
-        Route::get('/subscriptions/create', [FoodServiceController::class, 'createSubscription'])->name('food.subscriptions.create');
-        Route::post('/orders', [FoodServiceController::class, 'placeOrder'])->name('food.orders.place');
-        Route::post('/subscriptions', [FoodServiceController::class, 'storeSubscription'])->name('food.subscriptions.store');
-        Route::post('/orders/{id}/cancel', [FoodServiceController::class, 'cancelOrder'])->name('food.orders.cancel');
-        Route::post('/subscriptions/{id}/pause', [FoodServiceController::class, 'pauseSubscription'])->name('food.subscriptions.pause');
-        Route::post('/subscriptions/{id}/cancel', [FoodServiceController::class, 'cancelSubscription'])->name('food.subscriptions.cancel');
-    });
+        // Food Services
+        Route::prefix('food')->group(function () {
+            Route::get('/', [FoodServiceController::class, 'index'])->name('food.index');
+            Route::get('/restaurants', [FoodServiceController::class, 'restaurants'])->name('food.restaurants');
+            Route::get('/restaurants/{id}', [FoodServiceController::class, 'restaurant'])->name('food.restaurant.show');
+            Route::get('/orders', [FoodServiceController::class, 'orders'])->name('food.orders');
+            Route::get('/orders/{id}', [FoodServiceController::class, 'orderDetails'])->name('food.order.show');
+            Route::get('/subscriptions', [FoodServiceController::class, 'subscriptions'])->name('food.subscriptions');
+            Route::get('/subscriptions/create', [FoodServiceController::class, 'createSubscription'])->name('food.subscriptions.create');
+            Route::post('/orders', [FoodServiceController::class, 'placeOrder'])->name('food.orders.place');
+            Route::post('/subscriptions', [FoodServiceController::class, 'storeSubscription'])->name('food.subscriptions.store');
+            Route::post('/orders/{id}/cancel', [FoodServiceController::class, 'cancelOrder'])->name('food.orders.cancel');
+            Route::post('/subscriptions/{id}/pause', [FoodServiceController::class, 'pauseSubscription'])->name('food.subscriptions.pause');
+            Route::post('/subscriptions/{id}/cancel', [FoodServiceController::class, 'cancelSubscription'])->name('food.subscriptions.cancel');
+        });
 
         // Laundry Services
         Route::prefix('laundry')->name('laundry.')->group(function () {
@@ -121,20 +122,21 @@ Route::middleware('auth')->group(function () {
         Route::post('/bookings/{booking}/check-out', [RentalController::class, 'checkOutBooking'])->name('bookings.check-out');
         Route::post('/bookings/extend', [RentalController::class, 'extendBooking'])->name('bookings.extend');
         Route::get('/bookings/{booking}/manage', [BookingController::class, 'manage'])->name('bookings.manage');
+        Route::get('/rental/booking/{booking}', [RentalController::class, 'showBooking'])->name('rental.booking-details');
         // Reviews
         Route::post('/reviews', [RentalController::class, 'submitReview'])->name('property-ratings.store');
         
-        // Complaints
-        Route::post('/complaints', [RentalController::class, 'submitComplaint'])->name('complaints.store');
+        // Complaints (USER complaints)
+        Route::prefix('complaints')->name('complaints.')->group(function () {
+            Route::get('/', [RentalController::class, 'complaints'])->name('index');
+            Route::post('/', [RentalController::class, 'submitComplaint'])->name('store');
+            Route::get('/{complaint}', [RentalController::class, 'showComplaint'])->name('show');
+        });
         
         // Booking Management
         Route::get('/bookings/{booking}', [RentalController::class, 'showBooking'])->name('bookings.show');
         Route::post('/bookings/{booking}/cancel', [RentalController::class, 'cancelBooking'])->name('bookings.cancel');
         Route::get('/bookings/{booking}/invoice', [RentalController::class, 'showInvoice'])->name('bookings.invoice');
-        
-        // Complaints Management
-        Route::get('/complaints', [RentalController::class, 'complaints'])->name('complaints.index');
-        Route::get('/complaints/{complaint}', [RentalController::class, 'showComplaint'])->name('complaints.show');
         
         // ============ PROPERTY SEARCH & BOOKING ROUTES ============
         Route::prefix('properties')->name('properties.')->group(function () {
@@ -172,9 +174,6 @@ Route::middleware('auth')->group(function () {
 }); 
 
 // ============ ROLE-SPECIFIC ROUTES ============
-// These are OUTSIDE the 'verified' group to allow access without email verification
-// (You can move them inside the 'verified.custom' group if you want verification required)
-
 // OWNER ROUTES
 Route::middleware(['auth', 'role:OWNER'])->group(function () {
     Route::prefix('owner')->name('owner.')->group(function () {
@@ -183,48 +182,28 @@ Route::middleware(['auth', 'role:OWNER'])->group(function () {
             return view('owner.pages.dashboard');
         })->name('dashboard');
         
-        // Bookings
-        Route::get('/bookings', function () {
-            return view('owner.pages.bookings.index');
-        })->name('bookings.index');
+        Route::prefix('bookings')->name('bookings.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Owner\BookingController::class, 'index'])->name('index');
+            Route::get('/{id}', [\App\Http\Controllers\Owner\BookingController::class, 'show'])->name('show');
+            Route::put('/{id}/status', [\App\Http\Controllers\Owner\BookingController::class, 'updateStatus'])->name('update-status');
+            Route::post('/{id}/reminder', [\App\Http\Controllers\Owner\BookingController::class, 'sendReminder'])->name('send-reminder');
+            Route::get('/export', [\App\Http\Controllers\Owner\BookingController::class, 'export'])->name('export');
+        });
         
         // Earnings
         Route::get('/earnings', function () {
             return view('owner.pages.earnings.index');
         })->name('earnings.index');
         
-// Complaints
-Route::prefix('complaints')->name('complaints.')->group(function () {
-    Route::get('/', [\App\Http\Controllers\Owner\ComplaintController::class, 'index'])
-        ->name('index');
-    
-    Route::get('/{id}', [\App\Http\Controllers\Owner\ComplaintController::class, 'show'])
-        ->name('show');
-    
-    // Assignment routes
-    Route::post('/{complaint}/assign', [\App\Http\Controllers\Owner\ComplaintController::class, 'assign'])
-        ->name('assign');
-    
-    Route::post('/{complaint}/assign-self', [\App\Http\Controllers\Owner\ComplaintController::class, 'assignToSelf'])
-        ->name('assign-self');
-    
-    // Reply and status update
-    Route::post('/{complaint}/reply', [\App\Http\Controllers\Owner\ComplaintController::class, 'reply'])
-        ->name('reply');
-    
-    Route::put('/{complaint}/status', [\App\Http\Controllers\Owner\ComplaintController::class, 'updateStatus'])
-        ->name('update-status');
-    
-    // Export (if you have this method in controller)
-    Route::get('/export', [\App\Http\Controllers\Owner\ComplaintController::class, 'export'])
-        ->name('export');
-    
-    // Statistics (if you have this method)
-    Route::get('/statistics', [\App\Http\Controllers\Owner\ComplaintController::class, 'statistics'])
-        ->name('statistics');
-     Route::put('/{complaint}', [\App\Http\Controllers\Owner\ComplaintController::class, 'update'])
-        ->name('update');
-});
+        // ============ COMPLAINT ROUTES (FIXED) ============
+        Route::prefix('complaints')->name('complaints.')->group(function () {
+            Route::get('/', [ComplaintController::class, 'index'])->name('index');
+            Route::post('/{id}/assign-self', [ComplaintController::class, 'assignToSelf'])->name('assign-self');
+            Route::put('/{id}/status', [ComplaintController::class, 'updateStatus'])->name('update-status');
+            Route::post('/{id}/reply', [ComplaintController::class, 'sendReply'])->name('reply');
+            Route::get('/export', [ComplaintController::class, 'export'])->name('export');
+            Route::get('/statistics', [ComplaintController::class, 'statistics'])->name('statistics');
+        });
         
         // Notifications
         Route::get('/notifications', function () {
@@ -242,7 +221,7 @@ Route::prefix('complaints')->name('complaints.')->group(function () {
         })->name('profile');
         
         // ============ OWNER PROPERTY MANAGEMENT ROUTES ============
-        // Property Management Routes - CORRECTED with proper prefix
+        // Property Management Routes
         Route::prefix('properties')->name('properties.')->group(function () {
             Route::get('/', [PropertyController::class, 'index'])->name('index');
             Route::get('/create', [PropertyController::class, 'create'])->name('create');
@@ -361,7 +340,6 @@ Route::middleware(['auth', 'role:SUPERADMIN'])->group(function () {
 });
 
 // ============ FALLBACK FOR MISSING ROUTES ============
-// Add this to prevent RouteNotFoundException
 Route::fallback(function () {
     if (auth()->check()) {
         return redirect()->route('dashboard');

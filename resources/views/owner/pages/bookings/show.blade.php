@@ -1,330 +1,377 @@
-@extends('owner.layouts.master')
+@extends('owner.layout.owner-layout')
 
-@section('title', 'Booking Details')
+@section('title', 'Booking #' . $booking->booking_reference . ' - RentEase')
+@section('page-title', 'Booking Details')
+
+@push('styles')
+<style>
+    .info-card {
+        @apply bg-white rounded-xl border border-gray-200 p-6;
+    }
+    
+    .info-label {
+        @apply text-sm font-medium text-gray-700 mb-1;
+    }
+    
+    .info-value {
+        @apply text-gray-900 font-semibold;
+    }
+    
+    .status-badge {
+        @apply px-3 py-1 rounded-full text-sm font-medium;
+    }
+    
+    .status-pending { @apply bg-yellow-100 text-yellow-800; }
+    .status-confirmed { @apply bg-green-100 text-green-800; }
+    .status-checked_in { @apply bg-blue-100 text-blue-800; }
+    .status-checked_out { @apply bg-purple-100 text-purple-800; }
+    .status-cancelled { @apply bg-red-100 text-red-800; }
+</style>
+@endpush
 
 @section('content')
-<div class="container mx-auto px-4 py-8">
-    <!-- Header -->
-    <div class="flex justify-between items-center mb-6">
-        <div>
-            <h1 class="text-2xl font-bold text-gray-900">Booking Details</h1>
-            <p class="text-gray-600">Booking ID: #{{ $booking->id }}</p>
-        </div>
-        <div class="flex gap-2">
-            <a href="{{ route('owner.bookings.index') }}" 
-               class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300">
-                ← Back to Bookings
-            </a>
-            <button class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-                Print Invoice
-            </button>
+<div class="space-y-6">
+    <!-- Header Section -->
+    <div class="info-card">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div>
+                <div class="flex items-center gap-3 mb-2">
+                    <h1 class="text-2xl font-bold text-gray-900">Booking #{{ $booking->booking_reference }}</h1>
+                    @php
+                        $statusClasses = [
+                            'PENDING' => 'status-pending',
+                            'CONFIRMED' => 'status-confirmed',
+                            'CHECKED_IN' => 'status-checked_in',
+                            'CHECKED_OUT' => 'status-checked_out',
+                            'CANCELLED' => 'status-cancelled'
+                        ];
+                        
+                        $statusIcons = [
+                            'PENDING' => 'clock',
+                            'CONFIRMED' => 'check-circle',
+                            'CHECKED_IN' => 'sign-in-alt',
+                            'CHECKED_OUT' => 'sign-out-alt',
+                            'CANCELLED' => 'times-circle'
+                        ];
+                    @endphp
+                    <span class="status-badge {{ $statusClasses[$booking->status] }}">
+                        <i class="fas fa-{{ $statusIcons[$booking->status] }} mr-1"></i>
+                        {{ ucfirst(strtolower(str_replace('_', ' ', $booking->status))) }}
+                    </span>
+                </div>
+                <p class="text-gray-600">
+                    Created {{ $booking->created_at->format('M d, Y \\a\\t h:i A') }}
+                    • Last updated {{ $booking->updated_at->diffForHumans() }}
+                </p>
+            </div>
+            
+            <div class="flex gap-3">
+                <a href="{{ route('owner.bookings.index') }}" 
+                   class="px-4 py-2 border border-gray-300 rounded-lg font-medium hover:bg-gray-50">
+                    <i class="fas fa-arrow-left mr-2"></i> Back
+                </a>
+                
+                @if($booking->status == 'PENDING')
+                <button onclick="updateStatus('CONFIRMED')" 
+                        class="px-4 py-2 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700">
+                    <i class="fas fa-check mr-2"></i> Confirm
+                </button>
+                @elseif($booking->status == 'CONFIRMED')
+                <button onclick="updateStatus('CHECKED_IN')" 
+                        class="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700">
+                    <i class="fas fa-sign-in-alt mr-2"></i> Check In
+                </button>
+                @elseif($booking->status == 'CHECKED_IN')
+                <button onclick="updateStatus('CHECKED_OUT')" 
+                        class="px-4 py-2 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700">
+                    <i class="fas fa-sign-out-alt mr-2"></i> Check Out
+                </button>
+                @endif
+            </div>
         </div>
     </div>
 
-    <!-- Status Badge -->
-    <div class="mb-6">
-        @php
-            $status = $booking->status ?? 'pending';
-            $statusColors = [
-                'confirmed' => 'bg-green-100 text-green-800 border-green-200',
-                'pending' => 'bg-yellow-100 text-yellow-800 border-yellow-200',
-                'cancelled' => 'bg-red-100 text-red-800 border-red-200',
-                'completed' => 'bg-blue-100 text-blue-800 border-blue-200',
-            ];
-            $statusColor = $statusColors[$status] ?? 'bg-gray-100 text-gray-800 border-gray-200';
-        @endphp
-        
-        <div class="inline-flex items-center px-4 py-2 rounded-lg border {{ $statusColor }}">
-            <span class="font-semibold">Status:</span>
-            <span class="ml-2">{{ ucfirst($status) }}</span>
-        </div>
-        <span class="ml-4 text-gray-500">
-            Booked on: {{ \Carbon\Carbon::parse($booking->created_at)->format('M d, Y') }}
-        </span>
-    </div>
-
+    <!-- Main Content Grid -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <!-- Left Column -->
         <div class="lg:col-span-2 space-y-6">
-            <!-- Guest Info Card -->
-            <div class="bg-white rounded-xl shadow-md p-6">
-                <h2 class="text-lg font-bold text-gray-900 mb-4 pb-2 border-b">Guest Information</h2>
-                
-                <div class="flex items-start gap-4">
-                    <!-- Avatar -->
-                    <div class="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center">
-                        @php
-                            $user = \App\Models\User::find($booking->user_id);
-                            $initial = $user ? strtoupper(substr($user->name, 0, 1)) : 'G';
-                        @endphp
-                        <span class="text-2xl font-bold text-purple-600">{{ $initial }}</span>
-                    </div>
-                    
-                    <!-- Guest Details -->
-                    <div class="flex-1">
-                        <h3 class="text-xl font-semibold text-gray-900">
-                            {{ $user->name ?? 'Guest #' . $booking->user_id }}
-                        </h3>
-                        <div class="mt-2 space-y-2 text-gray-600">
-                            <div class="flex items-center">
-                                <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                                    <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z"/>
-                                    <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z"/>
-                                </svg>
-                                {{ $user->email ?? 'Email not available' }}
-                            </div>
-                            @if($user && $user->phone)
-                            <div class="flex items-center">
-                                <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M7 2a2 2 0 00-2 2v12a2 2 0 002 2h6a2 2 0 002-2V4a2 2 0 00-2-2H7zm3 14a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd"/>
-                                </svg>
-                                {{ $user->phone }}
-                            </div>
+            <!-- Guest Information -->
+            <div class="info-card">
+                <h2 class="text-lg font-semibold text-gray-900 mb-4">Guest Information</h2>
+                <div class="space-y-4">
+                    <div class="flex items-center">
+                        <div class="w-16 h-16 rounded-full bg-purple-100 flex items-center justify-center mr-4">
+                            @if($booking->user->avatar_url)
+                                <img src="{{ $booking->user->avatar_url }}" alt="{{ $booking->user->name }}" 
+                                     class="w-16 h-16 rounded-full object-cover">
+                            @else
+                                <i class="fas fa-user text-purple-600 text-2xl"></i>
                             @endif
                         </div>
-                    </div>
-                </div>
-                
-                <!-- Booking Dates -->
-                <div class="mt-6 pt-4 border-t grid grid-cols-2 gap-4">
-                    <div>
-                        <p class="text-sm text-gray-500">Check-in</p>
-                        <p class="font-semibold">
-                            {{ $booking->check_in ? \Carbon\Carbon::parse($booking->check_in)->format('M d, Y') : 'Not set' }}
-                        </p>
-                        <p class="text-sm text-gray-500">After 2:00 PM</p>
-                    </div>
-                    <div>
-                        <p class="text-sm text-gray-500">Check-out</p>
-                        <p class="font-semibold">
-                            {{ $booking->check_out ? \Carbon\Carbon::parse($booking->check_out)->format('M d, Y') : 'Not set' }}
-                        </p>
-                        <p class="text-sm text-gray-500">Before 11:00 AM</p>
-                    </div>
-                    <div class="col-span-2 mt-2">
-                        <p class="text-sm text-gray-500">Duration</p>
-                        <p class="font-semibold">
-                            @if($booking->check_in && $booking->check_out)
-                                {{ \Carbon\Carbon::parse($booking->check_in)->diffInDays($booking->check_out) }} nights
-                            @else
-                                Not specified
+                        <div>
+                            <p class="text-xl font-bold text-gray-900">{{ $booking->user->name }}</p>
+                            <p class="text-gray-600">{{ $booking->user->email }}</p>
+                            @if($booking->user->phone)
+                            <p class="text-gray-500 mt-1">
+                                <i class="fas fa-phone mr-2"></i>{{ $booking->user->phone }}
+                            </p>
                             @endif
-                        </p>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Property Info Card -->
-            <div class="bg-white rounded-xl shadow-md p-6">
-                <h2 class="text-lg font-bold text-gray-900 mb-4 pb-2 border-b">Property Information</h2>
-                
-                @php
-                    $property = \App\Models\Property::find($booking->property_id);
-                    $room = \App\Models\Room::find($booking->room_id);
-                @endphp
-                
-                <div class="flex flex-col md:flex-row gap-4">
-                    <!-- Property Image -->
-                    <div class="md:w-1/3">
-                        @if($property && $property->primaryImage)
-                            <img src="{{ asset('storage/' . $property->primaryImage->image_path) }}" 
-                                 alt="{{ $property->name }}"
-                                 class="w-full h-48 object-cover rounded-lg">
-                        @else
-                            <div class="w-full h-48 bg-gray-200 rounded-lg flex items-center justify-center">
-                                <span class="text-gray-400">No Image</span>
-                            </div>
-                        @endif
-                    </div>
-                    
-                    <!-- Property Details -->
-                    <div class="md:w-2/3">
-                        <h3 class="text-xl font-bold text-gray-900">
-                            {{ $property->name ?? 'Property #' . $booking->property_id }}
-                        </h3>
-                        <p class="text-gray-600 mt-1">
-                            {{ $property->address ?? 'Address not available' }}
-                        </p>
-                        
-                        <div class="mt-4 grid grid-cols-2 md:grid-cols-3 gap-4">
-                            <div>
-                                <p class="text-sm text-gray-500">Property Type</p>
-                                <p class="font-semibold">
-                                    {{ $property ? ($property->type == 'HOSTEL' ? 'Hostel' : 'Apartment') : 'N/A' }}
-                                </p>
-                            </div>
-                            <div>
-                                <p class="text-sm text-gray-500">Room/Unit</p>
-                                <p class="font-semibold">
-                                    {{ $room->name ?? ($booking->room_id ? 'Room #' . $booking->room_id : 'Not specified') }}
-                                </p>
-                            </div>
-                            <div>
-                                <p class="text-sm text-gray-500">Guests</p>
-                                <p class="font-semibold">{{ $booking->guests ?? 1 }} guest(s)</p>
-                            </div>
-                            
-                            @if($property)
-                            <div>
-                                <p class="text-sm text-gray-500">Bedrooms</p>
-                                <p class="font-semibold">{{ $property->bedrooms ?? 'N/A' }}</p>
-                            </div>
-                            <div>
-                                <p class="text-sm text-gray-500">Bathrooms</p>
-                                <p class="font-semibold">{{ $property->bathrooms ?? 'N/A' }}</p>
-                            </div>
-                            <div>
-                                <p class="text-sm text-gray-500">Size</p>
-                                <p class="font-semibold">{{ $property->unit_size ?? 'N/A' }} sq ft</p>
-                            </div>
-                            @endif
+            <!-- Property & Stay Information -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Property Info -->
+                <div class="info-card">
+                    <h2 class="text-lg font-semibold text-gray-900 mb-4">Property Information</h2>
+                    <div class="space-y-4">
+                        <div>
+                            <p class="info-label">Property Name</p>
+                            <p class="info-value">{{ $booking->property->name }}</p>
+                            <p class="text-gray-600 text-sm mt-1">
+                                <i class="fas fa-{{ $booking->property->type == 'HOSTEL' ? 'bed' : 'home' }} mr-1"></i>
+                                {{ $booking->property->type }}
+                            </p>
                         </div>
                         
-                        <!-- Description -->
-                        @if($property && $property->description)
-                            <div class="mt-4">
-                                <p class="text-sm text-gray-500 mb-1">Description</p>
-                                <p class="text-gray-700 text-sm line-clamp-2">{{ $property->description }}</p>
-                            </div>
+                        <div>
+                            <p class="info-label">Location</p>
+                            <p class="info-value">{{ $booking->property->city }}, {{ $booking->property->area }}</p>
+                            <p class="text-gray-600 text-sm mt-1">{{ $booking->property->address }}</p>
+                        </div>
+                        
+                        @if($booking->room)
+                        <div>
+                            <p class="info-label">Room Details</p>
+                            <p class="info-value">{{ $booking->room->room_number }} ({{ $booking->room->room_type }})</p>
+                            <p class="text-gray-600 text-sm mt-1">Capacity: {{ $booking->room->capacity }} persons</p>
+                        </div>
+                        @else
+                        <div>
+                            <p class="info-label">Unit Type</p>
+                            <p class="info-value">Full Apartment</p>
+                        </div>
                         @endif
+                    </div>
+                </div>
+
+                <!-- Stay Details -->
+                <div class="info-card">
+                    <h2 class="text-lg font-semibold text-gray-900 mb-4">Stay Details</h2>
+                    <div class="space-y-4">
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <p class="info-label">Check-in Date</p>
+                                <p class="info-value">{{ $booking->check_in->format('M d, Y') }}</p>
+                            </div>
+                            <div>
+                                <p class="info-label">Check-out Date</p>
+                                <p class="info-value">{{ $booking->check_out->format('M d, Y') }}</p>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <p class="info-label">Duration</p>
+                            <p class="info-value">{{ $booking->check_in->diffInDays($booking->check_out) }} days</p>
+                        </div>
+                        
+                        <div>
+                            <p class="info-label">Booking Created</p>
+                            <p class="info-value">{{ $booking->created_at->format('M d, Y \\a\\t h:i A') }}</p>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Right Column: Payment Summary -->
-        <div class="lg:col-span-1">
-            <div class="bg-white rounded-xl shadow-md p-6 sticky top-6">
-                <h2 class="text-lg font-bold text-gray-900 mb-4 pb-2 border-b">Payment Summary</h2>
-                
-                <!-- Cost Breakdown -->
+        <!-- Right Column -->
+        <div class="space-y-6">
+            <!-- Financial Summary -->
+            <div class="info-card">
+                <h2 class="text-lg font-semibold text-gray-900 mb-4">Financial Summary</h2>
                 <div class="space-y-3">
-                    @php
-                        $nightlyRate = $booking->nightly_rate ?? $booking->base_price ?? 0;
-                        $cleaningFee = $booking->cleaning_fee ?? 0;
-                        $serviceFee = $booking->service_fee ?? 0;
-                        $discount = $booking->discount ?? 0;
-                        $totalAmount = $booking->total_amount ?? 0;
-                        $nights = 1;
-                        
-                        if ($booking->check_in && $booking->check_out) {
-                            try {
-                                $nights = \Carbon\Carbon::parse($booking->check_in)->diffInDays($booking->check_out);
-                            } catch (\Exception $e) {}
-                        }
-                    @endphp
-                    
-                    @if($nightlyRate > 0)
                     <div class="flex justify-between">
-                        <span class="text-gray-600">Nightly Rate</span>
-                        <span class="font-medium">${{ number_format($nightlyRate, 2) }} × {{ $nights }} nights</span>
+                        <span class="text-gray-600">Room Charges</span>
+                        <span class="font-semibold">
+                            ${{ number_format($booking->room_price_per_day * $booking->check_in->diffInDays($booking->check_out), 2) }}
+                        </span>
                     </div>
-                    @endif
-                    
-                    @if($cleaningFee > 0)
                     <div class="flex justify-between">
-                        <span class="text-gray-600">Cleaning Fee</span>
-                        <span class="font-medium">${{ number_format($cleaningFee, 2) }}</span>
+                        <span class="text-gray-600">Commission</span>
+                        <span class="font-semibold text-red-600">
+                            ${{ number_format($booking->commission_amount, 2) }}
+                        </span>
                     </div>
-                    @endif
-                    
-                    @if($serviceFee > 0)
-                    <div class="flex justify-between">
-                        <span class="text-gray-500">Service Fee</span>
-                        <span class="font-medium">${{ number_format($serviceFee, 2) }}</span>
-                    </div>
-                    @endif
-                    
-                    @if($discount > 0)
-                    <div class="flex justify-between text-green-600">
-                        <span>Discount</span>
-                        <span class="font-medium">-${{ number_format($discount, 2) }}</span>
-                    </div>
-                    @endif
-                    
-                    <div class="border-t pt-3 mt-3">
-                        <div class="flex justify-between text-lg font-bold">
-                            <span>Total Amount</span>
-                            <span>${{ number_format($totalAmount, 2) }}</span>
+                    <div class="pt-3 border-t border-gray-200">
+                        <div class="flex justify-between">
+                            <span class="font-semibold text-gray-900">Total Amount</span>
+                            <span class="font-bold text-lg text-gray-900">
+                                ${{ number_format($booking->total_amount, 2) }}
+                            </span>
                         </div>
                     </div>
                 </div>
                 
                 <!-- Payment Status -->
-                @php
-                    $paymentStatus = $booking->payment_status ?? 'pending';
-                    $statusColors = [
-                        'paid' => 'green',
-                        'pending' => 'yellow', 
-                        'refunded' => 'blue',
-                        'failed' => 'red'
-                    ];
-                    $color = $statusColors[$paymentStatus] ?? 'gray';
-                @endphp
-                
-                <div class="mt-6 p-4 rounded-lg bg-{{ $color }}-50 border border-{{ $color }}-200">
+                <div class="mt-6 pt-6 border-t border-gray-200">
                     <div class="flex justify-between items-center">
                         <div>
-                            <p class="font-semibold text-{{ $color }}-800">
-                                {{ ucfirst($paymentStatus) }}
-                            </p>
-                            <p class="text-sm text-{{ $color }}-600 mt-1">
-                                @if($paymentStatus == 'paid' && $booking->paid_at)
-                                    Paid on {{ \Carbon\Carbon::parse($booking->paid_at)->format('M d, Y') }}
-                                @else
-                                    {{ $paymentStatus == 'paid' ? 'Payment completed' : 'Pending payment' }}
-                                @endif
+                            <p class="text-sm text-gray-500">Payment Status</p>
+                            @php
+                                $hasPaid = $booking->payments->where('status', 'COMPLETED')->count() > 0;
+                            @endphp
+                            <p class="font-semibold {{ $hasPaid ? 'text-green-600' : 'text-yellow-600' }}">
+                                {{ $hasPaid ? 'Paid' : 'Pending Payment' }}
                             </p>
                         </div>
-                        @if($paymentStatus != 'paid')
-                            <button class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm">
-                                Mark as Paid
-                            </button>
+                        @if(!$hasPaid)
+                        <button onclick="sendReminder()" 
+                                class="px-3 py-1.5 bg-yellow-100 text-yellow-800 rounded-lg text-sm font-medium hover:bg-yellow-200">
+                            <i class="fas fa-bell mr-1"></i> Remind
+                        </button>
                         @endif
                     </div>
                 </div>
-                
-                <!-- Actions -->
-                <div class="mt-6 space-y-3">
-                    @php
-                        $bookingStatus = $booking->status ?? 'pending';
-                    @endphp
-                    
-                    @if($bookingStatus == 'pending')
-                        <button class="w-full py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium">
-                            Confirm Booking
-                        </button>
-                    @endif
-                    
-                    @if($bookingStatus == 'confirmed')
-                        <button class="w-full py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium">
-                            Send Check-in Instructions
-                        </button>
-                    @endif
-                    
-                    @if(in_array($bookingStatus, ['pending', 'confirmed']))
-                        <button class="w-full py-3 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 font-medium">
-                            Cancel Booking
-                        </button>
-                    @endif
-                    
-                    <button class="w-full py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium">
-                        Send Message
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="info-card">
+                <h2 class="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h2>
+                <div class="space-y-3">
+                    <button onclick="sendMessage()" 
+                            class="w-full px-4 py-2.5 border border-gray-300 rounded-lg font-medium hover:bg-gray-50 flex items-center justify-center">
+                        <i class="fas fa-envelope mr-2"></i> Send Message
                     </button>
+                    
+                    <button onclick="printInvoice()" 
+                            class="w-full px-4 py-2.5 border border-gray-300 rounded-lg font-medium hover:bg-gray-50 flex items-center justify-center">
+                        <i class="fas fa-print mr-2"></i> Print Invoice
+                    </button>
+                    
+                    @if($booking->status !== 'CANCELLED' && $booking->status !== 'CHECKED_OUT')
+                    <button onclick="cancelBooking()" 
+                            class="w-full px-4 py-2.5 border border-red-300 text-red-700 rounded-lg font-medium hover:bg-red-50 flex items-center justify-center">
+                        <i class="fas fa-times mr-2"></i> Cancel Booking
+                    </button>
+                    @endif
+                </div>
+            </div>
+
+            <!-- Booking Timeline -->
+            <div class="info-card">
+                <h2 class="text-lg font-semibold text-gray-900 mb-4">Booking Timeline</h2>
+                <div class="space-y-4">
+                    <div class="flex items-center">
+                        <div class="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center mr-3">
+                            <i class="fas fa-calendar-plus text-green-600"></i>
+                        </div>
+                        <div>
+                            <p class="font-medium">Booking Created</p>
+                            <p class="text-sm text-gray-500">{{ $booking->created_at->format('M d, Y \\a\\t h:i A') }}</p>
+                        </div>
+                    </div>
+                    
+                    @if($booking->status == 'CANCELLED')
+                    <div class="flex items-center">
+                        <div class="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center mr-3">
+                            <i class="fas fa-times-circle text-red-600"></i>
+                        </div>
+                        <div>
+                            <p class="font-medium">Booking Cancelled</p>
+                            <p class="text-sm text-gray-500">{{ $booking->updated_at->format('M d, Y \\a\\t h:i A') }}</p>
+                        </div>
+                    </div>
+                    @endif
                 </div>
             </div>
         </div>
     </div>
 </div>
-@endsection
 
-@push('styles')
-<style>
-    .line-clamp-2 {
-        display: -webkit-box;
-        -webkit-line-clamp: 2;
-        -webkit-box-orient: vertical;
-        overflow: hidden;
+<script>
+// Get CSRF token
+function getCsrfToken() {
+    const metaTag = document.querySelector('meta[name="csrf-token"]');
+    return metaTag ? metaTag.content : '';
+}
+
+function updateStatus(status) {
+    const statusText = {
+        'CONFIRMED': 'Confirmed',
+        'CHECKED_IN': 'Checked In',
+        'CHECKED_OUT': 'Checked Out',
+        'CANCELLED': 'Cancelled'
+    }[status] || status;
+    
+    if(confirm(`Are you sure you want to change status to "${statusText}"?`)) {
+        fetch(`/owner/bookings/{{ $booking->id }}/status`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': getCsrfToken(),
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({ 
+                status: status,
+                notes: ''
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Status updated successfully!');
+                window.location.reload();
+            } else {
+                alert('Error: ' + data.message);
+            }
+        })
+        .catch(error => {
+            alert('Failed to update status');
+        });
     }
-</style>
-@endpush 
+}
+
+function sendReminder() {
+    fetch(`/owner/bookings/{{ $booking->id }}/reminder`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': getCsrfToken(),
+            'Accept': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message);
+        } else {
+            alert('Error: ' + data.message);
+        }
+    })
+    .catch(error => {
+        alert('Failed to send reminder');
+    });
+}
+
+function sendMessage() {
+    alert('Messaging feature coming soon!');
+}
+
+function printInvoice() {
+    window.open(`/owner/bookings/{{ $booking->id }}/invoice`, '_blank');
+}
+
+function cancelBooking() {
+    if(confirm('Are you sure you want to cancel this booking? This action cannot be undone.')) {
+        updateStatus('CANCELLED');
+    }
+}
+
+// Initialize
+document.addEventListener('DOMContentLoaded', function() {
+    // Add any initialization code here
+});
+</script>
+@endsection

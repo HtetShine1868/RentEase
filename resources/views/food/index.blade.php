@@ -466,6 +466,7 @@ function foodServices() {
         selectedRestaurant: null,
         selectedMealTypeId: null,
         orderType: 'PAY_PER_EAT',
+        orderStatusFilter: '',
         
         // Methods
         async init() {
@@ -476,31 +477,81 @@ function foodServices() {
         
         async loadRestaurants() {
             try {
-                const response = await fetch(`/api/food/restaurants?search=${this.searchQuery}&meal_type=${this.selectedMealType}&sort=${this.sortBy}`);
+                const params = new URLSearchParams({
+                    search: this.searchQuery,
+                    meal_type: this.selectedMealType,
+                    sort: this.sortBy
+                });
+                
+                const response = await fetch(`/food/restaurants?${params}`, {
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+                
+                if (!response.ok) throw new Error('Network response was not ok');
+                
                 const data = await response.json();
-                this.restaurants = data.restaurants || [];
+                if (data.success) {
+                    this.restaurants = data.restaurants || [];
+                } else {
+                    console.error('Error loading restaurants:', data.message);
+                }
             } catch (error) {
                 console.error('Error loading restaurants:', error);
+                this.showError('Failed to load restaurants');
             }
         },
         
         async loadOrders() {
             try {
-                const response = await fetch(`/api/food/orders?status=${this.orderStatusFilter}`);
+                const params = new URLSearchParams();
+                if (this.orderStatusFilter) {
+                    params.append('status', this.orderStatusFilter);
+                }
+                
+                const response = await fetch(`/food/orders?${params}`, {
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+                
+                if (!response.ok) throw new Error('Network response was not ok');
+                
                 const data = await response.json();
-                this.orders = data.orders || [];
+                if (data.success) {
+                    this.orders = data.orders || [];
+                } else {
+                    console.error('Error loading orders:', data.message);
+                }
             } catch (error) {
                 console.error('Error loading orders:', error);
+                this.showError('Failed to load orders');
             }
         },
         
         async loadSubscriptions() {
             try {
-                const response = await fetch('/api/food/subscriptions');
+                const response = await fetch('/food/subscriptions', {
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+                
+                if (!response.ok) throw new Error('Network response was not ok');
+                
                 const data = await response.json();
-                this.subscriptions = data.subscriptions || [];
+                if (data.success) {
+                    this.subscriptions = data.subscriptions || [];
+                } else {
+                    console.error('Error loading subscriptions:', data.message);
+                }
             } catch (error) {
                 console.error('Error loading subscriptions:', error);
+                this.showError('Failed to load subscriptions');
             }
         },
         
@@ -518,23 +569,36 @@ function foodServices() {
         
         async viewRestaurant(restaurantId) {
             try {
-                const response = await fetch(`/api/food/restaurants/${restaurantId}/menu`);
+                const response = await fetch(`/food/restaurant/${restaurantId}/menu`, {
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+                
+                if (!response.ok) throw new Error('Network response was not ok');
+                
                 const data = await response.json();
-                this.selectedRestaurant = data.restaurant;
-                this.selectedMealTypeId = this.mealTypes[0]?.id;
-                this.showMenuModal = true;
-                this.cart = {};
-                this.calculateCartTotal();
+                if (data.success) {
+                    this.selectedRestaurant = data.restaurant;
+                    this.selectedRestaurant.menu_items = data.menu_items || [];
+                    this.selectedMealTypeId = this.mealTypes[0]?.id;
+                    this.showMenuModal = true;
+                    this.cart = {};
+                    this.calculateCartTotal();
+                } else {
+                    this.showError(data.message || 'Failed to load restaurant menu');
+                }
             } catch (error) {
                 console.error('Error loading restaurant:', error);
-                alert('Failed to load restaurant menu');
+                this.showError('Failed to load restaurant menu');
             }
         },
         
         get filteredMenuItems() {
             if (!this.selectedRestaurant?.menu_items) return [];
             return this.selectedRestaurant.menu_items.filter(item => 
-                item.meal_type_id === this.selectedMealTypeId && item.is_available
+                item.meal_type_id == this.selectedMealTypeId
             );
         },
         
@@ -543,6 +607,15 @@ function foodServices() {
         },
         
         increaseQuantity(itemId) {
+            const item = this.filteredMenuItems.find(i => i.id == itemId);
+            if (!item) return;
+            
+            // Check quantity limit
+            if (item.daily_quantity && this.getCartQuantity(itemId) >= (item.daily_quantity - item.sold_today)) {
+                this.showError(`Only ${item.daily_quantity - item.sold_today} items available`);
+                return;
+            }
+            
             if (!this.cart[itemId]) {
                 this.cart[itemId] = 0;
             }
@@ -575,37 +648,154 @@ function foodServices() {
             this.cartTotal = total.toFixed(2);
         },
         
-        proceedToCheckout() {
-            this.showMenuModal = false;
-            this.showCheckoutModal = true;
-        },
-        
-        getStatusBadgeClass(status) {
-            const classes = {
-                'PENDING': 'bg-yellow-100 text-yellow-800',
-                'ACCEPTED': 'bg-blue-100 text-blue-800',
-                'PREPARING': 'bg-purple-100 text-purple-800',
-                'OUT_FOR_DELIVERY': 'bg-indigo-100 text-indigo-800',
-                'DELIVERED': 'bg-green-100 text-green-800',
-                'CANCELLED': 'bg-red-100 text-red-800'
+        async proceedToCheckout() {
+            if (this.cartTotal === 0) {
+                this.showError('Please add items to cart');
+                return;
+            }
+            
+            if (this.orderType === 'SUBSCRIPTION') {
+                this.showNewSubscriptionModal = true;
+                return;
+            }
+            
+            // Prepare order items
+            const orderItems = [];
+            for (const [itemId, quantity] of Object.entries(this.cart)) {
+                const item = this.selectedRestaurant.menu_items.find(i => i.id == itemId);
+                if (item) {
+                    orderItems.push({
+                        food_item_id: parseInt(itemId),
+                        quantity: quantity
+                    });
+                }
+            }
+            
+            // Get user's default address
+            let deliveryAddress = 'Your Address';
+            let deliveryLat = 23.8103;
+            let deliveryLon = 90.4125;
+            
+            try {
+                // Fetch user address from server
+                const response = await fetch('/api/user/address/default', {
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success && data.address) {
+                        deliveryAddress = `${data.address.address_line1}, ${data.address.city}`;
+                        deliveryLat = data.address.latitude || 23.8103;
+                        deliveryLon = data.address.longitude || 90.4125;
+                    }
+                }
+            } catch (error) {
+                console.error('Error fetching address:', error);
+            }
+            
+            const orderData = {
+                service_provider_id: this.selectedRestaurant.id,
+                meal_type_id: this.selectedMealTypeId,
+                meal_date: new Date().toISOString().split('T')[0],
+                delivery_address: deliveryAddress,
+                delivery_latitude: deliveryLat,
+                delivery_longitude: deliveryLon,
+                items: orderItems
             };
-            return classes[status] || 'bg-gray-100 text-gray-800';
+            
+            try {
+                const response = await fetch('/food/order', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                    },
+                    body: JSON.stringify(orderData)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    this.showMenuModal = false;
+                    this.showSuccess('Order placed successfully!');
+                    this.cart = {};
+                    this.cartTotal = 0;
+                    await this.loadOrders();
+                } else {
+                    this.showError(result.message || 'Failed to place order');
+                }
+            } catch (error) {
+                console.error('Error placing order:', error);
+                this.showError('Failed to place order');
+            }
         },
         
-        getSubscriptionStatusBadgeClass(status) {
-            const classes = {
-                'ACTIVE': 'bg-green-100 text-green-800',
-                'PAUSED': 'bg-yellow-100 text-yellow-800',
-                'CANCELLED': 'bg-red-100 text-red-800',
-                'COMPLETED': 'bg-blue-100 text-blue-800'
-            };
-            return classes[status] || 'bg-gray-100 text-gray-800';
+        async cancelOrder(orderId) {
+            if (!confirm('Are you sure you want to cancel this order?')) return;
+            
+            try {
+                const response = await fetch(`/food/order/${orderId}/cancel`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                    }
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    this.showSuccess('Order cancelled successfully');
+                    await this.loadOrders();
+                } else {
+                    this.showError(result.message || 'Failed to cancel order');
+                }
+            } catch (error) {
+                console.error('Error cancelling order:', error);
+                this.showError('Failed to cancel order');
+            }
         },
         
-        getDeliveryDaysText(daysMask) {
-            const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-            const activeDays = days.filter((_, i) => daysMask & (1 << i));
-            return activeDays.join(', ');
+        async cancelSubscription(subscriptionId) {
+            if (!confirm('Are you sure you want to cancel this subscription?')) return;
+            
+            try {
+                const response = await fetch(`/food/subscription/${subscriptionId}/cancel`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                    }
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    this.showSuccess('Subscription cancelled successfully');
+                    await this.loadSubscriptions();
+                } else {
+                    this.showError(result.message || 'Failed to cancel subscription');
+                }
+            } catch (error) {
+                console.error('Error cancelling subscription:', error);
+                this.showError('Failed to cancel subscription');
+            }
+        },
+        
+        showSuccess(message) {
+            // You can use Toastr or similar library
+            alert('Success: ' + message);
+        },
+        
+        showError(message) {
+            alert('Error: ' + message);
         },
         
         debounce(func, wait) {

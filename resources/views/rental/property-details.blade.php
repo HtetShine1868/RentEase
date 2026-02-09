@@ -8,7 +8,7 @@
     <nav class="bg-white shadow" aria-label="Breadcrumb">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
             <div class="flex items-center space-x-2">
-                <a href="{{ route('rental.search') }}" class="text-sm font-medium text-gray-500 hover:text-gray-700">
+                <a href="{{ route('properties.search') }}" class="text-sm font-medium text-gray-500 hover:text-gray-700">
                     Search
                 </a>
                 <svg class="h-5 w-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
@@ -266,7 +266,7 @@
 
                     <!-- CTA Buttons -->
                     @if($property->type === 'APARTMENT')
-                        <a href="{{ route('rental.apartment.rent', $property) }}" 
+                        <a href="{{ route('properties.rent', $property) }}" 
                            class="w-full inline-flex justify-center items-center px-4 py-3 border border-transparent text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 mb-3">
                             <svg class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />

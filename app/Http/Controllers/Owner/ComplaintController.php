@@ -20,91 +20,278 @@ class ComplaintController extends Controller
     /**
      * Display a listing of complaints
      */
-    public function index(Request $request)
-    {
-        $owner = Auth::user();
-        
-        // Get owner's properties and service providers
-        $ownerProperties = Property::where('owner_id', $owner->id)->pluck('id');
-        $ownerServiceProviders = ServiceProvider::where('user_id', $owner->id)->pluck('id');
-        
-        // Build base query
-        $complaintsQuery = Complaint::with([
-            'user:id,name,email,avatar_url',
-            'assignedUser:id,name,avatar_url'
-        ])->where(function($query) use ($ownerProperties, $ownerServiceProviders) {
-            $query->where(function($q) use ($ownerProperties) {
-                $q->where('related_type', 'PROPERTY')
-                  ->whereIn('related_id', $ownerProperties);
-            })
-            ->orWhere(function($q) use ($ownerServiceProviders) {
-                $q->where('related_type', 'SERVICE_PROVIDER')
-                  ->whereIn('related_id', $ownerServiceProviders);
-            });
+ /**
+ * Display a listing of complaints
+ */
+public function index(Request $request)
+{
+    $owner = Auth::user();
+    
+    // Get owner's properties and service providers IDs
+    $ownerProperties = Property::where('owner_id', $owner->id)->pluck('id')->toArray();
+    $ownerServiceProviders = ServiceProvider::where('user_id', $owner->id)->pluck('id')->toArray();
+    
+    // Build base query - FIXED: Use proper relationship loading
+    $complaintsQuery = Complaint::with([
+        'user:id,name,email,avatar_url',
+        'assignedUser:id,name,avatar_url',
+    ])->where(function($query) use ($ownerProperties, $ownerServiceProviders) {
+        // Property complaints owned by this owner
+        $query->where(function($q) use ($ownerProperties) {
+            $q->where('related_type', 'PROPERTY')
+              ->whereIn('related_id', $ownerProperties);
+        })
+        // Service provider complaints owned by this owner
+        ->orWhere(function($q) use ($ownerServiceProviders) {
+            $q->where('related_type', 'SERVICE_PROVIDER')
+              ->whereIn('related_id', $ownerServiceProviders);
         });
-        
-        // Apply status filter
-        $currentStatus = $request->status ?? 'all';
-        if ($currentStatus !== 'all') {
-            $complaintsQuery->where('status', $currentStatus);
-        }
-        
-        // Apply priority filter
-        if ($request->filled('priority')) {
-            $complaintsQuery->where('priority', $request->priority);
-        }
-        
-        // Apply search
-        if ($request->filled('search')) {
-            $search = $request->search;
-            $complaintsQuery->where(function($q) use ($search) {
-                $q->where('title', 'like', "%{$search}%")
-                  ->orWhere('description', 'like', "%{$search}%")
-                  ->orWhere('complaint_reference', 'like', "%{$search}%")
-                  ->orWhereHas('user', function($userQuery) use ($search) {
-                      $userQuery->where('name', 'like', "%{$search}%")
-                               ->orWhere('email', 'like', "%{$search}%");
-                  });
-            });
-        }
-        
-        // Get statistics
-        $stats = $this->getComplaintStats($owner, $complaintsQuery->clone());
-        
-        // Get selected complaint if specified
-        $selectedComplaint = null;
-        if ($request->filled('complaint_id')) {
-            $selectedComplaint = $this->getComplaintWithDetails($request->complaint_id, $owner);
-        }
-        
-        // Get paginated complaints
-        $complaints = $complaintsQuery->orderBy('created_at', 'desc')
-            ->paginate(15)
-            ->withQueryString();
-        
-        // Manually load related entities for each complaint
-        $complaints->getCollection()->transform(function ($complaint) use ($owner) {
-            return $this->enrichComplaintData($complaint);
-        });
-        
-        return view('owner.pages.complaints.index', [
-            'complaints' => $complaints,
-            'selectedComplaint' => $selectedComplaint,
-            'stats' => $stats,
-            'currentStatus' => $currentStatus,
-            'filters' => [
-                'status' => $currentStatus,
-                'priority' => $request->priority,
-                'search' => $request->search
-            ]
-        ]);
+    });
+    
+    // Apply status filter
+    $currentStatus = $request->status ?? 'all';
+    if ($currentStatus !== 'all') {
+        $complaintsQuery->where('status', $currentStatus);
     }
+    
+    // Apply priority filter
+    if ($request->filled('priority')) {
+        $complaintsQuery->where('priority', $request->priority);
+    }
+    
+    // Apply type filter
+    if ($request->filled('type') && $request->type !== 'all') {
+        $complaintsQuery->where('complaint_type', $request->type);
+    }
+    
+    // Apply date range filter
+    if ($request->filled('date_from')) {
+        $complaintsQuery->whereDate('created_at', '>=', $request->date_from);
+    }
+    if ($request->filled('date_to')) {
+        $complaintsQuery->whereDate('created_at', '<=', $request->date_to);
+    }
+    
+    // Apply search with multiple fields
+    if ($request->filled('search')) {
+        $search = $request->search;
+        $complaintsQuery->where(function($q) use ($search, $ownerProperties, $ownerServiceProviders) {
+            // Search in complaint fields
+            $q->where('title', 'like', "%{$search}%")
+              ->orWhere('description', 'like', "%{$search}%")
+              ->orWhere('complaint_reference', 'like', "%{$search}%")
+              ->orWhereHas('user', function($userQuery) use ($search) {
+                  $userQuery->where('name', 'like', "%{$search}%")
+                           ->orWhere('email', 'like', "%{$search}%");
+              });
+            
+            // Search in related properties
+            $q->orWhere(function($propertyQuery) use ($search, $ownerProperties) {
+                $propertyQuery->where('related_type', 'PROPERTY')
+                    ->whereIn('related_id', $ownerProperties)
+                    ->whereHas('property', function($propQuery) use ($search) {
+                        $propQuery->where('name', 'like', "%{$search}%")
+                                 ->orWhere('city', 'like', "%{$search}%")
+                                 ->orWhere('area', 'like', "%{$search}%");
+                    });
+            });
+            
+            // Search in related service providers
+            $q->orWhere(function($serviceQuery) use ($search, $ownerServiceProviders) {
+                $serviceQuery->where('related_type', 'SERVICE_PROVIDER')
+                    ->whereIn('related_id', $ownerServiceProviders)
+                    ->whereHas('serviceProvider', function($spQuery) use ($search) {
+                        $spQuery->where('business_name', 'like', "%{$search}%")
+                               ->orWhere('city', 'like', "%{$search}%");
+                    });
+            });
+        });
+    }
+    
+    // Get statistics BEFORE pagination
+    $stats = $this->getComplaintStats($owner, $complaintsQuery->clone());
+    
+    // Get selected complaint if specified
+    $selectedComplaint = null;
+    if ($request->filled('complaint_id')) {
+        $selectedComplaint = $this->getComplaintWithDetails($request->complaint_id, $owner);
+        
+        // If complaint doesn't exist or owner doesn't have permission, redirect
+        if (!$selectedComplaint) {
+            return redirect()->route('owner.complaints.index')
+                ->with('error', 'Complaint not found or you do not have permission to view it.');
+        }
+    }
+    
+    // Apply sorting
+    $sortBy = $request->get('sort_by', 'created_at');
+    $sortOrder = $request->get('sort_order', 'desc');
+    
+    $validSortFields = ['created_at', 'updated_at', 'priority', 'status'];
+    if (in_array($sortBy, $validSortFields)) {
+        $complaintsQuery->orderBy($sortBy, $sortOrder);
+    } else {
+        $complaintsQuery->orderBy('created_at', 'desc');
+    }
+    
+    // Apply manual priority ordering if requested
+    if ($request->get('sort_by') === 'priority_order') {
+        $complaintsQuery->orderByRaw("FIELD(priority, 'URGENT', 'HIGH', 'MEDIUM', 'LOW')");
+    }
+    
+    // Get paginated complaints
+    $perPage = $request->get('per_page', 15);
+    $complaints = $complaintsQuery->paginate($perPage)->withQueryString();
+    
+    // ===== FIXED: Load related entities properly =====
+    $complaints->getCollection()->transform(function ($complaint) use ($owner) {
+        // Manually load the correct relationship based on related_type
+        if ($complaint->related_type === 'PROPERTY') {
+            // Load property directly with custom query
+            $property = Property::select('id', 'name', 'type', 'city', 'area', 'owner_id')
+                ->where('id', $complaint->related_id)
+                ->first();
+            
+            // Manually set the relationship to avoid polymorphic issues
+            $complaint->setRelation('property', $property);
+            
+            // Also set the related polymorphic relation
+            $complaint->setRelation('related', $property);
+            
+        } elseif ($complaint->related_type === 'SERVICE_PROVIDER') {
+            // Load service provider directly with custom query
+            $serviceProvider = ServiceProvider::select('id', 'business_name', 'service_type', 'city', 'user_id')
+                ->where('id', $complaint->related_id)
+                ->first();
+            
+            // Manually set the relationship to avoid polymorphic issues
+            $complaint->setRelation('serviceProvider', $serviceProvider);
+            
+            // Also set the related polymorphic relation
+            $complaint->setRelation('related', $serviceProvider);
+        }
+        
+        // Load conversations count
+        $complaint->conversations_count = ComplaintConversation::where('complaint_id', $complaint->id)->count();
+        
+        // Enrich with additional data
+        return $this->enrichComplaintData($complaint);
+    });
+    
+    // Prepare filter options for the view
+    $filterOptions = [
+        'statuses' => [
+            'all' => 'All Status',
+            'OPEN' => 'Open',
+            'IN_PROGRESS' => 'In Progress',
+            'RESOLVED' => 'Resolved',
+            'CLOSED' => 'Closed',
+        ],
+        'priorities' => [
+            'all' => 'All Priority',
+            'URGENT' => 'Urgent',
+            'HIGH' => 'High',
+            'MEDIUM' => 'Medium',
+            'LOW' => 'Low',
+        ],
+        'types' => [
+            'all' => 'All Types',
+            'PROPERTY' => 'Property',
+            'FOOD_SERVICE' => 'Food Service',
+            'LAUNDRY_SERVICE' => 'Laundry Service',
+        ],
+        'sort_options' => [
+            'created_at_desc' => 'Newest First',
+            'created_at_asc' => 'Oldest First',
+            'priority_order' => 'Priority (High to Low)',
+            'updated_at_desc' => 'Recently Updated',
+        ],
+        'per_page_options' => [10, 15, 25, 50, 100],
+    ];
+    
+    return view('owner.pages.complaints.index', [
+        'complaints' => $complaints,
+        'selectedComplaint' => $selectedComplaint,
+        'stats' => $stats,
+        'currentStatus' => $currentStatus,
+        'filterOptions' => $filterOptions,
+        'filters' => [
+            'status' => $currentStatus,
+            'priority' => $request->priority,
+            'type' => $request->type,
+            'search' => $request->search,
+            'date_from' => $request->date_from,
+            'date_to' => $request->date_to,
+            'sort_by' => $sortBy,
+            'sort_order' => $sortOrder,
+            'per_page' => $perPage,
+        ]
+    ]);
+}
 
-    /**
-     * Display the specified complaint
-     */
-    public function show($id)
-    {
+/**
+ * Get complaint with all details (FIXED VERSION)
+ */
+private function getComplaintWithDetails($complaintId, $owner)
+{
+    // First, get the complaint without problematic relationships
+    $complaint = Complaint::with([
+        'user:id,name,email,avatar_url,phone',
+        'assignedUser:id,name,email,avatar_url',
+    ])->find($complaintId);
+    
+    if (!$complaint || !$this->verifyOwnership($complaint, $owner)) {
+        return null;
+    }
+    
+    // Load the correct related entity manually
+    if ($complaint->related_type === 'PROPERTY') {
+        $property = Property::select('id', 'name', 'type', 'city', 'area', 'address')
+            ->where('id', $complaint->related_id)
+            ->first();
+        
+        $complaint->setRelation('property', $property);
+        $complaint->setRelation('related', $property);
+        
+    } elseif ($complaint->related_type === 'SERVICE_PROVIDER') {
+        $serviceProvider = ServiceProvider::select('id', 'business_name', 'service_type', 'city', 'address')
+            ->where('id', $complaint->related_id)
+            ->first();
+        
+        $complaint->setRelation('serviceProvider', $serviceProvider);
+        $complaint->setRelation('related', $serviceProvider);
+    }
+    
+    // Load conversations with user info
+    $conversations = ComplaintConversation::with(['user:id,name,avatar_url'])
+        ->where('complaint_id', $complaint->id)
+        ->orderBy('created_at', 'asc')
+        ->get();
+    
+    $complaint->setRelation('conversations', $conversations);
+    
+    // Load attachments if any
+    if (class_exists(ComplaintAttachment::class)) {
+        $attachments = ComplaintAttachment::where('complaint_id', $complaint->id)->get();
+        $complaint->setRelation('attachments', $attachments);
+    }
+    
+    // Load status history if exists
+    if (class_exists(ComplaintStatusHistory::class)) {
+        $statusHistory = ComplaintStatusHistory::where('complaint_id', $complaint->id)
+            ->orderBy('created_at', 'asc')
+            ->get();
+        $complaint->setRelation('statusHistory', $statusHistory);
+    }
+    
+    return $this->enrichComplaintData($complaint, true);
+}
+
+/**
+ * Display the specified complaint
+ */
+public function show($id)
+{
         $owner = Auth::user();
         $complaint = $this->getComplaintWithDetails($id, $owner);
         
@@ -118,113 +305,118 @@ class ComplaintController extends Controller
     /**
      * Update complaint status
      */
-    public function updateStatus(Request $request, $id)
-    {
-        $request->validate([
-            'status' => 'required|in:OPEN,IN_PROGRESS,RESOLVED,CLOSED',
-            'resolution' => 'nullable|string|max:1000'
+public function updateStatus(Request $request, $id)
+{
+    $request->validate([
+        'status' => 'required|in:OPEN,IN_PROGRESS,RESOLVED,CLOSED',
+        'resolution' => 'nullable|string|max:1000'
+    ]);
+    
+    $owner = Auth::user();
+    $complaint = Complaint::findOrFail($id);
+    
+    // Verify ownership
+    if (!$this->verifyOwnership($complaint, $owner)) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Unauthorized action'
+        ], 403);
+    }
+    
+    DB::beginTransaction();
+    
+    try {
+        $oldStatus = $complaint->status;
+        $complaint->status = $request->status;
+        
+        if ($request->filled('resolution')) {
+            $complaint->resolution = $request->resolution;
+        }
+        
+        if ($request->status === 'RESOLVED' || $request->status === 'CLOSED') {
+            $complaint->resolved_at = now();
+        }
+        
+        $complaint->save();
+        
+        // Add status change to conversation
+        ComplaintConversation::create([
+            'complaint_id' => $complaint->id,
+            'user_id' => $owner->id,
+            'message' => "Status changed from {$oldStatus} to {$request->status}" . 
+                        ($request->resolution ? "\n\nResolution: " . $request->resolution : ''),
+            'type' => 'STATUS_UPDATE'
         ]);
         
-        $owner = Auth::user();
-        $complaint = Complaint::findOrFail($id);
+        DB::commit();
         
-        // Verify ownership
-        if (!$this->verifyOwnership($complaint, $owner)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Unauthorized action'
-            ], 403);
-        }
+        return response()->json([
+            'success' => true,
+            'message' => 'Status updated successfully',
+            'data' => $this->enrichComplaintData($complaint)
+        ]);
         
-        DB::beginTransaction();
-        
-        try {
-            $oldStatus = $complaint->status;
-            $complaint->status = $request->status;
-            
-            if ($request->filled('resolution')) {
-                $complaint->resolution = $request->resolution;
-            }
-            
-            if ($request->status === 'RESOLVED' || $request->status === 'CLOSED') {
-                $complaint->resolved_at = now();
-            }
-            
-            $complaint->save();
-            
-            // Add status change to conversation
-            ComplaintConversation::create([
-                'complaint_id' => $complaint->id,
-                'user_id' => $owner->id,
-                'message' => "Status changed from {$oldStatus} to {$request->status}" . 
-                            ($request->resolution ? "\n\nResolution: " . $request->resolution : ''),
-                'type' => 'STATUS_UPDATE'
-            ]);
-            
-            DB::commit();
-            
-            return response()->json([
-                'success' => true,
-                'message' => 'Status updated successfully',
-                'data' => $this->enrichComplaintData($complaint)
-            ]);
-            
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to update status: ' . $e->getMessage()
-            ], 500);
-        }
+    } catch (\Exception $e) {
+        DB::rollBack();
+        return response()->json([
+            'success' => false,
+            'message' => 'Failed to update status: ' . $e->getMessage()
+        ], 500);
     }
+}
 
     /**
      * Assign complaint to current user
      */
-    public function assignToSelf($id)
-    {
-        $owner = Auth::user();
-        $complaint = Complaint::findOrFail($id);
-        
-        // Verify ownership
-        if (!$this->verifyOwnership($complaint, $owner)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Unauthorized action'
-            ], 403);
-        }
-        
-        DB::beginTransaction();
-        
-        try {
-            $complaint->assigned_to = $owner->id;
-            $complaint->status = 'IN_PROGRESS';
-            $complaint->save();
-            
-            // Add assignment to conversation
-            ComplaintConversation::create([
-                'complaint_id' => $complaint->id,
-                'user_id' => $owner->id,
-                'message' => "Complaint assigned to {$owner->name}",
-                'type' => 'ASSIGNMENT'
-            ]);
-            
-            DB::commit();
-            
-            return response()->json([
-                'success' => true,
-                'message' => 'Complaint assigned to you successfully',
-                'data' => $this->enrichComplaintData($complaint)
-            ]);
-            
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to assign complaint: ' . $e->getMessage()
-            ], 500);
-        }
+public function assignToSelf($id)
+{
+    $owner = Auth::user();
+    
+    // Find complaint WITHOUT loading problematic relationships initially
+    $complaint = Complaint::without(['property', 'serviceProvider'])->findOrFail($id);
+    
+    // Verify ownership using a direct query
+    if (!$this->verifyOwnership($complaint, $owner)) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Unauthorized action'
+        ], 403);
     }
+    
+    DB::beginTransaction();
+    
+    try {
+        $complaint->assigned_to = $owner->id;
+        $complaint->status = 'IN_PROGRESS';
+        $complaint->save();
+        
+        // Add assignment to conversation
+        ComplaintConversation::create([
+            'complaint_id' => $complaint->id,
+            'user_id' => $owner->id,
+            'message' => "Complaint assigned to {$owner->name}",
+            'type' => 'ASSIGNMENT'
+        ]);
+        
+        DB::commit();
+        
+        // Load the enriched data for response
+        $enrichedComplaint = $this->enrichComplaintData($complaint);
+        
+        return response()->json([
+            'success' => true,
+            'message' => 'Complaint assigned to you successfully',
+            'data' => $enrichedComplaint
+        ]);
+        
+    } catch (\Exception $e) {
+        DB::rollBack();
+        return response()->json([
+            'success' => false,
+            'message' => 'Failed to assign complaint: ' . $e->getMessage()
+        ], 500);
+    }
+}
 
     /**
      * Send reply to complaint
@@ -415,64 +607,41 @@ class ComplaintController extends Controller
     /**
      * Get complaint with all details
      */
-    private function getComplaintWithDetails($complaintId, $owner)
-    {
-        $complaint = Complaint::with([
-            'user:id,name,email,avatar_url',
-            'assignedUser:id,name,email,avatar_url',
-            'conversations.user:id,name,avatar_url',
-        ])->find($complaintId);
-        
-        if (!$complaint || !$this->verifyOwnership($complaint, $owner)) {
-            return null;
-        }
-        
-        // Load the specific related entity
-        if ($complaint->related_type === 'PROPERTY') {
-            $complaint->load(['property' => function($query) {
-                $query->select('id', 'name', 'type', 'city', 'area');
-            }]);
-        } elseif ($complaint->related_type === 'SERVICE_PROVIDER') {
-            $complaint->load(['serviceProvider' => function($query) {
-                $query->select('id', 'business_name', 'service_type', 'city');
-            }]);
-        }
-        
-        return $this->enrichComplaintData($complaint, true);
-    }
+
 
     /**
      * Enrich complaint data with additional computed fields
      */
-    private function enrichComplaintData($complaint, $full = false)
-    {
-        if (!$complaint) return null;
-        
-        // Add computed properties
-        $complaint->status_text = ucfirst(strtolower($complaint->status));
-        $complaint->priority_text = ucfirst(strtolower($complaint->priority));
-        
-        // Add icons
-        $complaint->status_icon = $this->getStatusIcon($complaint->status);
-        $complaint->priority_icon = $this->getPriorityIcon($complaint->priority);
-        
-        // Add badge classes
-        $complaint->status_badge_class = $this->getStatusBadgeClass($complaint->status);
-        $complaint->priority_badge_class = $this->getPriorityBadgeClass($complaint->priority);
-        
-        // Add related entity info
-        $complaint->related_entity_name = $this->getRelatedEntityName($complaint);
-        $complaint->related_entity_icon = $this->getRelatedEntityIcon($complaint);
-        $complaint->elapsed_time = $complaint->created_at->diffForHumans();
-        
-        // Add counts if full details
-        if ($full) {
-            $complaint->conversations_count = $complaint->conversations->count();
-            $complaint->attachments_count = $this->getAttachmentsCount($complaint);
-        }
-        
-        return $complaint;
+
+private function enrichComplaintData($complaint, $full = false)
+{
+    if (!$complaint) return null;
+    
+    // Add computed properties - use safe access
+    $complaint->status_text = $complaint->status ? ucfirst(strtolower($complaint->status)) : '';
+    $complaint->priority_text = $complaint->priority ? ucfirst(strtolower($complaint->priority)) : '';
+    
+    // Add icons
+    $complaint->status_icon = $this->getStatusIcon($complaint->status ?? '');
+    $complaint->priority_icon = $this->getPriorityIcon($complaint->priority ?? '');
+    
+    // Add badge classes
+    $complaint->status_badge_class = $this->getStatusBadgeClass($complaint->status ?? '');
+    $complaint->priority_badge_class = $this->getPriorityBadgeClass($complaint->priority ?? '');
+    
+    // Add related entity info
+    $complaint->related_entity_name = $this->getRelatedEntityName($complaint);
+    $complaint->related_entity_icon = $this->getRelatedEntityIcon($complaint);
+    $complaint->elapsed_time = $complaint->created_at ? $complaint->created_at->diffForHumans() : '';
+    
+    // Add counts if full details
+    if ($full) {
+        $complaint->conversations_count = $complaint->conversations ? $complaint->conversations->count() : 0;
+        $complaint->attachments_count = $this->getAttachmentsCount($complaint);
     }
+    
+    return $complaint;
+}
 
     /**
      * Get attachments count for complaint

@@ -8,7 +8,7 @@
     <nav class="bg-white shadow" aria-label="Breadcrumb">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
             <div class="flex items-center space-x-2">
-                <a href="{{ route('rental.booking.details', $booking) }}" 
+                <a href="{{ route('properties.show', $booking) }}" 
                    class="text-sm font-medium text-gray-500 hover:text-gray-700">
                     Booking Details
                 </a>
@@ -27,7 +27,7 @@
                 <p class="text-gray-600 mt-1">Booking Reference: {{ $booking->booking_reference }}</p>
             </div>
             
-            <form method="POST" action="{{ route('rental.booking.payment.store', $booking) }}" class="p-6">
+            <form method="POST" action="{{ route('payments.store', $booking) }}" class="p-6">
                 @csrf
                 
                 <!-- Booking Summary -->
@@ -143,7 +143,7 @@
 
                 <!-- Form Actions -->
                 <div class="flex items-center justify-between pt-6 border-t border-gray-200">
-                    <a href="{{ route('rental.booking.details', $booking) }}" 
+                    <a href="{{ route('properties.show', $booking) }}" 
                        class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50">
                         Cancel
                     </a>

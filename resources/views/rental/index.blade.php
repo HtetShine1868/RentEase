@@ -56,7 +56,7 @@
             </div>
         @endif
 
-        <!-- Current Rental - Show only if check_out date is in future -->
+        <!-- Current Rental Cards -->
         @if($currentBookings->count() > 0)
             <div class="mb-8">
                 <h2 class="text-xl font-bold text-gray-900 mb-4">Current Stay</h2>
@@ -64,137 +64,101 @@
                     @foreach($currentBookings as $booking)
                         @php
                             $isActive = \Carbon\Carbon::parse($booking->check_out)->isFuture();
-                            $canExtend = $isActive && \Carbon\Carbon::parse($booking->check_out)->diffInDays(now()) <= 7;
-                            $hasReviewed = $booking->propertyRating()->where('user_id', auth()->id())->exists();
+                            $daysRemaining = \Carbon\Carbon::parse($booking->check_out)->diffInDays(now());
+                            $canExtend = $isActive && $daysRemaining <= 7;
+                            $hasReviewed = $booking->property->propertyRatings()->where('user_id', auth()->id())->exists();
+                            $canCheckIn = $booking->status === 'CONFIRMED' && now()->toDateString() >= \Carbon\Carbon::parse($booking->check_in)->toDateString();
                         @endphp
                         
                         @if($isActive)
-                            <div class="bg-white rounded-lg shadow overflow-hidden border border-green-200">
-                                <div class="p-6">
-                                    <!-- Property Info -->
-                                    <div class="flex items-start mb-4">
-                                        <div class="h-16 w-16 bg-gray-100 rounded-lg flex items-center justify-center mr-4">
-                                            <svg class="h-8 w-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                                            </svg>
-                                        </div>
-                                        <div class="flex-1">
-                                            <h3 class="font-medium text-gray-900">{{ $booking->property->name }}</h3>
-                                            <p class="text-sm text-gray-600">{{ $booking->property->address }}</p>
-                                            <p class="text-xs text-gray-500 mt-1">{{ $booking->property->city }}, {{ $booking->property->area }}</p>
-                                        </div>
-                                    </div>
-
-                                    <!-- Booking Details -->
-                                    <div class="space-y-2 mb-4">
-                                        <div class="flex justify-between text-sm">
-                                            <span class="text-gray-500">Check-in:</span>
-                                            <span class="font-medium">{{ \Carbon\Carbon::parse($booking->check_in)->format('M d, Y') }}</span>
-                                        </div>
-                                        <div class="flex justify-between text-sm">
-                                            <span class="text-gray-500">Check-out:</span>
-                                            <span class="font-medium">{{ \Carbon\Carbon::parse($booking->check_out)->format('M d, Y') }}</span>
-                                        </div>
-                                        <div class="flex justify-between text-sm">
-                                            <span class="text-gray-500">Duration:</span>
-                                            <span class="font-medium">{{ $booking->duration_days }} days</span>
-                                        </div>
-                                        @if($booking->room)
-                                            <div class="flex justify-between text-sm">
-                                                <span class="text-gray-500">Room:</span>
-                                                <span class="font-medium">{{ $booking->room->room_type }} ({{ $booking->room->room_number }})</span>
-                                            </div>
-                                        @endif
-                                        <div class="flex justify-between text-sm">
-                                            <span class="text-gray-500">Total Amount:</span>
-                                            <span class="font-medium">৳{{ number_format($booking->total_amount, 2) }}</span>
-                                        </div>
-                                    </div>
-
-                                    <!-- Days remaining -->
-                                    <div class="mb-4 p-2 bg-blue-50 rounded">
-                                        <div class="flex justify-between text-sm">
-                                            <span class="text-blue-700">Days Remaining:</span>
-                                            <span class="font-medium text-blue-700">
-                                                {{ \Carbon\Carbon::parse($booking->check_out)->diffInDays(now()) }} days
-                                            </span>
-                                        </div>
-                                    </div>
-
-                                    <!-- Status Badge -->
-                                    <div class="mb-4">
-                                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium
-                                            @if($booking->status === 'CHECKED_IN') bg-green-100 text-green-800
-                                            @elseif($booking->status === 'CONFIRMED') bg-yellow-100 text-yellow-800
-                                            @else bg-gray-100 text-gray-800 @endif">
+                            <div class="bg-white rounded-lg shadow-lg overflow-hidden border border-gray-200 hover:border-indigo-300 transition duration-300">
+                                <!-- Status Banner -->
+                                <div class="px-4 py-2 bg-indigo-600 text-white">
+                                    <div class="flex justify-between items-center">
+                                        <span class="text-sm font-semibold">
                                             @if($booking->status === 'CHECKED_IN')
-                                                <svg class="mr-1.5 h-2 w-2 text-green-400" fill="currentColor" viewBox="0 0 8 8">
-                                                    <circle cx="4" cy="4" r="3" />
+                                                <svg class="inline w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
                                                 </svg>
                                                 Currently Staying
-                                            @elseif($booking->status === 'CONFIRMED')
-                                                <svg class="mr-1.5 h-2 w-2 text-yellow-400" fill="currentColor" viewBox="0 0 8 8">
-                                                    <circle cx="4" cy="4" r="3" />
+                                            @else
+                                                <svg class="inline w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"/>
                                                 </svg>
                                                 Confirmed
+                                            @endif
+                                        </span>
+                                        <span class="text-xs bg-white bg-opacity-20 px-2 py-1 rounded">
+                                            @if($booking->property->type === 'APARTMENT')
+                                                Apartment
                                             @else
-                                                {{ $booking->status }}
+                                                {{ $booking->room->room_type ?? 'Room' }}
                                             @endif
                                         </span>
                                     </div>
-
-                                    <!-- Actions -->
-                                    <div class="space-y-2">
-                                        @if($booking->status === 'CONFIRMED')
-                                            <form method="POST" action="{{ route('bookings.check-in', $booking->id) }}">
-                                                @csrf
-                                                <button type="submit" 
-                                                        class="w-full inline-flex justify-center items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">
-                                                    Check In Now
-                                                </button>
-                                            </form>
-                                        @endif
-                                        
-                                        @if($booking->status === 'CHECKED_IN')
-                                            <form method="POST" action="{{ route('bookings.check-out', $booking->id) }}">
-                                                @csrf
-                                                <button type="submit" 
-                                                        onclick="return confirm('Are you sure you want to check out? This action cannot be undone.')"
-                                                        class="w-full inline-flex justify-center items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
-                                                    Check Out
-                                                </button>
-                                            </form>
-                                        @endif
-
-                                        <!-- Quick Actions -->
-                                        <div class="grid grid-cols-2 gap-2">
-                                            <a href="{{ route('bookings.show', $booking->id) }}" 
-                                               class="inline-flex justify-center items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
-                                                Details
-                                            </a>
-                                            
-                                            @if($canExtend)
-                                                <button type="button" 
-                                                        onclick="openExtendModal({{ $booking->id }}, '{{ addslashes($booking->property->name) }}', {{ $booking->room ? $booking->room->total_price : $booking->property->total_price }})"
-                                                        class="inline-flex justify-center items-center px-3 py-2 border border-blue-300 text-sm font-medium rounded-md text-blue-700 bg-white hover:bg-blue-50">
-                                                    Extend Stay
-                                                </button>
-                                            @endif
-                                            
-                                            <button type="button" 
-                                                    onclick="openComplaintModal({{ $booking->id }}, 'property', {{ $booking->property_id }})"
-                                                    class="inline-flex justify-center items-center px-3 py-2 border border-red-300 text-sm font-medium rounded-md text-red-700 bg-white hover:bg-red-50">
-                                                Report Issue
-                                            </button>
-                                            
-                                            @if($booking->status === 'CHECKED_IN' && !$hasReviewed)
-                                                <button type="button"
-                                                        onclick="openReviewModal({{ $booking->id }}, '{{ addslashes($booking->property->name) }}')"
-                                                        class="inline-flex justify-center items-center px-3 py-2 border border-green-300 text-sm font-medium rounded-md text-green-700 bg-white hover:bg-green-50">
-                                                    Write Review
-                                                </button>
-                                            @endif
+                                </div>
+                                
+                                <div class="p-5">
+                                    <!-- Property Info -->
+                                    <div class="mb-4">
+                                        <div class="flex items-start">
+                                            <div class="h-12 w-12 bg-gradient-to-r from-indigo-100 to-blue-100 rounded-lg flex items-center justify-center mr-3">
+                                                <svg class="h-6 w-6 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                                                </svg>
+                                            </div>
+                                            <div class="flex-1">
+                                                <h3 class="font-bold text-gray-900 text-lg">{{ $booking->property->name }}</h3>
+                                                <p class="text-sm text-gray-600">{{ $booking->property->city }}, {{ $booking->property->area }}</p>
+                                            </div>
                                         </div>
+                                    </div>
+
+                                    <!-- Progress Bar for Days Remaining -->
+                                    <div class="mb-4">
+                                        <div class="flex justify-between text-sm mb-1">
+                                            <span class="text-gray-600">Days Remaining</span>
+                                            <span class="font-semibold text-indigo-600">{{ $daysRemaining }} days</span>
+                                        </div>
+                                        <div class="w-full bg-gray-200 rounded-full h-2">
+                                            @php
+                                                $totalDays = \Carbon\Carbon::parse($booking->check_out)->diffInDays(\Carbon\Carbon::parse($booking->check_in));
+                                                $progress = min(100, max(0, (($totalDays - $daysRemaining) / $totalDays) * 100));
+                                                $progressColor = $daysRemaining <= 3 ? 'bg-red-500' : ($daysRemaining <= 7 ? 'bg-yellow-500' : 'bg-green-500');
+                                            @endphp
+                                            <div class="h-2 rounded-full {{ $progressColor }}" style="width: {{ $progress }}%"></div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Stay Duration -->
+                                    <div class="bg-gray-50 rounded-lg p-3 mb-4">
+                                        <div class="grid grid-cols-2 gap-3">
+                                            <div class="text-center">
+                                                <div class="text-xs text-gray-500">Check-in</div>
+                                                <div class="font-semibold text-gray-900">{{ \Carbon\Carbon::parse($booking->check_in)->format('M d') }}</div>
+                                                <div class="text-xs text-gray-500">{{ \Carbon\Carbon::parse($booking->check_in)->format('Y') }}</div>
+                                            </div>
+                                            <div class="text-center">
+                                                <div class="text-xs text-gray-500">Check-out</div>
+                                                <div class="font-semibold text-gray-900">{{ \Carbon\Carbon::parse($booking->check_out)->format('M d') }}</div>
+                                                <div class="text-xs text-gray-500">{{ \Carbon\Carbon::parse($booking->check_out)->format('Y') }}</div>
+                                            </div>
+                                        </div>
+                                        <div class="text-center mt-2">
+                                            <div class="text-xs text-gray-500">Duration</div>
+                                            <div class="font-semibold text-gray-900">{{ $booking->duration_days }} days</div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Action Button -->
+                                    <div class="mt-4">
+                                        <a href="{{ route('rental.booking-details', $booking) }}" 
+                                           class="w-full inline-flex justify-center items-center px-4 py-3 border border-transparent rounded-lg text-sm font-medium text-white bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 shadow-sm transition duration-300">
+                                            <svg class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                            </svg>
+                                            View Details & Manage
+                                        </a>
                                     </div>
                                 </div>
                             </div>
@@ -208,22 +172,22 @@
         @if($upcomingBookings->count() > 0)
             <div class="mb-8">
                 <h2 class="text-xl font-bold text-gray-900 mb-4">Upcoming Stays</h2>
-                <div class="bg-white shadow overflow-hidden rounded-lg">
-                    <div class="px-6 py-4 border-b border-gray-200">
-                        <h3 class="text-lg font-medium text-gray-900">Confirmed Bookings</h3>
+                <div class="bg-white shadow rounded-lg overflow-hidden">
+                    <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
+                        <h3 class="text-lg font-semibold text-gray-900">Confirmed Bookings</h3>
                     </div>
                     <div class="divide-y divide-gray-200">
                         @foreach($upcomingBookings as $booking)
-                            <div class="px-6 py-4">
+                            <div class="px-6 py-4 hover:bg-gray-50 transition duration-150">
                                 <div class="flex items-center justify-between">
                                     <div class="flex items-center">
-                                        <div class="h-12 w-12 bg-gray-100 rounded-lg flex items-center justify-center mr-4">
-                                            <svg class="h-6 w-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                                        <div class="h-10 w-10 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
+                                            <svg class="h-5 w-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                                             </svg>
                                         </div>
                                         <div>
-                                            <h4 class="font-medium text-gray-900">{{ $booking->property->name }}</h4>
+                                            <h4 class="font-semibold text-gray-900">{{ $booking->property->name }}</h4>
                                             <div class="flex items-center text-sm text-gray-600">
                                                 <svg class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -232,9 +196,9 @@
                                             </div>
                                         </div>
                                     </div>
-                                    <div class="flex items-center space-x-4">
+                                    <div class="flex items-center space-x-3">
                                         <a href="{{ route('bookings.show', $booking->id) }}" 
-                                           class="text-indigo-600 hover:text-indigo-900 text-sm font-medium">
+                                           class="text-sm text-indigo-600 hover:text-indigo-900 font-medium hover:underline">
                                             View Details
                                         </a>
                                         @if($booking->property->type === 'APARTMENT')
@@ -243,7 +207,7 @@
                                             </span>
                                         @else
                                             <span class="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">
-                                                {{ $booking->room ? $booking->room->room_type : 'Room' }}
+                                                {{ $booking->room->room_type ?? 'Room' }}
                                             </span>
                                         @endif
                                     </div>
@@ -260,26 +224,26 @@
             <!-- Past Bookings -->
             <div class="lg:col-span-2">
                 <div class="bg-white shadow rounded-lg">
-                    <div class="px-6 py-4 border-b border-gray-200">
-                        <h3 class="text-lg font-medium text-gray-900">Booking History</h3>
+                    <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
+                        <h3 class="text-lg font-semibold text-gray-900">Booking History</h3>
                     </div>
                     
                     @if($pastBookings->count() > 0)
                         <div class="divide-y divide-gray-200">
                             @foreach($pastBookings as $booking)
                                 @php
-                                    $hasReviewed = $booking->propertyRating()->where('user_id', auth()->id())->exists();
+                                    $hasReviewed = $booking->property->propertyRatings()->where('user_id', auth()->id())->exists();
                                 @endphp
-                                <div class="px-6 py-4">
+                                <div class="px-6 py-4 hover:bg-gray-50 transition duration-150">
                                     <div class="flex items-center justify-between">
                                         <div class="flex items-center flex-1">
-                                            <div class="h-16 w-16 bg-gray-100 rounded-lg flex items-center justify-center mr-4">
-                                                <svg class="h-8 w-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                                            <div class="h-12 w-12 bg-gray-100 rounded-lg flex items-center justify-center mr-3">
+                                                <svg class="h-6 w-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                                                 </svg>
                                             </div>
                                             <div class="flex-1">
-                                                <h4 class="font-medium text-gray-900">{{ $booking->property->name }}</h4>
+                                                <h4 class="font-semibold text-gray-900">{{ $booking->property->name }}</h4>
                                                 <div class="flex items-center text-sm text-gray-600 mt-1">
                                                     <svg class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -301,7 +265,7 @@
                                         </div>
                                         <div class="ml-4 flex flex-col items-end space-y-2">
                                             <a href="{{ route('bookings.show', $booking->id) }}" 
-                                               class="text-sm text-indigo-600 hover:text-indigo-900">
+                                               class="text-sm text-indigo-600 hover:text-indigo-900 font-medium hover:underline">
                                                 View Details
                                             </a>
                                             
@@ -309,7 +273,7 @@
                                             @if($booking->status === 'CHECKED_OUT' && !$hasReviewed)
                                                 <button type="button"
                                                         onclick="openReviewModal({{ $booking->id }}, '{{ addslashes($booking->property->name) }}')"
-                                                        class="text-sm text-green-600 hover:text-green-900">
+                                                        class="text-sm text-green-600 hover:text-green-900 hover:underline">
                                                     Write Review
                                                 </button>
                                             @endif
@@ -328,7 +292,7 @@
                     @else
                         <div class="px-6 py-8 text-center">
                             <svg class="h-12 w-12 mx-auto text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                             </svg>
                             <h3 class="mt-4 text-sm font-medium text-gray-900">No booking history</h3>
                             <p class="mt-1 text-sm text-gray-500">Your past bookings will appear here.</p>
@@ -337,26 +301,52 @@
                 </div>
             </div>
 
-            <!-- Sidebar: Complaints & Reviews -->
+            <!-- Sidebar: Quick Stats & Actions -->
             <div class="space-y-6">
+                <!-- Quick Stats -->
+                <div class="bg-white shadow rounded-lg">
+                    <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
+                        <h3 class="text-lg font-semibold text-gray-900">Quick Stats</h3>
+                    </div>
+                    <div class="p-6">
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="text-center p-3 bg-blue-50 rounded-lg">
+                                <div class="text-2xl font-bold text-blue-600">{{ $currentBookings->count() }}</div>
+                                <div class="text-xs text-blue-800 mt-1">Current Stays</div>
+                            </div>
+                            <div class="text-center p-3 bg-green-50 rounded-lg">
+                                <div class="text-2xl font-bold text-green-600">{{ $pastBookings->total() }}</div>
+                                <div class="text-xs text-green-800 mt-1">Total Bookings</div>
+                            </div>
+                            <div class="text-center p-3 bg-yellow-50 rounded-lg col-span-2">
+                                <div class="text-2xl font-bold text-yellow-600">{{ $reviewableBookings->count() }}</div>
+                                <div class="text-xs text-yellow-800 mt-1">Pending Reviews</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Pending Reviews -->
                 @if($reviewableBookings->count() > 0)
                     <div class="bg-white shadow rounded-lg">
-                        <div class="px-6 py-4 border-b border-gray-200">
-                            <h3 class="text-lg font-medium text-gray-900">Pending Reviews</h3>
+                        <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
+                            <h3 class="text-lg font-semibold text-gray-900">Pending Reviews</h3>
                         </div>
                         <div class="p-6">
                             <p class="text-sm text-gray-600 mb-4">Please review your recent stays:</p>
                             <div class="space-y-3">
                                 @foreach($reviewableBookings as $booking)
-                                    <div class="border border-gray-200 rounded-lg p-3">
+                                    <div class="border border-green-200 rounded-lg p-3 bg-green-50">
                                         <h4 class="font-medium text-gray-900">{{ $booking->property->name }}</h4>
                                         <p class="text-xs text-gray-600 mt-1">
                                             Stayed: {{ \Carbon\Carbon::parse($booking->check_out)->format('M d, Y') }}
                                         </p>
                                         <button type="button"
                                                 onclick="openReviewModal({{ $booking->id }}, '{{ addslashes($booking->property->name) }}')"
-                                                class="mt-2 w-full inline-flex justify-center items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-green-600 hover:bg-green-700">
+                                                class="mt-2 w-full inline-flex justify-center items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-green-600 hover:bg-green-700 transition duration-150">
+                                            <svg class="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                                            </svg>
                                             Write Review
                                         </button>
                                     </div>
@@ -366,55 +356,17 @@
                     </div>
                 @endif
 
-                <!-- Recent Complaints -->
-                @if($complaints->count() > 0)
-                    <div class="bg-white shadow rounded-lg">
-                        <div class="px-6 py-4 border-b border-gray-200">
-                            <h3 class="text-lg font-medium text-gray-900">Recent Complaints</h3>
-                        </div>
-                        <div class="divide-y divide-gray-200">
-                            @foreach($complaints as $complaint)
-                                <div class="px-6 py-4">
-                                    <div class="flex items-start justify-between">
-                                        <div>
-                                            <h4 class="font-medium text-gray-900">{{ $complaint->title }}</h4>
-                                            <div class="mt-1 flex items-center">
-                                                <span class="px-2 py-1 text-xs font-medium rounded-full 
-                                                    @if($complaint->status === 'OPEN') bg-yellow-100 text-yellow-800
-                                                    @elseif($complaint->status === 'RESOLVED') bg-green-100 text-green-800
-                                                    @elseif($complaint->status === 'CLOSED') bg-gray-100 text-gray-800
-                                                    @else bg-blue-100 text-blue-800 @endif">
-                                                    {{ $complaint->status }}
-                                                </span>
-                                                <span class="ml-2 text-xs text-gray-600">
-                                                    {{ \Carbon\Carbon::parse($complaint->created_at)->format('M d') }}
-                                                </span>
-                                            </div>
-                                            @if($complaint->related_type === 'PROPERTY')
-                                                <p class="text-xs text-gray-500 mt-1">{{ $complaint->property->name ?? 'Property' }}</p>
-                                            @endif
-                                        </div>
-                                        @if($complaint->resolution)
-                                            <span class="text-xs text-green-600">Resolved</span>
-                                        @endif
-                                    </div>
-                                </div>
-                            @endforeach
-                        </div>
-                    </div>
-                @endif
-
                 <!-- No Current Rental Message -->
                 @if($currentBookings->count() === 0 && $upcomingBookings->count() === 0)
                     <div class="bg-white shadow rounded-lg p-6 text-center">
                         <svg class="h-12 w-12 mx-auto text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                         </svg>
                         <h3 class="mt-4 text-sm font-medium text-gray-900">No Active Rental</h3>
                         <p class="mt-1 text-sm text-gray-500">Find your perfect place to stay.</p>
                         <div class="mt-6">
                             <a href="{{ route('properties.search') }}" 
-                               class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">
+                               class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 transition duration-150">
                                 Search for Rental
                             </a>
                         </div>
@@ -425,76 +377,7 @@
     </div>
 </div>
 
-<!-- Complaint Modal -->
-<div id="complaintModal" class="hidden fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center p-4 z-50">
-    <div class="bg-white rounded-lg shadow-xl max-w-md w-full">
-        <div class="px-6 py-4 border-b border-gray-200">
-            <h3 class="text-lg font-medium text-gray-900">Submit Complaint</h3>
-        </div>
-        <form id="complaintForm" method="POST" action="{{ route('complaints.store') }}">
-            @csrf
-            <input type="hidden" name="booking_id" id="complaintBookingId">
-            <input type="hidden" name="complaint_type" id="complaintType">
-            <input type="hidden" name="related_id" id="relatedId">
-            <input type="hidden" name="related_type" id="relatedType">
-            
-            <div class="p-6">
-                <div class="space-y-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Title</label>
-                        <input type="text" name="title" required
-                               class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                               placeholder="Brief description of the issue">
-                    </div>
-                    
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                        <textarea name="description" rows="4" required
-                                  class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                                  placeholder="Describe the issue in detail..."></textarea>
-                    </div>
-                    
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Complaint Type</label>
-                        <select name="complaint_type_display" required
-                                class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                                onchange="updateComplaintType(this.value)">
-                            <option value="">Select type</option>
-                            <option value="PROPERTY">Property Issue</option>
-                            <option value="FOOD_SERVICE">Food Service</option>
-                            <option value="LAUNDRY_SERVICE">Laundry Service</option>
-                            <option value="USER">User Issue</option>
-                            <option value="SYSTEM">System Issue</option>
-                        </select>
-                    </div>
-                    
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Priority</label>
-                        <select name="priority" required
-                                class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
-                            <option value="MEDIUM">Medium</option>
-                            <option value="LOW">Low</option>
-                            <option value="HIGH">High</option>
-                            <option value="URGENT">Urgent</option>
-                        </select>
-                    </div>
-                </div>
-            </div>
-            <div class="px-6 py-4 border-t border-gray-200 flex justify-end space-x-3">
-                <button type="button" onclick="closeComplaintModal()"
-                        class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
-                    Cancel
-                </button>
-                <button type="submit"
-                        class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700">
-                    Submit Complaint
-                </button>
-            </div>
-        </form>
-    </div>
-</div>
-
-<!-- Review Modal -->
+<!-- Review Modal (keep from previous version) -->
 <div id="reviewModal" class="hidden fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center p-4 z-50">
     <div class="bg-white rounded-lg shadow-xl max-w-md w-full">
         <div class="px-6 py-4 border-b border-gray-200">
@@ -606,102 +489,14 @@
     </div>
 </div>
 
-<!-- Extend Stay Modal -->
-<div id="extendModal" class="hidden fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center p-4 z-50">
-    <div class="bg-white rounded-lg shadow-xl max-w-md w-full">
-        <div class="px-6 py-4 border-b border-gray-200">
-            <h3 class="text-lg font-medium text-gray-900">Extend Your Stay</h3>
-            <p id="extendPropertyName" class="text-sm text-gray-600 mt-1"></p>
-        </div>
-        <form id="extendForm" method="POST" action="{{ route('bookings.extend') }}">
-            @csrf
-            <input type="hidden" name="booking_id" id="extendBookingId">
-            <input type="hidden" name="daily_price" id="extendDailyPrice">
-            
-            <div class="p-6">
-                <div class="space-y-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Current Check-out</label>
-                        <input type="text" id="currentCheckout" readonly
-                               class="block w-full rounded-md border-gray-300 bg-gray-50 shadow-sm sm:text-sm">
-                    </div>
-                    
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">New Check-out Date</label>
-                        <input type="date" name="new_check_out" required
-                               id="newCheckoutDate"
-                               class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                               min="{{ now()->addDay()->format('Y-m-d') }}">
-                    </div>
-                    
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Extension Days</label>
-                        <input type="number" id="extensionDays" readonly
-                               class="block w-full rounded-md border-gray-300 bg-gray-50 shadow-sm sm:text-sm">
-                    </div>
-                    
-                    <div class="p-3 bg-blue-50 rounded">
-                        <div class="flex justify-between text-sm">
-                            <span class="text-blue-700">Daily Rate:</span>
-                            <span class="font-medium text-blue-700" id="dailyRateDisplay"></span>
-                        </div>
-                        <div class="flex justify-between text-sm mt-1">
-                            <span class="text-blue-700">Total Extension Cost:</span>
-                            <span class="font-bold text-blue-700" id="totalExtensionCost"></span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="px-6 py-4 border-t border-gray-200 flex justify-end space-x-3">
-                <button type="button" onclick="closeExtendModal()"
-                        class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
-                    Cancel
-                </button>
-                <button type="submit"
-                        class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700">
-                    Extend Stay
-                </button>
-            </div>
-        </form>
-    </div>
-</div>
-
 <script>
-// Complaint Modal Functions
-let currentComplaintData = {};
-
-function openComplaintModal(bookingId, relatedType = 'property', relatedId = null) {
-    currentComplaintData = {
-        booking_id: bookingId,
-        related_type: relatedType.toUpperCase(),
-        related_id: relatedId
-    };
-    
-    document.getElementById('complaintBookingId').value = bookingId;
-    document.getElementById('relatedId').value = relatedId;
-    document.getElementById('relatedType').value = relatedType.toUpperCase();
-    
-    document.getElementById('complaintModal').classList.remove('hidden');
-}
-
-function updateComplaintType(type) {
-    document.getElementById('complaintType').value = type;
-}
-
-function closeComplaintModal() {
-    document.getElementById('complaintModal').classList.add('hidden');
-    document.getElementById('complaintForm').reset();
-    currentComplaintData = {};
-}
-
 // Review Modal Functions
 let currentReviewBookingId = null;
-let currentPropertyId = null;
 
 function openReviewModal(bookingId, propertyName) {
     currentReviewBookingId = bookingId;
-    document.getElementById('reviewBookingId').value = bookingId;
     document.getElementById('reviewPropertyName').textContent = propertyName;
+    document.getElementById('reviewBookingId').value = bookingId;
     document.getElementById('reviewModal').classList.remove('hidden');
     
     // Reset ratings
@@ -712,44 +507,6 @@ function closeReviewModal() {
     document.getElementById('reviewModal').classList.add('hidden');
     resetRatings();
     currentReviewBookingId = null;
-    currentPropertyId = null;
-}
-
-// Extend Stay Modal Functions
-function openExtendModal(bookingId, propertyName, dailyPrice) {
-    document.getElementById('extendBookingId').value = bookingId;
-    document.getElementById('extendDailyPrice').value = dailyPrice;
-    document.getElementById('extendPropertyName').textContent = propertyName;
-    document.getElementById('dailyRateDisplay').textContent = '৳' + dailyPrice.toFixed(2);
-    
-    const checkoutInput = document.getElementById('newCheckoutDate');
-    const today = new Date().toISOString().split('T')[0];
-    checkoutInput.min = today;
-    
-    document.getElementById('extendModal').classList.remove('hidden');
-    
-    // Initialize date calculation
-    updateExtensionCost();
-}
-
-function closeExtendModal() {
-    document.getElementById('extendModal').classList.add('hidden');
-    document.getElementById('extendForm').reset();
-}
-
-function updateExtensionCost() {
-    const dailyPrice = parseFloat(document.getElementById('extendDailyPrice').value);
-    const newCheckout = document.getElementById('newCheckoutDate').value;
-    
-    if (newCheckout) {
-        const currentDate = new Date();
-        const newDate = new Date(newCheckout);
-        const diffTime = Math.abs(newDate - currentDate);
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        
-        document.getElementById('extensionDays').value = diffDays;
-        document.getElementById('totalExtensionCost').textContent = '৳' + (diffDays * dailyPrice).toFixed(2);
-    }
 }
 
 // Rating Functions
@@ -777,19 +534,9 @@ function setRating(category, rating) {
     });
 }
 
-// Event Listeners
-document.getElementById('newCheckoutDate').addEventListener('change', updateExtensionCost);
-
-document.getElementById('complaintModal').addEventListener('click', function(e) {
-    if (e.target === this) closeComplaintModal();
-});
-
+// Close modal when clicking outside
 document.getElementById('reviewModal').addEventListener('click', function(e) {
     if (e.target === this) closeReviewModal();
-});
-
-document.getElementById('extendModal').addEventListener('click', function(e) {
-    if (e.target === this) closeExtendModal();
 });
 
 // Form validation
@@ -804,17 +551,5 @@ document.getElementById('reviewForm').addEventListener('submit', function(e) {
         alert('Please provide at least one rating before submitting.');
     }
 });
-
-// Initialize current checkout date
-@if($currentBookings->count() > 0)
-    @foreach($currentBookings as $booking)
-        document.addEventListener('DOMContentLoaded', function() {
-            const checkoutElements = document.querySelectorAll('[data-booking-id="{{ $booking->id }}"]');
-            checkoutElements.forEach(el => {
-                el.textContent = '{{ \Carbon\Carbon::parse($booking->check_out)->format("Y-m-d") }}';
-            });
-        });
-    @endforeach
-@endif
 </script>
 @endsection

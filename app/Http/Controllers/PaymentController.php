@@ -62,10 +62,10 @@ class PaymentController extends Controller
             // Update booking status
             $booking->update(['status' => 'CONFIRMED']);
             
-            return redirect()->route('rental.payment.success', $payment);
+            return redirect()->route('payments.success', $payment);
         } else {
             // Cash payment - stays pending
-            return redirect()->route('rental.booking.details', $booking)
+            return redirect()->route('properties.show', $booking)
                 ->with('info', 'Cash payment requested. Please pay the owner directly.');
         }
     }

@@ -88,7 +88,7 @@ class BookingController extends Controller
             'status' => 'PENDING',
         ]);
         
-        return redirect()->route('rental.booking.details', $booking)
+       return redirect()->route('bookings.show', $booking)
             ->with('success', 'Apartment booking request submitted successfully! Please complete payment.');
     }
     

@@ -8,13 +8,13 @@
     <nav class="bg-white shadow" aria-label="Breadcrumb">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
             <div class="flex items-center space-x-2">
-                <a href="{{ route('rental.search') }}" class="text-sm font-medium text-gray-500 hover:text-gray-700">
+                <a href="{{ route('properties.search') }}" class="text-sm font-medium text-gray-500 hover:text-gray-700">
                     Search
                 </a>
                 <svg class="h-5 w-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
                     <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
                 </svg>
-                <a href="{{ route('rental.property.details', $property) }}" 
+                <a href="{{ route('properties.show', $property) }}" 
                    class="text-sm font-medium text-gray-500 hover:text-gray-700">
                     {{ Str::limit($property->name, 20) }}
                 </a>
@@ -72,7 +72,7 @@
             </div>
             
             <!-- FORM FIX: Changed action to the correct POST route -->
-            <form method="POST" action="{{ route('rental.apartment.book', $property) }}" class="p-6">
+            <form method="POST" action="{{ route('bookings.apartment.store', $property) }}" class="p-6">
                 @csrf
                 
                 <!-- Property Summary -->
@@ -292,7 +292,7 @@
 
                 <!-- Form Actions -->
                 <div class="flex items-center justify-between pt-8 border-t border-gray-200">
-                    <a href="{{ route('rental.property.details', $property) }}" 
+                    <a href="{{ route('properties.show', $property) }}" 
                        class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                         <svg class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />

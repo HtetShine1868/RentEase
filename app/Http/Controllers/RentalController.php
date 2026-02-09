@@ -293,27 +293,30 @@ class RentalController extends Controller
     /**
      * Check-in to a booking
      */
-    public function checkInBooking(Booking $booking)
-    {
-        if ($booking->user_id !== Auth::id()) {
-            abort(403);
-        }
-        
-        if ($booking->status !== 'CONFIRMED') {
-            return redirect()->back()->with('error', 'Only confirmed bookings can be checked in.');
-        }
-        
-        if (now()->lt(Carbon::parse($booking->check_in))) {
-            return redirect()->back()->with('error', 'Check-in is only allowed on or after the check-in date.');
-        }
-        
-        $booking->update([
-            'status' => 'CHECKED_IN',
-            'updated_at' => now()
-        ]);
-        
-        return redirect()->back()->with('success', 'Successfully checked in!');
+ // In RentalController.php - update checkInBooking method
+
+public function checkInBooking(Booking $booking)
+{
+    if ($booking->user_id !== Auth::id()) {
+        abort(403);
     }
+    
+    if ($booking->status !== 'CONFIRMED') {
+        return redirect()->back()->with('error', 'Only confirmed bookings can be checked in.');
+    }
+    
+    // FIXED: Use date comparison instead of datetime
+    if (now()->toDateString() < Carbon::parse($booking->check_in)->toDateString()) {
+        return redirect()->back()->with('error', 'Check-in is only allowed on or after the check-in date.');
+    }
+    
+    $booking->update([
+        'status' => 'CHECKED_IN',
+        'updated_at' => now()
+    ]);
+    
+    return redirect()->back()->with('success', 'Successfully checked in!');
+}
     
     /**
      * Check-out from a booking
