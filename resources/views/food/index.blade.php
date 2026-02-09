@@ -20,6 +20,10 @@
                     <div class="text-2xl font-bold text-green-600">{{ $activeSubscriptions ?? 0 }}</div>
                     <div class="text-sm text-gray-500">Active Subscriptions</div>
                 </div>
+                <div class="text-center">
+                    <div class="text-2xl font-bold text-yellow-600">{{ $pendingOrders ?? 0 }}</div>
+                    <div class="text-sm text-gray-500">Pending</div>
+                </div>
             </div>
         </div>
     </div>
@@ -28,17 +32,17 @@
     <div class="bg-white rounded-lg shadow">
         <div class="border-b border-gray-200">
             <nav class="-mb-px flex space-x-8 px-6" aria-label="Tabs">
-                <button @click="activeTab = 'restaurants'" 
+                <button @click="activeTab = 'restaurants'; loadRestaurants();" 
                         :class="activeTab === 'restaurants' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
                         class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
                     Browse Restaurants
                 </button>
-                <button @click="activeTab = 'orders'" 
+                <button @click="activeTab = 'orders'; loadOrders();" 
                         :class="activeTab === 'orders' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
                         class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
                     My Orders
                 </button>
-                <button @click="activeTab = 'subscriptions'" 
+                <button @click="activeTab = 'subscriptions'; loadSubscriptions();" 
                         :class="activeTab === 'subscriptions' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
                         class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
                     My Subscriptions
@@ -82,9 +86,61 @@
 
                 <!-- Restaurant Grid -->
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <!-- Initial restaurants loaded from server -->
+                    @foreach($initialRestaurants as $restaurant)
+                    <div class="border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition-shadow">
+                        <div class="h-48 bg-gray-100 flex items-center justify-center">
+                            <i class="fas fa-utensils text-gray-300 text-4xl"></i>
+                        </div>
+                        
+                        <div class="p-4">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <h3 class="font-bold text-lg text-gray-900">{{ $restaurant->business_name }}</h3>
+                                    <div class="flex items-center mt-1">
+                                        <div class="flex text-yellow-400">
+                                            @for($i = 1; $i <= 5; $i++)
+                                                @if($i <= floor($restaurant->rating ?? 0))
+                                                <i class="fas fa-star"></i>
+                                                @elseif($i - 0.5 <= ($restaurant->rating ?? 0))
+                                                <i class="fas fa-star-half-alt"></i>
+                                                @else
+                                                <i class="far fa-star"></i>
+                                                @endif
+                                            @endfor
+                                        </div>
+                                        <span class="ml-2 text-gray-600">{{ number_format($restaurant->rating ?? 0, 1) }}</span>
+                                        <span class="ml-2 text-gray-400">({{ $restaurant->total_orders ?? 0 }} orders)</span>
+                                    </div>
+                                    <p class="mt-2 text-gray-600 text-sm">{{ Str::limit($restaurant->description ?? 'No description', 100) }}</p>
+                                </div>
+                                <div class="text-right">
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                        <i class="fas fa-clock mr-1"></i>
+                                        <span>~45 min</span>
+                                    </span>
+                                </div>
+                            </div>
+                            
+                            <div class="mt-4 pt-4 border-t border-gray-100">
+                                <div class="flex justify-between items-center">
+                                    <div>
+                                        <span class="text-gray-900 font-semibold">5.0 km away</span>
+                                        <p class="text-sm text-gray-500">{{ $restaurant->city ?? 'Dhaka' }}</p>
+                                    </div>
+                                    <button @click="viewRestaurant({{ $restaurant->id }})"
+                                            class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors">
+                                        View Menu
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    @endforeach
+                    
+                    <!-- Dynamic restaurants loaded via AJAX -->
                     <template x-for="restaurant in restaurants" :key="restaurant.id">
                         <div class="border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition-shadow">
-                            <!-- Restaurant Image Placeholder -->
                             <div class="h-48 bg-gray-100 flex items-center justify-center">
                                 <i class="fas fa-utensils text-gray-300 text-4xl"></i>
                             </div>
@@ -100,14 +156,14 @@
                                                 </template>
                                             </div>
                                             <span class="ml-2 text-gray-600" x-text="restaurant.rating.toFixed(1)"></span>
-                                            <span class="ml-2 text-gray-400">(${restaurant.total_orders} orders)</span>
+                                            <span class="ml-2 text-gray-400">(<span x-text="restaurant.total_orders"></span> orders)</span>
                                         </div>
-                                        <p class="mt-2 text-gray-600 text-sm" x-text="restaurant.description"></p>
+                                        <p class="mt-2 text-gray-600 text-sm" x-text="restaurant.description ? restaurant.description.substring(0, 100) + '...' : 'No description available'"></p>
                                     </div>
                                     <div class="text-right">
                                         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                                             <i class="fas fa-clock mr-1"></i>
-                                            <span x-text="`${restaurant.estimated_delivery_minutes} min`"></span>
+                                            <span x-text="`~${restaurant.estimated_delivery_minutes || 45} min`"></span>
                                         </span>
                                     </div>
                                 </div>
@@ -115,7 +171,7 @@
                                 <div class="mt-4 pt-4 border-t border-gray-100">
                                     <div class="flex justify-between items-center">
                                         <div>
-                                            <span class="text-gray-900 font-semibold" x-text="`${restaurant.distance_km.toFixed(1)} km away`"></span>
+                                            <span class="text-gray-900 font-semibold" x-text="`${restaurant.distance_km || 5.0} km away`"></span>
                                             <p class="text-sm text-gray-500" x-text="restaurant.city"></p>
                                         </div>
                                         <button @click="viewRestaurant(restaurant.id)"
@@ -130,7 +186,7 @@
                 </div>
 
                 <!-- Empty State -->
-                <div x-show="restaurants.length === 0" x-cloak class="text-center py-12">
+                <div x-show="restaurants.length === 0 && !hasInitialRestaurants" x-cloak class="text-center py-12">
                     <i class="fas fa-search text-gray-300 text-5xl mb-4"></i>
                     <h3 class="text-lg font-medium text-gray-900">No restaurants found</h3>
                     <p class="mt-2 text-gray-500">Try adjusting your search or filters</p>
@@ -154,6 +210,42 @@
                     </div>
                 </div>
 
+                <!-- Initial orders from server -->
+                @if(count($recentOrders) > 0)
+                @foreach($recentOrders as $order)
+                <div class="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 mb-4">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <div class="flex items-center">
+                                <span class="font-semibold text-gray-900">{{ $order->order_reference }}</span>
+                                <span class="{{ 
+                                    $order->status === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
+                                    ($order->status === 'ACCEPTED' ? 'bg-blue-100 text-blue-800' :
+                                    ($order->status === 'PREPARING' ? 'bg-purple-100 text-purple-800' :
+                                    ($order->status === 'OUT_FOR_DELIVERY' ? 'bg-indigo-100 text-indigo-800' :
+                                    ($order->status === 'DELIVERED' ? 'bg-green-100 text-green-800' :
+                                    ($order->status === 'CANCELLED' ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800')))))
+                                }} ml-3 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium">
+                                    <span>{{ str_replace('_', ' ', $order->status) }}</span>
+                                </span>
+                            </div>
+                            <p class="text-sm text-gray-600 mt-1">
+                                <span>{{ $order->business_name }}</span> • 
+                                <span>{{ \Carbon\Carbon::parse($order->created_at)->format('M d, Y') }}</span> • 
+                                <span>{{ $order->meal_type }}</span>
+                            </p>
+                            <p class="text-sm text-gray-500 mt-1">{{ $order->delivery_address ?? 'Address not specified' }}</p>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-lg font-bold text-gray-900">৳{{ number_format($order->total_amount, 2) }}</div>
+                            <div class="text-sm text-gray-500">{{ $order->created_at_formatted }}</div>
+                        </div>
+                    </div>
+                </div>
+                @endforeach
+                @endif
+
+                <!-- Dynamic orders loaded via AJAX -->
                 <div class="space-y-4">
                     <template x-for="order in orders" :key="order.id">
                         <div class="border border-gray-200 rounded-lg p-4 hover:bg-gray-50">
@@ -168,7 +260,7 @@
                                     </div>
                                     <p class="text-sm text-gray-600 mt-1">
                                         <span x-text="order.business_name"></span> • 
-                                        <span x-text="order.meal_date"></span> • 
+                                        <span x-text="new Date(order.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })"></span> • 
                                         <span x-text="order.meal_type"></span>
                                     </p>
                                     <p class="text-sm text-gray-500 mt-1" x-text="order.delivery_address"></p>
@@ -207,7 +299,7 @@
                 </div>
 
                 <!-- Empty State -->
-                <div x-show="orders.length === 0" x-cloak class="text-center py-12">
+                <div x-show="orders.length === 0 && {{ count($recentOrders) }} === 0" x-cloak class="text-center py-12">
                     <i class="fas fa-shopping-bag text-gray-300 text-5xl mb-4"></i>
                     <h3 class="text-lg font-medium text-gray-900">No orders yet</h3>
                     <p class="mt-2 text-gray-500">Your food orders will appear here</p>
@@ -226,6 +318,65 @@
                     </div>
                 </div>
 
+                <!-- Initial subscriptions from server -->
+                @if(count($subscriptions) > 0)
+                @foreach($subscriptions as $subscription)
+                <div class="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 mb-4">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <div class="flex items-center">
+                                <span class="font-semibold text-gray-900">{{ $subscription->business_name }}</span>
+                                <span class="{{ 
+                                    $subscription->status === 'ACTIVE' ? 'bg-green-100 text-green-800' :
+                                    ($subscription->status === 'PAUSED' ? 'bg-yellow-100 text-yellow-800' :
+                                    ($subscription->status === 'CANCELLED' ? 'bg-red-100 text-red-800' :
+                                    ($subscription->status === 'COMPLETED' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800')))
+                                }} ml-3 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium">
+                                    <span>{{ $subscription->status }}</span>
+                                </span>
+                            </div>
+                            <p class="text-sm text-gray-600 mt-1">
+                                <span>{{ $subscription->meal_type }}</span> • 
+                                <span>{{ \Carbon\Carbon::parse($subscription->delivery_time)->format('h:i A') }}</span> • 
+                                <span>{{ $subscription->delivery_days_text }}</span>
+                            </p>
+                            <p class="text-sm text-gray-500 mt-1">
+                                <span>{{ $subscription->start_date_formatted }}</span> to <span>{{ $subscription->end_date_formatted }}</span>
+                            </p>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-lg font-bold text-gray-900">৳{{ number_format($subscription->daily_price, 2) }}/day</div>
+                            <div class="text-sm text-gray-500">Total: ৳{{ number_format($subscription->total_price, 2) }}</div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4 pt-4 border-t border-gray-100">
+                        <div class="flex justify-between items-center">
+                            <div class="text-sm text-gray-600">
+                                <span>Discount: ৳{{ number_format($subscription->discount_amount, 2) }}</span>
+                            </div>
+                            <div class="flex space-x-2">
+                                <button class="text-indigo-600 hover:text-indigo-900 px-3 py-1 text-sm font-medium">
+                                    Details
+                                </button>
+                                @if($subscription->status === 'ACTIVE')
+                                <button class="text-yellow-600 hover:text-yellow-900 px-3 py-1 text-sm font-medium">
+                                    Pause
+                                </button>
+                                @endif
+                                @if(in_array($subscription->status, ['ACTIVE', 'PAUSED']))
+                                <button class="text-red-600 hover:text-red-900 px-3 py-1 text-sm font-medium">
+                                    Cancel
+                                </button>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                @endforeach
+                @endif
+
+                <!-- Dynamic subscriptions loaded via AJAX -->
                 <div class="space-y-4">
                     <template x-for="subscription in subscriptions" :key="subscription.id">
                         <div class="border border-gray-200 rounded-lg p-4 hover:bg-gray-50">
@@ -241,10 +392,10 @@
                                     <p class="text-sm text-gray-600 mt-1">
                                         <span x-text="subscription.meal_type"></span> • 
                                         <span x-text="subscription.delivery_time"></span> • 
-                                        <span x-text="getDeliveryDaysText(subscription.delivery_days)"></span>
+                                        <span x-text="subscription.delivery_days_text"></span>
                                     </p>
                                     <p class="text-sm text-gray-500 mt-1">
-                                        <span x-text="subscription.start_date"></span> to <span x-text="subscription.end_date"></span>
+                                        <span x-text="subscription.start_date_formatted"></span> to <span x-text="subscription.end_date_formatted"></span>
                                     </p>
                                 </div>
                                 <div class="text-right">
@@ -259,8 +410,7 @@
                                         <span x-text="`Discount: ৳${subscription.discount_amount}`"></span>
                                     </div>
                                     <div class="flex space-x-2">
-                                        <button @click="viewSubscriptionDetails(subscription.id)"
-                                                class="text-indigo-600 hover:text-indigo-900 px-3 py-1 text-sm font-medium">
+                                        <button class="text-indigo-600 hover:text-indigo-900 px-3 py-1 text-sm font-medium">
                                             Details
                                         </button>
                                         <button x-show="subscription.status === 'ACTIVE'"
@@ -281,7 +431,7 @@
                 </div>
 
                 <!-- Empty State -->
-                <div x-show="subscriptions.length === 0" x-cloak class="text-center py-12">
+                <div x-show="subscriptions.length === 0 && {{ count($subscriptions) }} === 0" x-cloak class="text-center py-12">
                     <i class="fas fa-calendar-alt text-gray-300 text-5xl mb-4"></i>
                     <h3 class="text-lg font-medium text-gray-900">No active subscriptions</h3>
                     <p class="mt-2 text-gray-500">Subscribe to your favorite meals for regular delivery</p>
@@ -292,10 +442,10 @@
 </div>
 
 <!-- Restaurant Menu Modal -->
-<div x-show="showMenuModal" x-cloak class="fixed inset-0 z-50 overflow-y-auto">
+<div x-show="showMenuModal" x-cloak class="fixed inset-0 z-50 overflow-y-auto" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
     <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
         <div class="fixed inset-0 transition-opacity" aria-hidden="true">
-            <div class="absolute inset-0 bg-gray-500 opacity-75"></div>
+            <div class="absolute inset-0 bg-gray-500 opacity-75" @click="showMenuModal = false"></div>
         </div>
         
         <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full">
@@ -317,7 +467,7 @@
                                         <p class="text-gray-600" x-text="selectedRestaurant.description"></p>
                                         <p class="text-sm text-gray-500 mt-1">
                                             <i class="fas fa-clock mr-1"></i>
-                                            <span x-text="`${selectedRestaurant.opening_time} - ${selectedRestaurant.closing_time}`"></span>
+                                            <span x-text="`${selectedRestaurant.opening_time || '08:00'} - ${selectedRestaurant.closing_time || '22:00'}`"></span>
                                             <span class="mx-2">•</span>
                                             <i class="fas fa-map-marker-alt mr-1"></i>
                                             <span x-text="selectedRestaurant.address"></span>
@@ -333,24 +483,24 @@
                             <!-- Meal Type Tabs -->
                             <div class="border-b border-gray-200 mb-6">
                                 <nav class="-mb-px flex space-x-8" aria-label="Meal Types">
-                                    <template x-for="mealType in mealTypes" :key="mealType.id">
-                                        <button @click="selectMealType(mealType.id)"
-                                                :class="selectedMealTypeId === mealType.id ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
-                                                class="whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm">
-                                            <span x-text="mealType.name"></span>
-                                        </button>
-                                    </template>
+                                    @foreach($mealTypes as $mealType)
+                                    <button @click="selectMealType({{ $mealType->id }})"
+                                            :class="selectedMealTypeId === {{ $mealType->id }} ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
+                                            class="whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm">
+                                        {{ $mealType->name }}
+                                    </button>
+                                    @endforeach
                                 </nav>
                             </div>
                             
                             <!-- Food Items Grid -->
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 max-h-96 overflow-y-auto">
                                 <template x-for="item in filteredMenuItems" :key="item.id">
                                     <div class="border border-gray-200 rounded-lg p-4">
                                         <div class="flex justify-between items-start">
                                             <div class="flex-1">
                                                 <h4 class="font-semibold text-gray-900" x-text="item.name"></h4>
-                                                <p class="text-sm text-gray-600 mt-1" x-text="item.description"></p>
+                                                <p class="text-sm text-gray-600 mt-1" x-text="item.description || 'No description available'"></p>
                                                 <div class="mt-2">
                                                     <template x-for="tag in item.dietary_tags" :key="tag">
                                                         <span class="inline-block bg-green-100 text-green-800 text-xs px-2 py-1 rounded mr-1" x-text="tag"></span>
@@ -397,7 +547,7 @@
                                         <h4 class="font-semibold text-gray-900">Delivery Options</h4>
                                         <div class="mt-2 space-y-2">
                                             <label class="flex items-center">
-                                                <input type="radio" x-model="orderType" value="PAY_PER_EAT" class="mr-2">
+                                                <input type="radio" x-model="orderType" value="PAY_PER_EAT" class="mr-2" checked>
                                                 <span>Pay Per Meal</span>
                                             </label>
                                             <label class="flex items-center" x-show="selectedRestaurant.supports_subscription">
@@ -429,16 +579,6 @@
     </div>
 </div>
 
-<!-- Checkout Modal -->
-<div x-show="showCheckoutModal" x-cloak class="fixed inset-0 z-50 overflow-y-auto">
-    <!-- Similar modal structure for checkout -->
-</div>
-
-<!-- New Subscription Modal -->
-<div x-show="showNewSubscriptionModal" x-cloak class="fixed inset-0 z-50 overflow-y-auto">
-    <!-- Modal structure for new subscription -->
-</div>
-
 <script>
 function foodServices() {
     return {
@@ -446,12 +586,17 @@ function foodServices() {
         searchQuery: '',
         selectedMealType: '',
         sortBy: 'rating',
+        orderStatusFilter: '',
         
         // Data
         restaurants: [],
         orders: [],
         subscriptions: [],
         mealTypes: @json($mealTypes ?? []),
+        
+        // Flags
+        hasInitialRestaurants: {{ count($initialRestaurants) > 0 ? 'true' : 'false' }},
+        isLoading: false,
         
         // Cart
         cart: {},
@@ -464,18 +609,17 @@ function foodServices() {
         
         // Selected items
         selectedRestaurant: null,
-        selectedMealTypeId: null,
+        selectedMealTypeId: {{ $mealTypes->first()->id ?? 'null' }},
         orderType: 'PAY_PER_EAT',
-        orderStatusFilter: '',
         
         // Methods
         async init() {
-            await this.loadRestaurants();
-            await this.loadOrders();
-            await this.loadSubscriptions();
+            // Initial data is already loaded from server
+            console.log('Food services initialized');
         },
         
         async loadRestaurants() {
+            this.isLoading = true;
             try {
                 const params = new URLSearchParams({
                     search: this.searchQuery,
@@ -483,80 +627,118 @@ function foodServices() {
                     sort: this.sortBy
                 });
                 
-                const response = await fetch(`/food/restaurants?${params}`, {
+                const response = await fetch(`/food/api/restaurants?${params}`, {
                     headers: {
                         'Accept': 'application/json',
                         'X-Requested-With': 'XMLHttpRequest'
                     }
                 });
                 
-                if (!response.ok) throw new Error('Network response was not ok');
+                // Check if response is HTML (error page)
+                const contentType = response.headers.get("content-type");
+                if (contentType && contentType.indexOf("text/html") !== -1) {
+                    throw new Error('Server returned HTML instead of JSON. Check your route.');
+                }
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
                 
                 const data = await response.json();
                 if (data.success) {
                     this.restaurants = data.restaurants || [];
                 } else {
                     console.error('Error loading restaurants:', data.message);
+                    this.showError(data.message || 'Failed to load restaurants');
                 }
             } catch (error) {
                 console.error('Error loading restaurants:', error);
-                this.showError('Failed to load restaurants');
+                this.showError('Failed to load restaurants. Please check your connection.');
+            } finally {
+                this.isLoading = false;
             }
         },
         
         async loadOrders() {
+            this.isLoading = true;
             try {
                 const params = new URLSearchParams();
                 if (this.orderStatusFilter) {
                     params.append('status', this.orderStatusFilter);
                 }
                 
-                const response = await fetch(`/food/orders?${params}`, {
+                const response = await fetch(`/food/api/orders?${params}`, {
                     headers: {
                         'Accept': 'application/json',
                         'X-Requested-With': 'XMLHttpRequest'
                     }
                 });
                 
-                if (!response.ok) throw new Error('Network response was not ok');
+                // Check if response is HTML (error page)
+                const contentType = response.headers.get("content-type");
+                if (contentType && contentType.indexOf("text/html") !== -1) {
+                    throw new Error('Server returned HTML instead of JSON. Check your route.');
+                }
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
                 
                 const data = await response.json();
                 if (data.success) {
                     this.orders = data.orders || [];
                 } else {
                     console.error('Error loading orders:', data.message);
+                    this.showError(data.message || 'Failed to load orders');
                 }
             } catch (error) {
                 console.error('Error loading orders:', error);
-                this.showError('Failed to load orders');
+                this.showError('Failed to load orders. Please check your connection.');
+            } finally {
+                this.isLoading = false;
             }
         },
         
         async loadSubscriptions() {
+            this.isLoading = true;
             try {
-                const response = await fetch('/food/subscriptions', {
+                const response = await fetch('/food/api/subscriptions', {
                     headers: {
                         'Accept': 'application/json',
                         'X-Requested-With': 'XMLHttpRequest'
                     }
                 });
                 
-                if (!response.ok) throw new Error('Network response was not ok');
+                // Check if response is HTML (error page)
+                const contentType = response.headers.get("content-type");
+                if (contentType && contentType.indexOf("text/html") !== -1) {
+                    throw new Error('Server returned HTML instead of JSON. Check your route.');
+                }
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
                 
                 const data = await response.json();
                 if (data.success) {
                     this.subscriptions = data.subscriptions || [];
                 } else {
                     console.error('Error loading subscriptions:', data.message);
+                    this.showError(data.message || 'Failed to load subscriptions');
                 }
             } catch (error) {
                 console.error('Error loading subscriptions:', error);
-                this.showError('Failed to load subscriptions');
+                this.showError('Failed to load subscriptions. Please check your connection.');
+            } finally {
+                this.isLoading = false;
             }
         },
         
         searchRestaurants() {
-            this.debounce(() => this.loadRestaurants(), 500);
+            clearTimeout(this.searchTimeout);
+            this.searchTimeout = setTimeout(() => {
+                this.loadRestaurants();
+            }, 500);
         },
         
         filterRestaurants() {
@@ -569,14 +751,22 @@ function foodServices() {
         
         async viewRestaurant(restaurantId) {
             try {
-                const response = await fetch(`/food/restaurant/${restaurantId}/menu`, {
+                const response = await fetch(`/food/api/restaurant/${restaurantId}/menu`, {
                     headers: {
                         'Accept': 'application/json',
                         'X-Requested-With': 'XMLHttpRequest'
                     }
                 });
                 
-                if (!response.ok) throw new Error('Network response was not ok');
+                // Check if response is HTML (error page)
+                const contentType = response.headers.get("content-type");
+                if (contentType && contentType.indexOf("text/html") !== -1) {
+                    throw new Error('Server returned HTML instead of JSON. Check your route.');
+                }
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
                 
                 const data = await response.json();
                 if (data.success) {
@@ -585,7 +775,8 @@ function foodServices() {
                     this.selectedMealTypeId = this.mealTypes[0]?.id;
                     this.showMenuModal = true;
                     this.cart = {};
-                    this.calculateCartTotal();
+                    this.cartTotal = 0;
+                    this.orderType = 'PAY_PER_EAT'; // Reset order type
                 } else {
                     this.showError(data.message || 'Failed to load restaurant menu');
                 }
@@ -642,7 +833,7 @@ function foodServices() {
             for (const [itemId, quantity] of Object.entries(this.cart)) {
                 const item = this.selectedRestaurant?.menu_items?.find(i => i.id == itemId);
                 if (item) {
-                    total += item.total_price * quantity;
+                    total += parseFloat(item.total_price) * quantity;
                 }
             }
             this.cartTotal = total.toFixed(2);
@@ -671,52 +862,35 @@ function foodServices() {
                 }
             }
             
-            // Get user's default address
-            let deliveryAddress = 'Your Address';
-            let deliveryLat = 23.8103;
-            let deliveryLon = 90.4125;
-            
-            try {
-                // Fetch user address from server
-                const response = await fetch('/api/user/address/default', {
-                    headers: {
-                        'Accept': 'application/json',
-                        'X-Requested-With': 'XMLHttpRequest'
-                    }
-                });
-                
-                if (response.ok) {
-                    const data = await response.json();
-                    if (data.success && data.address) {
-                        deliveryAddress = `${data.address.address_line1}, ${data.address.city}`;
-                        deliveryLat = data.address.latitude || 23.8103;
-                        deliveryLon = data.address.longitude || 90.4125;
-                    }
-                }
-            } catch (error) {
-                console.error('Error fetching address:', error);
-            }
+            // Prepare order data
+            const today = new Date().toISOString().split('T')[0];
             
             const orderData = {
                 service_provider_id: this.selectedRestaurant.id,
                 meal_type_id: this.selectedMealTypeId,
-                meal_date: new Date().toISOString().split('T')[0],
-                delivery_address: deliveryAddress,
-                delivery_latitude: deliveryLat,
-                delivery_longitude: deliveryLon,
+                meal_date: today,
+                delivery_address: 'Your delivery address',
+                delivery_latitude: 23.8103,
+                delivery_longitude: 90.4125,
                 items: orderItems
             };
             
             try {
-                const response = await fetch('/food/order', {
+                const response = await fetch('/food/api/order', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                         'Accept': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
                     },
                     body: JSON.stringify(orderData)
                 });
+                
+                // Check if response is HTML (error page)
+                const contentType = response.headers.get("content-type");
+                if (contentType && contentType.indexOf("text/html") !== -1) {
+                    throw new Error('Server returned HTML instead of JSON. Check your route.');
+                }
                 
                 const result = await response.json();
                 
@@ -739,14 +913,20 @@ function foodServices() {
             if (!confirm('Are you sure you want to cancel this order?')) return;
             
             try {
-                const response = await fetch(`/food/order/${orderId}/cancel`, {
+                const response = await fetch(`/food/api/order/${orderId}/cancel`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                         'Accept': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
                     }
                 });
+                
+                // Check if response is HTML (error page)
+                const contentType = response.headers.get("content-type");
+                if (contentType && contentType.indexOf("text/html") !== -1) {
+                    throw new Error('Server returned HTML instead of JSON. Check your route.');
+                }
                 
                 const result = await response.json();
                 
@@ -766,14 +946,20 @@ function foodServices() {
             if (!confirm('Are you sure you want to cancel this subscription?')) return;
             
             try {
-                const response = await fetch(`/food/subscription/${subscriptionId}/cancel`, {
+                const response = await fetch(`/food/api/subscription/${subscriptionId}/cancel`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                         'Accept': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
                     }
                 });
+                
+                // Check if response is HTML (error page)
+                const contentType = response.headers.get("content-type");
+                if (contentType && contentType.indexOf("text/html") !== -1) {
+                    throw new Error('Server returned HTML instead of JSON. Check your route.');
+                }
                 
                 const result = await response.json();
                 
@@ -789,25 +975,53 @@ function foodServices() {
             }
         },
         
+        getStatusBadgeClass(status) {
+            const classes = {
+                'PENDING': 'bg-yellow-100 text-yellow-800',
+                'ACCEPTED': 'bg-blue-100 text-blue-800',
+                'PREPARING': 'bg-purple-100 text-purple-800',
+                'OUT_FOR_DELIVERY': 'bg-indigo-100 text-indigo-800',
+                'DELIVERED': 'bg-green-100 text-green-800',
+                'CANCELLED': 'bg-red-100 text-red-800'
+            };
+            return classes[status] || 'bg-gray-100 text-gray-800';
+        },
+        
+        getSubscriptionStatusBadgeClass(status) {
+            const classes = {
+                'ACTIVE': 'bg-green-100 text-green-800',
+                'PAUSED': 'bg-yellow-100 text-yellow-800',
+                'CANCELLED': 'bg-red-100 text-red-800',
+                'COMPLETED': 'bg-blue-100 text-blue-800'
+            };
+            return classes[status] || 'bg-gray-100 text-gray-800';
+        },
+        
         showSuccess(message) {
-            // You can use Toastr or similar library
-            alert('Success: ' + message);
+            // Use SweetAlert or Toastr for better notifications
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Success',
+                    text: message,
+                    timer: 3000
+                });
+            } else {
+                alert('Success: ' + message);
+            }
         },
         
         showError(message) {
-            alert('Error: ' + message);
-        },
-        
-        debounce(func, wait) {
-            let timeout;
-            return function executedFunction(...args) {
-                const later = () => {
-                    clearTimeout(timeout);
-                    func(...args);
-                };
-                clearTimeout(timeout);
-                timeout = setTimeout(later, wait);
-            };
+            // Use SweetAlert or Toastr for better notifications
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: message
+                });
+            } else {
+                alert('Error: ' + message);
+            }
         }
     };
 }
@@ -817,5 +1031,22 @@ function foodServices() {
 [x-cloak] {
     display: none !important;
 }
+
+/* Loading spinner */
+.loading-spinner {
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid #3498db;
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    animation: spin 1s linear infinite;
+    margin: 0 auto;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
 </style>
+
 @endsection

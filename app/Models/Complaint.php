@@ -97,9 +97,9 @@ class Complaint extends Model
     /**
      * Get the user who filed the complaint
      */
-    public function user(): BelongsTo
+    public function user()
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class, 'user_id');
     }
     
     /**
@@ -150,11 +150,10 @@ class Complaint extends Model
     /**
      * Get the assigned user (admin/owner)
      */
-    public function assignedUser(): BelongsTo
+    public function assignedToUser()
     {
         return $this->belongsTo(User::class, 'assigned_to');
     }
-    
     /**
      * Get all conversations for this complaint
      */

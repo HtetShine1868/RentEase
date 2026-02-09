@@ -1,6 +1,11 @@
+@php
+    use Carbon\Carbon;
+@endphp
+
 @extends('layouts.app')
 
 @section('title', 'My Rental')
+
 
 @section('content')
 <div class="min-h-screen bg-gray-50">
@@ -63,19 +68,64 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     @foreach($currentBookings as $booking)
                         @php
-                            $isActive = \Carbon\Carbon::parse($booking->check_out)->isFuture();
-                            $daysRemaining = \Carbon\Carbon::parse($booking->check_out)->diffInDays(now());
-                            $canExtend = $isActive && $daysRemaining <= 7;
+                          
+                            $today = today();
+                            $checkInDate = Carbon::parse($booking->check_in)->startOfDay();
+                            $checkOutDate = Carbon::parse($booking->check_out)->startOfDay();
+
+                            // Determine booking stage
+                            if ($today->lt($checkInDate)) {
+                                // Upcoming - hasn't started yet
+                                $bookingStage = 'upcoming';
+                                $daysUntilCheckin = $checkInDate->diffInDays($today);
+                            } elseif ($today->between($checkInDate, $checkOutDate) || $today->eq($checkInDate)) {
+                                // Active - currently staying or today is check-in day
+                                $bookingStage = 'active';
+                                $daysRemaining = max(0, $checkOutDate->diffInDays($today));
+                            } else {
+                                // Past - stay completed
+                                $bookingStage = 'past';
+                                $daysSinceCheckout = $today->diffInDays($checkOutDate);
+                            }
+                            
+                            // For active stays, calculate progress
+                            if ($bookingStage === 'active') {
+                                $totalDays = max(1, $checkOutDate->diffInDays($checkInDate));
+                                $daysPassed = min($totalDays, $today->diffInDays($checkInDate));
+                                $progress = min(100, max(0, ($daysPassed / $totalDays) * 100));
+                                
+                                // Progress bar color
+                                if ($daysRemaining <= 3) {
+                                    $progressColor = 'bg-red-500';
+                                    $textColor = 'text-red-600';
+                                } elseif ($daysRemaining <= 7) {
+                                    $progressColor = 'bg-yellow-500';
+                                    $textColor = 'text-yellow-600';
+                                } else {
+                                    $progressColor = 'bg-green-500';
+                                    $textColor = 'text-green-600';
+                                }
+                            }
+                            
+                            $canExtend = $bookingStage === 'active' && $daysRemaining <= 7;
                             $hasReviewed = $booking->property->propertyRatings()->where('user_id', auth()->id())->exists();
-                            $canCheckIn = $booking->status === 'CONFIRMED' && now()->toDateString() >= \Carbon\Carbon::parse($booking->check_in)->toDateString();
+                            $canCheckIn = $booking->status === 'CONFIRMED' && $today->toDateString() >= $checkInDate->toDateString();
                         @endphp
                         
-                        @if($isActive)
-                            <div class="bg-white rounded-lg shadow-lg overflow-hidden border border-gray-200 hover:border-indigo-300 transition duration-300">
-                                <!-- Status Banner -->
-                                <div class="px-4 py-2 bg-indigo-600 text-white">
-                                    <div class="flex justify-between items-center">
-                                        <span class="text-sm font-semibold">
+                        <div class="bg-white rounded-lg shadow-lg overflow-hidden border border-gray-200 hover:border-indigo-300 transition duration-300">
+                            <!-- Status Banner -->
+                            <div class="px-4 py-2 
+                                @if($bookingStage === 'upcoming') bg-blue-600
+                                @elseif($bookingStage === 'active') bg-indigo-600
+                                @else bg-gray-600 @endif text-white">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-sm font-semibold">
+                                        @if($bookingStage === 'upcoming')
+                                            <svg class="inline w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"/>
+                                            </svg>
+                                            Upcoming
+                                        @elseif($bookingStage === 'active')
                                             @if($booking->status === 'CHECKED_IN')
                                                 <svg class="inline w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
                                                     <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
@@ -87,82 +137,154 @@
                                                 </svg>
                                                 Confirmed
                                             @endif
-                                        </span>
-                                        <span class="text-xs bg-white bg-opacity-20 px-2 py-1 rounded">
-                                            @if($booking->property->type === 'APARTMENT')
-                                                Apartment
-                                            @else
-                                                {{ $booking->room->room_type ?? 'Room' }}
-                                            @endif
-                                        </span>
+                                        @else
+                                            <svg class="inline w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                                            </svg>
+                                            Completed
+                                        @endif
+                                    </span>
+                                    <span class="text-xs bg-white bg-opacity-20 px-2 py-1 rounded">
+                                        @if($booking->property->type === 'APARTMENT')
+                                            Apartment
+                                        @else
+                                            {{ $booking->room->room_type ?? 'Room' }}
+                                        @endif
+                                    </span>
+                                </div>
+                            </div>
+                            
+                            <div class="p-5">
+                                <!-- Property Info -->
+                                <div class="mb-4">
+                                    <div class="flex items-start">
+                                        <div class="h-12 w-12 bg-gradient-to-r from-indigo-100 to-blue-100 rounded-lg flex items-center justify-center mr-3">
+                                            <svg class="h-6 w-6 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                                            </svg>
+                                        </div>
+                                        <div class="flex-1">
+                                            <h3 class="font-bold text-gray-900 text-lg">{{ $booking->property->name }}</h3>
+                                            <p class="text-sm text-gray-600">{{ $booking->property->city }}, {{ $booking->property->area }}</p>
+                                        </div>
                                     </div>
                                 </div>
-                                
-                                <div class="p-5">
-                                    <!-- Property Info -->
-                                    <div class="mb-4">
-                                        <div class="flex items-start">
-                                            <div class="h-12 w-12 bg-gradient-to-r from-indigo-100 to-blue-100 rounded-lg flex items-center justify-center mr-3">
-                                                <svg class="h-6 w-6 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                                                </svg>
-                                            </div>
-                                            <div class="flex-1">
-                                                <h3 class="font-bold text-gray-900 text-lg">{{ $booking->property->name }}</h3>
-                                                <p class="text-sm text-gray-600">{{ $booking->property->city }}, {{ $booking->property->area }}</p>
+
+                                <!-- Status Specific Content -->
+                                @if($bookingStage === 'upcoming')
+                                    <!-- Upcoming Stay -->
+                                    <div class="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                                        <div class="flex items-center">
+                                            <svg class="h-5 w-5 text-blue-400 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                            </svg>
+                                            <div>
+                                                <h4 class="text-sm font-semibold text-blue-800">Upcoming Stay</h4>
+                                                <p class="text-sm text-blue-600">
+                                                    Check-in in <span class="font-bold">{{ $daysUntilCheckin }}</span> 
+                                                    {{ Str::plural('day', $daysUntilCheckin) }}
+                                                </p>
                                             </div>
                                         </div>
                                     </div>
-
-                                    <!-- Progress Bar for Days Remaining -->
+                                    
+                                @elseif($bookingStage === 'active')
+                                    <!-- Active Stay - Days Remaining -->
                                     <div class="mb-4">
                                         <div class="flex justify-between text-sm mb-1">
                                             <span class="text-gray-600">Days Remaining</span>
-                                            <span class="font-semibold text-indigo-600">{{ $daysRemaining }} days</span>
+                                            <span class="font-semibold {{ $textColor }}">
+                                                {{ $daysRemaining }} {{ Str::plural('day', $daysRemaining) }}
+                                            </span>
                                         </div>
-                                        <div class="w-full bg-gray-200 rounded-full h-2">
-                                            @php
-                                                $totalDays = \Carbon\Carbon::parse($booking->check_out)->diffInDays(\Carbon\Carbon::parse($booking->check_in));
-                                                $progress = min(100, max(0, (($totalDays - $daysRemaining) / $totalDays) * 100));
-                                                $progressColor = $daysRemaining <= 3 ? 'bg-red-500' : ($daysRemaining <= 7 ? 'bg-yellow-500' : 'bg-green-500');
-                                            @endphp
+                                        
+                                        <!-- Progress Bar -->
+                                        <div class="w-full bg-gray-200 rounded-full h-2 mb-2">
                                             <div class="h-2 rounded-full {{ $progressColor }}" style="width: {{ $progress }}%"></div>
                                         </div>
-                                    </div>
-
-                                    <!-- Stay Duration -->
-                                    <div class="bg-gray-50 rounded-lg p-3 mb-4">
-                                        <div class="grid grid-cols-2 gap-3">
-                                            <div class="text-center">
-                                                <div class="text-xs text-gray-500">Check-in</div>
-                                                <div class="font-semibold text-gray-900">{{ \Carbon\Carbon::parse($booking->check_in)->format('M d') }}</div>
-                                                <div class="text-xs text-gray-500">{{ \Carbon\Carbon::parse($booking->check_in)->format('Y') }}</div>
-                                            </div>
-                                            <div class="text-center">
-                                                <div class="text-xs text-gray-500">Check-out</div>
-                                                <div class="font-semibold text-gray-900">{{ \Carbon\Carbon::parse($booking->check_out)->format('M d') }}</div>
-                                                <div class="text-xs text-gray-500">{{ \Carbon\Carbon::parse($booking->check_out)->format('Y') }}</div>
-                                            </div>
+                                        
+                                        <!-- Progress Text -->
+                                        <div class="text-xs text-gray-500 text-center">
+                                            {{ $daysPassed }} of {{ $totalDays }} days completed
                                         </div>
-                                        <div class="text-center mt-2">
-                                            <div class="text-xs text-gray-500">Duration</div>
-                                            <div class="font-semibold text-gray-900">{{ $booking->duration_days }} days</div>
-                                        </div>
+                                        
+                                        <!-- Alerts -->
+                                        @if($daysRemaining <= 3)
+                                            <div class="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg">
+                                                <div class="flex items-center">
+                                                    <svg class="h-5 w-5 text-red-400 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.771-.833-2.502 0L4.232 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                                                    </svg>
+                                                    <div>
+                                                        <h4 class="text-sm font-semibold text-red-800">Stay Ending Soon!</h4>
+                                                        <p class="text-sm text-red-600">Only {{ $daysRemaining }} {{ Str::plural('day', $daysRemaining) }} remaining</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        @elseif($daysRemaining <= 7)
+                                            <div class="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                                                <div class="flex items-center">
+                                                    <svg class="h-5 w-5 text-yellow-400 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.771-.833-2.502 0L4.232 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                                                    </svg>
+                                                    <div>
+                                                        <h4 class="text-sm font-semibold text-yellow-800">Stay Ending in {{ $daysRemaining }} Days</h4>
+                                                        <p class="text-sm text-yellow-600">Consider extending your stay</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        @endif
                                     </div>
-
-                                    <!-- Action Button -->
-                                    <div class="mt-4">
-                                        <a href="{{ route('rental.booking-details', $booking) }}" 
-                                           class="w-full inline-flex justify-center items-center px-4 py-3 border border-transparent rounded-lg text-sm font-medium text-white bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 shadow-sm transition duration-300">
-                                            <svg class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    
+                                @elseif($bookingStage === 'past')
+                                    <!-- Past Stay -->
+                                    <div class="mb-4 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                                        <div class="flex items-center">
+                                            <svg class="h-5 w-5 text-gray-400 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                                             </svg>
-                                            View Details & Manage
-                                        </a>
+                                            <div>
+                                                <h4 class="text-sm font-semibold text-gray-800">Stay Completed</h4>
+                                                <p class="text-sm text-gray-600">
+                                                    Ended {{ $daysSinceCheckout }} {{ Str::plural('day', $daysSinceCheckout) }} ago
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                @endif
+
+                                <!-- Stay Duration (Always Show) -->
+                                <div class="bg-gray-50 rounded-lg p-3 mb-4">
+                                    <div class="grid grid-cols-2 gap-3">
+                                        <div class="text-center">
+                                            <div class="text-xs text-gray-500">Check-in</div>
+                                            <div class="font-semibold text-gray-900">{{ $checkInDate->format('M d') }}</div>
+                                            <div class="text-xs text-gray-500">{{ $checkInDate->format('Y') }}</div>
+                                        </div>
+                                        <div class="text-center">
+                                            <div class="text-xs text-gray-500">Check-out</div>
+                                            <div class="font-semibold text-gray-900">{{ $checkOutDate->format('M d') }}</div>
+                                            <div class="text-xs text-gray-500">{{ $checkOutDate->format('Y') }}</div>
+                                        </div>
+                                    </div>
+                                    <div class="text-center mt-2">
+                                        <div class="text-xs text-gray-500">Duration</div>
+                                        <div class="font-semibold text-gray-900">{{ $booking->duration_days }} days</div>
                                     </div>
                                 </div>
+
+                                <!-- Action Button -->
+                                <div class="mt-4">
+                                    <a href="{{ route('rental.booking-details', $booking) }}" 
+                                       class="w-full inline-flex justify-center items-center px-4 py-3 border border-transparent rounded-lg text-sm font-medium text-white bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 shadow-sm transition duration-300">
+                                        <svg class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        </svg>
+                                        View Details & Manage
+                                    </a>
+                                </div>
                             </div>
-                        @endif
+                        </div>
                     @endforeach
                 </div>
             </div>

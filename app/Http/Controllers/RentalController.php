@@ -535,42 +535,43 @@ public function checkInBooking(Booking $booking)
         
         return redirect()->route('rental.index')->with('success', 'Booking cancelled successfully.');
     }
-    
-    /**
-     * Show booking invoice
-     */
-    public function showInvoice(Booking $booking)
-    {
-        if ($booking->user_id !== Auth::id()) {
-            abort(403);
-        }
-        
-        $booking->load(['property', 'room', 'payments']);
-        
-        return view('rental.invoice', compact('booking'));
+    // In RentalController::showInvoice method
+public function showInvoice(Booking $booking)
+{
+    if ($booking->user_id !== Auth::id()) {
+        abort(403);
     }
     
-    /**
-     * Show all complaints
-     */
-    public function complaints()
-    {
-        $complaints = Complaint::where('user_id', Auth::id())
-            ->orderBy('created_at', 'desc')
-            ->paginate(15);
-        
-        return view('rental.partials.complaint-modal', compact('complaints'));
-    }
+    $booking->load(['property', 'room', 'payments']);
     
-    /**
-     * Show single complaint
-     */
-    public function showComplaint(Complaint $complaint)
-    {
-        if ($complaint->user_id !== Auth::id()) {
-            abort(403);
-        }
-        
-        return view('rental.complaint-details', compact('complaint'));
+    return view('rental.invoice', compact('booking'));
+}
+
+// In RentalController::complaints method
+public function complaints()
+{
+    $complaints = Complaint::where('user_id', Auth::id())
+        ->with(['property', 'assignedToUser', 'booking'])
+        ->orderBy('created_at', 'desc')
+        ->paginate(15);
+    
+    return view('rental.complaints', compact('complaints'));
+}
+
+// In RentalController::showComplaint method
+public function showComplaint(Complaint $complaint)
+{
+    if ($complaint->user_id !== Auth::id()) {
+        abort(403);
     }
+
+    $complaint->load(['property', 'assignedToUser', 'booking']);
+
+    return view('rental.complaint-details', compact('complaint'));
+}
+
+
+    
+
+
 }

@@ -50,21 +50,38 @@ Route::middleware('auth')->group(function () {
             return view('dashboard.user', ['title' => 'User Dashboard']);
         })->name('dashboard.user');
 
+      
         // ============ USER SERVICE ROUTES ============
         // Food Services
-        Route::prefix('food')->group(function () {
-            Route::get('/', [FoodServiceController::class, 'index'])->name('food.index');
-            Route::get('/restaurants', [FoodServiceController::class, 'restaurants'])->name('food.restaurants');
-            Route::get('/restaurants/{id}', [FoodServiceController::class, 'restaurant'])->name('food.restaurant.show');
-            Route::get('/orders', [FoodServiceController::class, 'orders'])->name('food.orders');
-            Route::get('/orders/{id}', [FoodServiceController::class, 'orderDetails'])->name('food.order.show');
-            Route::get('/subscriptions', [FoodServiceController::class, 'subscriptions'])->name('food.subscriptions');
-            Route::get('/subscriptions/create', [FoodServiceController::class, 'createSubscription'])->name('food.subscriptions.create');
-            Route::post('/orders', [FoodServiceController::class, 'placeOrder'])->name('food.orders.place');
-            Route::post('/subscriptions', [FoodServiceController::class, 'storeSubscription'])->name('food.subscriptions.store');
-            Route::post('/orders/{id}/cancel', [FoodServiceController::class, 'cancelOrder'])->name('food.orders.cancel');
-            Route::post('/subscriptions/{id}/pause', [FoodServiceController::class, 'pauseSubscription'])->name('food.subscriptions.pause');
-            Route::post('/subscriptions/{id}/cancel', [FoodServiceController::class, 'cancelSubscription'])->name('food.subscriptions.cancel');
+        Route::prefix('food')->name('food.')->group(function () {
+            // Main dashboard
+            Route::get('/', [FoodServiceController::class, 'index'])->name('index');
+            
+            // AJAX API endpoints
+            Route::prefix('api')->name('api.')->group(function () {
+                Route::get('/restaurants', [FoodServiceController::class, 'getRestaurants'])->name('restaurants');
+                Route::get('/restaurant/{id}/menu', [FoodServiceController::class, 'getRestaurantMenu'])->name('restaurant.menu');
+                Route::get('/orders', [FoodServiceController::class, 'getOrders'])->name('orders');
+                Route::get('/subscriptions', [FoodServiceController::class, 'getSubscriptions'])->name('subscriptions');
+                
+                // Order actions
+                Route::post('/order', [FoodServiceController::class, 'placeOrder'])->name('order.place');
+                Route::post('/order/{id}/cancel', [FoodServiceController::class, 'cancelOrder'])->name('order.cancel');
+                
+                // Subscription actions
+                Route::post('/subscription', [FoodServiceController::class, 'createSubscription'])->name('subscription.create');
+                Route::post('/subscription/{id}/cancel', [FoodServiceController::class, 'cancelSubscription'])->name('subscription.cancel');
+            });
+            
+            // Traditional pages (optional)
+            Route::get('/restaurants', [FoodServiceController::class, 'restaurantsPage'])->name('restaurants');
+            Route::get('/restaurant/{id}', [FoodServiceController::class, 'restaurant'])->name('restaurant.show');
+            Route::get('/orders', [FoodServiceController::class, 'ordersPage'])->name('orders');
+            Route::get('/orders/{id}', [FoodServiceController::class, 'orderDetails'])->name('order.show');
+            Route::get('/subscriptions', [FoodServiceController::class, 'subscriptionsPage'])->name('subscriptions');
+            Route::get('/subscriptions/create', [FoodServiceController::class, 'createSubscriptionForm'])->name('subscriptions.create');
+            Route::post('/subscriptions', [FoodServiceController::class, 'storeSubscription'])->name('subscriptions.store');
+            Route::post('/subscriptions/{id}/pause', [FoodServiceController::class, 'pauseSubscription'])->name('subscriptions.pause');
         });
 
         // Laundry Services
