@@ -189,6 +189,17 @@
             from { transform: rotate(0deg); }
             to { transform: rotate(360deg); }
         }
+        
+        /* Nested menu styles */
+        .nested-menu {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+        }
+        
+        .nested-menu.open {
+            max-height: 500px;
+        }
     </style>
 </head>
 <body class="font-sans antialiased bg-gray-100">
@@ -196,6 +207,7 @@
         sidebarOpen: false,
         isPageLoading: false,
         currentPage: 'dashboard',
+        ordersMenuOpen: false,
         
         init() {
             // On desktop, sidebar is always visible (icon-only)
@@ -219,7 +231,8 @@
             else if (path.includes('owner')) this.currentPage = 'owner';
             else if (path.includes('food')) this.currentPage = 'food';
             else if (path.includes('laundry')) this.currentPage = 'laundry';
-            else if (path.includes('rental')) this.currentPage = 'rental';
+            else if (path.includes('rental') && !path.includes('properties')) this.currentPage = 'rental';
+            else if (path.includes('properties/search')) this.currentPage = 'properties';
             else if (path.includes('role.apply')) this.currentPage = 'role';
             else this.currentPage = 'dashboard';
         },
@@ -378,9 +391,9 @@
                 @endif
 
                 <!-- Find Properties -->
-                <a href="{{ route('rental.search') }}" 
-                   @click.prevent="navigate('{{ route('rental.search') }}')"
-                   :class="currentPage === 'rental' ? 'bg-gray-800 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white'"
+                <a href="{{ route('properties.search') }}" 
+                   @click.prevent="navigate('{{ route('properties.search') }}')"
+                   :class="currentPage === 'properties' ? 'bg-gray-800 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white'"
                    class="group flex items-center px-3 py-3 rounded-md sidebar-transition">
                     <i class="fas fa-search text-lg w-6 text-center"></i>
                     <span class="ml-3 truncate sidebar-text">Find Properties</span>
@@ -405,18 +418,39 @@
                 <!-- My Bookings -->
                 <a href="{{ route('rental.index') }}" 
                    @click.prevent="navigate('{{ route('rental.index') }}')"
-                   class="text-gray-300 hover:bg-gray-700 hover:text-white group flex items-center px-3 py-3 rounded-md sidebar-transition">
+                   :class="currentPage === 'rental' ? 'bg-gray-800 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white'"
+                   class="group flex items-center px-3 py-3 rounded-md sidebar-transition">
                     <i class="fas fa-calendar-alt text-lg w-6 text-center"></i>
                     <span class="ml-3 truncate sidebar-text">My Bookings</span>
                 </a>
 
-                <!-- My Orders -->
-                <a href="{{ route('food.orders') }}" 
-                   @click.prevent="navigate('{{ route('food.orders') }}')"
-                   class="text-gray-300 hover:bg-gray-700 hover:text-white group flex items-center px-3 py-3 rounded-md sidebar-transition">
-                    <i class="fas fa-shopping-bag text-lg w-6 text-center"></i>
-                    <span class="ml-3 truncate sidebar-text">My Orders</span>
-                </a>
+                <!-- My Orders - Updated with dropdown -->
+                <div x-data="{ ordersMenuOpen: false }">
+                    <button @click="ordersMenuOpen = !ordersMenuOpen"
+                            class="w-full text-left text-gray-300 hover:bg-gray-700 hover:text-white group flex items-center px-3 py-3 rounded-md sidebar-transition">
+                        <i class="fas fa-shopping-bag text-lg w-6 text-center"></i>
+                        <span class="ml-3 truncate sidebar-text">My Orders</span>
+                        <i class="fas fa-chevron-down ml-auto text-xs"></i>
+                    </button>
+                    
+                    <!-- Orders Submenu -->
+                    <div x-show="ordersMenuOpen" 
+                         x-collapse
+                         class="ml-6 mt-1 space-y-1 nested-menu"
+                         :class="{ 'open': ordersMenuOpen }"
+                         style="display: none;">
+                        <a href="#" 
+                           @click.prevent="navigate('#')"
+                           class="block px-3 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white rounded sidebar-transition">
+                            Food Orders
+                        </a>
+                        <a href="#" 
+                           @click.prevent="navigate('#')"
+                           class="block px-3 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white rounded sidebar-transition">
+                            Laundry Orders
+                        </a>
+                    </div>
+                </div>
 
                 <!-- Role Application (for regular users) -->
                 @if(auth()->user()->hasRole('USER') && !auth()->user()->isOwner() && !auth()->user()->isFoodProvider() && !auth()->user()->isLaundryProvider())
@@ -545,6 +579,11 @@
                                        class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                                         <i class="fas fa-user mr-2"></i> Profile
                                     </a>
+                                    <a href="{{ route('rental.index') }}" 
+                                       @click.prevent="navigate('{{ route('rental.index') }}')"
+                                       class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                        <i class="fas fa-calendar-alt mr-2"></i> My Bookings
+                                    </a>
                                     <div class="border-t border-gray-100"></div>
                                     <form method="POST" action="{{ route('logout') }}" id="logout-form-top">
                                         @csrf
@@ -663,6 +702,60 @@
                         }
                     }
                 });
+            });
+            
+            // Initialize collapse for nested menus
+            Alpine.directive('collapse', (el) => {
+                let duration = 300;
+                
+                el._x_isShown = () => !el.classList.contains('hidden');
+                
+                el._x_toggle = () => {
+                    if (el._x_isShown()) {
+                        el._x_hide();
+                    } else {
+                        el._x_show();
+                    }
+                };
+                
+                el._x_show = () => {
+                    if (el._x_isShown()) return;
+                    
+                    el.style.display = '';
+                    el.style.overflow = 'hidden';
+                    el.style.height = 0;
+                    
+                    requestAnimationFrame(() => {
+                        el.style.height = el.scrollHeight + 'px';
+                    });
+                    
+                    setTimeout(() => {
+                        el.style.height = 'auto';
+                        el.style.overflow = '';
+                    }, duration);
+                };
+                
+                el._x_hide = () => {
+                    if (!el._x_isShown()) return;
+                    
+                    el.style.overflow = 'hidden';
+                    el.style.height = el.scrollHeight + 'px';
+                    
+                    requestAnimationFrame(() => {
+                        el.style.height = 0;
+                    });
+                    
+                    setTimeout(() => {
+                        el.style.display = 'none';
+                        el.style.overflow = '';
+                        el.style.height = '';
+                    }, duration);
+                };
+                
+                // Set initial state
+                if (!el._x_isShown()) {
+                    el.style.display = 'none';
+                }
             });
         });
         

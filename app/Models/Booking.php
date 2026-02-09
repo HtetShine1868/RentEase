@@ -43,15 +43,40 @@ class Booking extends Model
     {
         return $this->belongsTo(Property::class);
     }
+        /**
+     * Get the property rating for this booking
+     */
+    public function propertyRating()
+    {
+        return $this->hasOne(PropertyRating::class, 'booking_id');
+    }
+
+    /**
+     * Get all property ratings (if multiple were possible)
+     */
+    public function propertyRatings()
+    {
+        return $this->hasMany(PropertyRating::class, 'booking_id');
+    }
 
     public function room()
     {
         return $this->belongsTo(Room::class);
     }
 
-    public function payment()
+    public function payments()
     {
-        return $this->morphOne(Payment::class, 'payable');
+        return $this->morphMany(Payment::class, 'payable');
+    }
+        public function latestPayment()
+    {
+        return $this->morphOne(Payment::class, 'payable')->latestOfMany();
+    }
+       public function isPaid()
+    {
+        return $this->payments()
+            ->where('status', 'COMPLETED')
+            ->exists();
     }
 
     public function rating()
@@ -130,4 +155,25 @@ class Booking extends Model
             $booking->commission_amount = $booking->calculateCommission();
         });
     }
+    public function canBeReviewed($userId = null)
+    {
+        if (!$userId) {
+            // If no user ID provided, check if user is authenticated
+            if (!auth()->check()) {
+                return false;
+            }
+            $userId = auth()->id();
+        }
+        
+        // Can review if booking is completed (checked out) and not already reviewed
+        $hasReview = $this->property->reviews()
+            ->where('user_id', $userId)
+            ->where('booking_id', $this->id)
+            ->exists();
+        
+        return $this->status === 'CHECKED_OUT' && 
+               !$hasReview &&
+               Carbon::parse($this->check_out)->diffInDays(Carbon::now()) <= 30;
+    }
+
 }

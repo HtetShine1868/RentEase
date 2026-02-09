@@ -1,10 +1,7 @@
 <header class="bg-white shadow-sm border-b border-gray-200 h-16 md:h-20 flex items-center justify-between px-4 md:px-6 z-20">
     <!-- Left Section: Mobile Menu Button & Title -->
     <div class="flex items-center space-x-4">
-        <!-- Mobile Menu Button -->
-        <button onclick="toggleSidebar()" class="md:hidden text-gray-600 hover:text-gray-900 focus:outline-none">
-            <i class="fas fa-bars text-xl"></i>
-        </button>
+      
         
         <!-- Page Title (Hidden on mobile when sidebar is open) -->
         <div>

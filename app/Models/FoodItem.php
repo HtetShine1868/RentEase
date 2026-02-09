@@ -2,13 +2,11 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class FoodItem extends Model
 {
-    use HasFactory;
-
     protected $fillable = [
         'service_provider_id',
         'name',
@@ -29,61 +27,31 @@ class FoodItem extends Model
         'is_available' => 'boolean',
         'daily_quantity' => 'integer',
         'sold_today' => 'integer',
-        'dietary_tags' => 'json',
-        'calories' => 'integer'
+        'calories' => 'integer',
+        'dietary_tags' => 'array'
     ];
 
-    protected $appends = ['total_price'];
-
-    // Relationships
-    public function serviceProvider()
+    /**
+     * Get the service provider.
+     */
+    public function serviceProvider(): BelongsTo
     {
         return $this->belongsTo(ServiceProvider::class);
     }
 
-    public function mealType()
+    /**
+     * Get the meal type.
+     */
+    public function mealType(): BelongsTo
     {
         return $this->belongsTo(MealType::class);
     }
 
-    public function orderItems()
+    /**
+     * Get formatted price.
+     */
+    public function getFormattedPriceAttribute()
     {
-        return $this->hasMany(FoodOrderItem::class);
-    }
-
-    // Attributes
-    public function getTotalPriceAttribute()
-    {
-        return $this->base_price + ($this->base_price * $this->commission_rate / 100);
-    }
-
-    // Methods
-    public function isAvailable()
-    {
-        if (!$this->is_available) {
-            return false;
-        }
-
-        if ($this->daily_quantity !== null) {
-            return $this->sold_today < $this->daily_quantity;
-        }
-
-        return true;
-    }
-
-    public function incrementSoldToday($quantity = 1)
-    {
-        $this->increment('sold_today', $quantity);
-    }
-
-    protected static function boot()
-    {
-        parent::boot();
-
-        static::saving(function ($item) {
-            if ($item->daily_quantity !== null && $item->sold_today >= $item->daily_quantity) {
-                $item->is_available = false;
-            }
-        });
+        return '₹' . number_format($this->base_price, 2);
     }
 }

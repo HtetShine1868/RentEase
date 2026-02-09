@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
@@ -22,6 +23,22 @@ class AuthenticatedSessionController extends Controller
             'password' => ['required'],
         ]);
 
+        // Check if user exists and is active
+        $user = User::where('email', $credentials['email'])->first();
+        
+        if (!$user) {
+            throw ValidationException::withMessages([
+                'email' => __('auth.failed'),
+            ]);
+        }
+
+        // Check if user is banned
+        if ($user->status === 'BANNED') {
+            throw ValidationException::withMessages([
+                'email' => 'Your account has been suspended. Please contact support.',
+            ]);
+        }
+
         // Attempt to authenticate
         if (!Auth::attempt($credentials, $request->boolean('remember'))) {
             throw ValidationException::withMessages([
@@ -40,7 +57,7 @@ class AuthenticatedSessionController extends Controller
             $user->sendVerificationCode();
             
             // Redirect to verification page
-            return redirect()->route('verify.show')
+            return redirect()->route('verification.show')
                 ->with('info', 'Please verify your email address to continue.');
         }
 
@@ -64,15 +81,13 @@ class AuthenticatedSessionController extends Controller
         if ($user->isSuperAdmin()) {
             return redirect()->route('admin.dashboard');
         } elseif ($user->isOwner()) {
-
             return redirect()->route('owner.dashboard');
-
         } elseif ($user->isFoodProvider()) {
             return redirect()->route('food-provider.dashboard');
         } elseif ($user->isLaundryProvider()) {
             return redirect()->route('laundry.dashboard');
         } else {
-            return redirect()->route('dashboard.user');
+            return redirect()->route('dashboard'); // Regular user dashboard
         }
     }
 }

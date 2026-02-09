@@ -1,4 +1,4 @@
-@extends('dashboard')
+@extends('owner.layout.owner-layout')
 
 @section('content')
 <div class="space-y-6">
@@ -9,7 +9,7 @@
                 <h1 class="text-2xl font-bold text-gray-900">My Properties</h1>
                 <p class="mt-2 text-gray-600">Manage your properties and view their performance.</p>
             </div>
-            <a href="{{ route('properties.create') }}" 
+            <a href="{{ route('owner.properties.create') }}" 
                class="inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                 <i class="fas fa-plus mr-2"></i>
                 Add New Property
@@ -127,7 +127,7 @@
                                     </div>
                                     <div class="ml-4">
                                         <div class="text-sm font-medium text-gray-900">
-                                            <a href="{{ route('properties.show', $property->id) }}" class="hover:text-indigo-600">
+                                            <a href="{{ route('owner.properties.show', $property->id) }}" class="hover:text-indigo-600">
                                                 {{ $property->name }}
                                             </a>
                                         </div>
@@ -159,16 +159,16 @@
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                 <div class="flex space-x-2">
-                                    <a href="{{ route('properties.show', $property->id) }}" 
+                                    <a href="{{ route('owner.properties.show', $property->id) }}" 
                                        class="text-indigo-600 hover:text-indigo-900">
                                         <i class="fas fa-eye"></i>
                                     </a>
-                                    <a href="{{ route('properties.edit', $property->id) }}" 
+                                    <a href="{{ route('owner.properties.edit', $property->id) }}" 
                                        class="text-yellow-600 hover:text-yellow-900">
                                         <i class="fas fa-edit"></i>
                                     </a>
                                     @if($property->status === 'DRAFT')
-                                        <form action="{{ route('properties.destroy', $property->id) }}" method="POST" 
+                                        <form action="{{ route('owner.properties.destroy', $property->id) }}" method="POST" 
                                               class="inline" onsubmit="return confirm('Delete this property?');">
                                             @csrf
                                             @method('DELETE')
@@ -186,7 +186,7 @@
                                 <div class="text-gray-400">
                                     <i class="fas fa-home text-4xl mb-3"></i>
                                     <p class="text-gray-500">No properties yet.</p>
-                                    <a href="{{ route('properties.create') }}" class="mt-3 inline-flex items-center text-indigo-600 hover:text-indigo-500">
+                                    <a href="{{ route('owner.properties.create') }}" class="mt-3 inline-flex items-center text-indigo-600 hover:text-indigo-500">
                                         Add your first property
                                         <i class="fas fa-arrow-right ml-1"></i>
                                     </a>

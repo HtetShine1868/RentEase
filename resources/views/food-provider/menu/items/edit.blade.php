@@ -5,6 +5,19 @@
 @section('header', 'Edit Menu Item')
 
 @section('content')
+@php
+    // Use the correct variable name from controller
+    $foodItem = $menuItem ?? null;
+    $itemId = $foodItem->id ?? 'N/A';
+    $updatedAt = $foodItem->updated_at ?? now();
+    
+    // Ensure mealTypes is set
+    $mealTypes = $mealTypes ?? collect([]);
+    
+    // Dietary tags from controller
+    $dietaryTags = $dietaryTags ?? [];
+@endphp
+
 <div class="max-w-3xl mx-auto">
     <div class="bg-white shadow-sm sm:rounded-lg">
         <!-- Form Header -->
@@ -20,17 +33,17 @@
                 </div>
                 <div class="flex items-center space-x-2">
                     <span class="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-800">
-                        Item ID: #{{ $itemId ?? '001' }}
+                        Item ID: #{{ $itemId }}
                     </span>
                     <span class="text-xs px-2 py-1 rounded-full bg-green-100 text-green-800">
-                        Last updated: {{ now()->format('M d, Y') }}
+                        Last updated: {{ $updatedAt->format('M d, Y') }}
                     </span>
                 </div>
             </div>
         </div>
 
         <!-- Form -->
-        <form action="#" method="POST" enctype="multipart/form-data" x-data="menuItemForm()">
+        <form action="{{ route('food-provider.menu.items.update', $foodItem->id) }}" method="POST" enctype="multipart/form-data" x-data="menuItemForm()">
             @csrf
             @method('PUT')
             
@@ -39,7 +52,7 @@
                 <div class="border-b border-gray-200 pb-6">
                     <h4 class="text-md font-medium text-gray-900 mb-4">Basic Information</h4>
                     
-                    <!-- Item Name & Category -->
+                    <!-- Item Name & Meal Type -->
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
                             <label for="name" class="block text-sm font-medium text-gray-700">
@@ -50,28 +63,35 @@
                                        name="name" 
                                        id="name" 
                                        x-model="itemName"
-                                       value="Butter Chicken"
+                                       value="{{ old('name', $foodItem->name) }}"
                                        class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md" 
                                        required>
+                                @error('name')
+                                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                                @enderror
                             </div>
                         </div>
 
                         <div>
-                            <label for="category_id" class="block text-sm font-medium text-gray-700">
-                                Category *
+                            <label for="meal_type_id" class="block text-sm font-medium text-gray-700">
+                                Meal Type *
                             </label>
                             <div class="mt-1">
-                                <select id="category_id" 
-                                        name="category_id" 
+                                <select id="meal_type_id" 
+                                        name="meal_type_id" 
                                         class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
                                         required>
-                                    <option value="">Select Category</option>
-                                    <option value="1" selected>Vegetarian</option>
-                                    <option value="2">Non-Vegetarian</option>
-                                    <option value="3">Vegan</option>
-                                    <option value="4">Desserts</option>
-                                    <option value="5">Beverages</option>
+                                    <option value="">Select Meal Type</option>
+                                    @foreach($mealTypes as $mealType)
+                                        <option value="{{ $mealType->id }}" 
+                                                {{ old('meal_type_id', $foodItem->meal_type_id) == $mealType->id ? 'selected' : '' }}>
+                                            {{ $mealType->name }}
+                                        </option>
+                                    @endforeach
                                 </select>
+                                @error('meal_type_id')
+                                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                                @enderror
                             </div>
                         </div>
                     </div>
@@ -85,14 +105,18 @@
                             <textarea id="description" 
                                       name="description" 
                                       rows="3" 
-                                      class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">Rich creamy curry with tandoori chicken, served with naan or rice.</textarea>
+                                      class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                                      @input="updateCharCount">{{ old('description', $foodItem->description) }}</textarea>
                         </div>
                         <p class="mt-2 text-sm text-gray-500">
                             Brief description about the item (optional).
                         </p>
                         <div class="mt-1 text-right text-xs text-gray-500">
-                            <span id="char-count">55</span>/500 characters
+                            <span id="char-count">0</span>/500 characters
                         </div>
+                        @error('description')
+                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
                     </div>
 
                     <!-- Dietary Information -->
@@ -102,44 +126,78 @@
                         </label>
                         <div class="flex flex-wrap gap-3">
                             <div class="flex items-center">
-                                <input id="is_vegetarian" 
-                                       name="dietary_info[]" 
+                                <input id="vegetarian" 
+                                       name="dietary_tags[]" 
                                        type="checkbox" 
                                        value="vegetarian" 
                                        class="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
-                                       checked>
-                                <label for="is_vegetarian" class="ml-2 block text-sm text-gray-900">
+                                       {{ in_array('vegetarian', $dietaryTags) ? 'checked' : '' }}>
+                                <label for="vegetarian" class="ml-2 block text-sm text-gray-900">
                                     <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
                                         <i class="fas fa-leaf mr-1"></i> Vegetarian
                                     </span>
                                 </label>
                             </div>
                             <div class="flex items-center">
-                                <input id="is_gluten_free" 
-                                       name="dietary_info[]" 
+                                <input id="gluten_free" 
+                                       name="dietary_tags[]" 
                                        type="checkbox" 
                                        value="gluten_free" 
-                                       class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
-                                <label for="is_gluten_free" class="ml-2 block text-sm text-gray-900">
+                                       class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                                       {{ in_array('gluten_free', $dietaryTags) ? 'checked' : '' }}>
+                                <label for="gluten_free" class="ml-2 block text-sm text-gray-900">
                                     <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
                                         <i class="fas fa-wheat mr-1"></i> Gluten Free
                                     </span>
                                 </label>
                             </div>
                             <div class="flex items-center">
-                                <input id="is_spicy" 
-                                       name="dietary_info[]" 
+                                <input id="spicy" 
+                                       name="dietary_tags[]" 
                                        type="checkbox" 
                                        value="spicy" 
                                        class="h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300 rounded"
-                                       checked>
-                                <label for="is_spicy" class="ml-2 block text-sm text-gray-900">
+                                       {{ in_array('spicy', $dietaryTags) ? 'checked' : '' }}>
+                                <label for="spicy" class="ml-2 block text-sm text-gray-900">
                                     <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800">
                                         <i class="fas fa-pepper-hot mr-1"></i> Spicy
                                     </span>
                                 </label>
                             </div>
+                            <div class="flex items-center">
+                                <input id="vegan" 
+                                       name="dietary_tags[]" 
+                                       type="checkbox" 
+                                       value="vegan" 
+                                       class="h-4 w-4 text-teal-600 focus:ring-teal-500 border-gray-300 rounded"
+                                       {{ in_array('vegan', $dietaryTags) ? 'checked' : '' }}>
+                                <label for="vegan" class="ml-2 block text-sm text-gray-900">
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-teal-100 text-teal-800">
+                                        <i class="fas fa-seedling mr-1"></i> Vegan
+                                    </span>
+                                </label>
+                            </div>
                         </div>
+                    </div>
+
+                    <!-- Calories -->
+                    <div class="mt-6">
+                        <label for="calories" class="block text-sm font-medium text-gray-700">
+                            Calories (optional)
+                        </label>
+                        <div class="mt-1">
+                            <input type="number" 
+                                   name="calories" 
+                                   id="calories" 
+                                   min="0"
+                                   step="1"
+                                   value="{{ old('calories', $foodItem->calories) }}"
+                                   class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                                   placeholder="e.g., 450">
+                        </div>
+                        @error('calories')
+                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
                     </div>
                 </div>
 
@@ -148,28 +206,31 @@
                     <h4 class="text-md font-medium text-gray-900 mb-4">Pricing & Commission</h4>
                     
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <!-- Price Input -->
+                        <!-- Base Price Input -->
                         <div>
-                            <label for="price" class="block text-sm font-medium text-gray-700">
-                                Price (₹) *
+                            <label for="base_price" class="block text-sm font-medium text-gray-700">
+                                Base Price (৳) *
                             </label>
                             <div class="mt-1 relative rounded-md shadow-sm">
                                 <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                    <span class="text-gray-500 sm:text-sm">₹</span>
+                                    <span class="text-gray-500 sm:text-sm">৳</span>
                                 </div>
                                 <input type="number" 
-                                       name="price" 
-                                       id="price" 
-                                       step="1"
-                                       min="0"
-                                       x-model="price"
+                                       name="base_price" 
+                                       id="base_price" 
+                                       step="0.01"
+                                       min="0.01" 
+                                       x-model="basePrice"
                                        @input="calculateCommission"
-                                       value="320"
+                                       value="{{ old('base_price', $foodItem->base_price) }}"
                                        class="focus:ring-indigo-500 focus:border-indigo-500 block w-full pl-7 sm:text-sm border-gray-300 rounded-md" 
                                        required>
+                                @error('base_price')
+                                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                                @enderror
                             </div>
                             <p class="mt-2 text-sm text-gray-500">
-                                Price shown to customers
+                                Your base price before commission
                             </p>
                         </div>
 
@@ -180,134 +241,88 @@
                             </label>
                             <div class="space-y-2">
                                 <div class="flex justify-between text-sm">
-                                    <span class="text-gray-600">Customer Pays:</span>
-                                    <span class="font-medium" x-text="`₹${price.toFixed(2)}`">₹320.00</span>
+                                    <span class="text-gray-600">Base Price:</span>
+                                    <span class="font-medium" x-text="`৳${basePrice.toFixed(2)}`">৳{{ number_format($foodItem->base_price, 2) }}</span>
                                 </div>
                                 <div class="flex justify-between text-sm">
-                                    <span class="text-gray-600">Platform Commission (12%):</span>
-                                    <span class="text-red-600" x-text="`-₹${commission.toFixed(2)}`">-₹38.40</span>
+                                    <span class="text-gray-600">Platform Commission ({{ $foodItem->commission_rate ?? 8.00 }}%):</span>
+                                    <span class="text-red-600" x-text="`+৳${commission.toFixed(2)}`">+৳{{ number_format($foodItem->base_price * ($foodItem->commission_rate ?? 8.00) / 100, 2) }}</span>
                                 </div>
                                 <div class="border-t pt-2 flex justify-between font-medium">
-                                    <span class="text-gray-900">You'll Receive:</span>
-                                    <span class="text-green-600" x-text="`₹${earnings.toFixed(2)}`">₹281.60</span>
+                                    <span class="text-gray-900">Customer Pays:</span>
+                                    <span class="text-indigo-600" x-text="`৳${totalPrice.toFixed(2)}`">৳{{ number_format($foodItem->total_price, 2) }}</span>
+                                </div>
+                                <div class="flex justify-between text-sm">
+                                    <span class="text-gray-600">You'll Receive:</span>
+                                    <span class="text-green-600" x-text="`৳${basePrice.toFixed(2)}`">৳{{ number_format($foodItem->base_price, 2) }}</span>
                                 </div>
                             </div>
                             <div class="mt-3 pt-3 border-t border-gray-200">
                                 <div class="text-xs text-gray-500">
                                     <i class="fas fa-info-circle mr-1"></i>
-                                    Commission varies: 12% for Pay-per-eat, 15% for Subscriptions
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Special Pricing -->
-                    <div class="mt-6">
-                        <div class="flex items-center">
-                            <input id="has_special_price" 
-                                   name="has_special_price" 
-                                   type="checkbox" 
-                                   x-model="showSpecialPrice"
-                                   class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
-                            <label for="has_special_price" class="ml-2 block text-sm text-gray-900">
-                                Set special/discounted price
-                            </label>
-                        </div>
-                        
-                        <div x-show="showSpecialPrice" x-transition class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div>
-                                <label for="special_price" class="block text-sm font-medium text-gray-700">
-                                    Special Price (₹)
-                                </label>
-                                <div class="mt-1 relative rounded-md shadow-sm">
-                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <span class="text-gray-500 sm:text-sm">₹</span>
-                                    </div>
-                                    <input type="number" 
-                                           name="special_price" 
-                                           id="special_price" 
-                                           step="1"
-                                           min="0"
-                                           value="280"
-                                           class="focus:ring-indigo-500 focus:border-indigo-500 block w-full pl-7 sm:text-sm border-gray-300 rounded-md">
-                                </div>
-                            </div>
-                            
-                            <div>
-                                <label for="special_price_end" class="block text-sm font-medium text-gray-700">
-                                    Special Price Ends
-                                </label>
-                                <div class="mt-1">
-                                    <input type="date" 
-                                           name="special_price_end" 
-                                           id="special_price_end" 
-                                           value="{{ date('Y-m-d', strtotime('+7 days')) }}"
-                                           class="focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                                    Commission rate: {{ $foodItem->commission_rate ?? 8.00 }}% for food items
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Meal Availability -->
+                <!-- Availability -->
                 <div class="border-b border-gray-200 pb-6">
-                    <h4 class="text-md font-medium text-gray-900 mb-4">Meal Availability</h4>
+                    <h4 class="text-md font-medium text-gray-900 mb-4">Availability & Stock</h4>
                     
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                        <div class="relative flex items-start p-4 border border-gray-200 rounded-lg hover:bg-gray-50">
-                            <div class="flex items-center h-5">
-                                <input id="breakfast" 
-                                       name="meal_types[]" 
-                                       type="checkbox" 
-                                       value="breakfast" 
-                                       class="focus:ring-yellow-500 h-4 w-4 text-yellow-600 border-gray-300 rounded">
-                            </div>
-                            <div class="ml-3 flex-1">
-                                <label for="breakfast" class="font-medium text-gray-700">
-                                    <span class="inline-flex items-center">
-                                        <i class="fas fa-sun text-yellow-500 mr-2"></i> Breakfast
-                                    </span>
-                                </label>
-                                <p class="text-sm text-gray-500">7:00 AM - 11:00 AM</p>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label for="is_available" class="block text-sm font-medium text-gray-700 mb-2">
+                                Availability Status
+                            </label>
+                            <div class="mt-1">
+                                <select id="is_available" 
+                                        name="is_available" 
+                                        class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
+                                    <option value="1" {{ $foodItem->is_available ? 'selected' : '' }}>Available</option>
+                                    <option value="0" {{ !$foodItem->is_available ? 'selected' : '' }}>Not Available</option>
+                                </select>
                             </div>
                         </div>
-                        
-                        <div class="relative flex items-start p-4 border border-gray-200 rounded-lg hover:bg-gray-50">
-                            <div class="flex items-center h-5">
-                                <input id="lunch" 
-                                       name="meal_types[]" 
-                                       type="checkbox" 
-                                       value="lunch" 
-                                       class="focus:ring-orange-500 h-4 w-4 text-orange-600 border-gray-300 rounded"
-                                       checked>
+
+                        <div>
+                            <label for="daily_quantity" class="block text-sm font-medium text-gray-700">
+                                Daily Quantity Limit
+                            </label>
+                            <div class="mt-1">
+                                <input type="number" 
+                                       name="daily_quantity" 
+                                       id="daily_quantity" 
+                                       min="0"
+                                       value="{{ old('daily_quantity', $foodItem->daily_quantity) }}"
+                                       class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                                       placeholder="Leave empty for unlimited">
+                                <p class="mt-1 text-xs text-gray-500">
+                                    Maximum number available per day. Leave empty for unlimited.
+                                </p>
                             </div>
-                            <div class="ml-3 flex-1">
-                                <label for="lunch" class="font-medium text-gray-700">
-                                    <span class="inline-flex items-center">
-                                        <i class="fas fa-utensils text-orange-500 mr-2"></i> Lunch
-                                    </span>
-                                </label>
-                                <p class="text-sm text-gray-500">12:00 PM - 3:00 PM</p>
-                            </div>
+                            @error('daily_quantity')
+                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
                         </div>
-                        
-                        <div class="relative flex items-start p-4 border border-gray-200 rounded-lg hover:bg-gray-50">
-                            <div class="flex items-center h-5">
-                                <input id="dinner" 
-                                       name="meal_types[]" 
-                                       type="checkbox" 
-                                       value="dinner" 
-                                       class="focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300 rounded"
-                                       checked>
+                    </div>
+
+                    <!-- Today's Sales -->
+                    <div class="mt-6 p-4 bg-blue-50 rounded-md border border-blue-200">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h5 class="text-sm font-medium text-blue-900">Today's Sales</h5>
+                                <p class="text-sm text-blue-700">
+                                    Sold today: <span class="font-semibold">{{ $foodItem->sold_today ?? 0 }}</span>
+                                    @if($foodItem->daily_quantity)
+                                        / {{ $foodItem->daily_quantity }} available
+                                    @else
+                                        (unlimited)
+                                    @endif
+                                </p>
                             </div>
-                            <div class="ml-3 flex-1">
-                                <label for="dinner" class="font-medium text-gray-700">
-                                    <span class="inline-flex items-center">
-                                        <i class="fas fa-moon text-blue-500 mr-2"></i> Dinner
-                                    </span>
-                                </label>
-                                <p class="text-sm text-gray-500">7:00 PM - 11:00 PM</p>
-                            </div>
+
                         </div>
                     </div>
                 </div>
@@ -319,19 +334,21 @@
                     <div class="flex flex-col items-center justify-center">
                         <div class="text-center">
                             <div class="relative">
-                                <img :src="imagePreview || 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=400&h=400&fit=crop'" 
+                                <img :src="imagePreview || '{{ $foodItem->image_url ? asset($foodItem->image_url) : 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=400&h=400&fit=crop' }}'" 
                                      alt="Menu item preview" 
                                      class="mx-auto h-48 w-48 object-cover rounded-lg shadow-lg">
+                                @if($foodItem->image_url)
                                 <button type="button" 
                                         @click="removeImage"
                                         class="absolute top-2 right-2 bg-red-600 text-white rounded-full p-1 hover:bg-red-700 focus:outline-none">
                                     <i class="fas fa-times h-4 w-4"></i>
                                 </button>
+                                @endif
                             </div>
                             <div class="mt-4">
                                 <label for="image" class="cursor-pointer inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                                     <i class="fas fa-upload mr-2"></i>
-                                    Change Image
+                                    {{ $foodItem->image_url ? 'Change Image' : 'Upload Image' }}
                                 </label>
                                 <input type="file" 
                                        id="image" 
@@ -339,6 +356,7 @@
                                        accept="image/*"
                                        @change="updateImagePreview($event)"
                                        class="hidden">
+                                <input type="hidden" name="remove_image" x-model="removeImageFlag">
                             </div>
                             <div class="mt-4 text-center">
                                 <p class="text-xs text-gray-500">
@@ -349,80 +367,47 @@
                     </div>
                 </div>
 
-                <!-- Availability & Status -->
+                <!-- Performance Statistics -->
                 <div>
-                    <h4 class="text-md font-medium text-gray-900 mb-4">Availability & Status</h4>
+                    <h4 class="text-md font-medium text-gray-900 mb-4">Item Performance</h4>
                     
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                            <label for="status" class="block text-sm font-medium text-gray-700">
-                                Item Status
-                            </label>
-                            <div class="mt-1">
-                                <select id="status" 
-                                        name="status" 
-                                        class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md">
-                                    <option value="active" selected>Active (Visible to customers)</option>
-                                    <option value="inactive">Inactive (Hidden from customers)</option>
-                                    <option value="out_of_stock">Out of Stock</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <div>
-                            <label for="preparation_time" class="block text-sm font-medium text-gray-700">
-                                Preparation Time (minutes)
-                            </label>
-                            <div class="mt-1">
-                                <input type="number" 
-                                       name="preparation_time" 
-                                       id="preparation_time" 
-                                       min="5"
-                                       max="60"
-                                       value="25"
-                                       class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
-                                       placeholder="e.g., 20">
-                            </div>
-                            <p class="mt-2 text-sm text-gray-500">
-                                Average time to prepare this item
-                            </p>
-                        </div>
-                    </div>
-
-                    <div class="mt-6">
-                        <div class="flex items-center">
-                            <input id="is_featured" 
-                                   name="is_featured" 
-                                   type="checkbox" 
-                                   class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-                                   checked>
-                            <label for="is_featured" class="ml-2 block text-sm text-gray-900">
-                                Feature this item on restaurant homepage
-                            </label>
-                        </div>
-                    </div>
-
-                    <!-- Sales Statistics -->
-                    <div class="mt-8 p-4 bg-gray-50 rounded-lg">
-                        <h5 class="text-sm font-medium text-gray-900 mb-3">Item Performance</h5>
-                        <div class="grid grid-cols-2 gap-4">
+                    <div class="p-4 bg-gray-50 rounded-lg">
+                        <h5 class="text-sm font-medium text-gray-900 mb-3">Sales Statistics</h5>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
                             <div>
-                                <div class="text-xs text-gray-500">Total Orders</div>
-                                <div class="text-lg font-semibold text-gray-900">148</div>
+                                <div class="text-xs text-gray-500">Total Sold</div>
+                                <div class="text-lg font-semibold text-gray-900">{{ $foodItem->sold_today ?? 0 }}</div>
                             </div>
                             <div>
-                                <div class="text-xs text-gray-500">Avg. Rating</div>
-                                <div class="text-lg font-semibold text-gray-900">4.7 ⭐</div>
+                                <div class="text-xs text-gray-500">Base Price</div>
+                                <div class="text-lg font-semibold text-gray-900">৳{{ number_format($foodItem->base_price, 2) }}</div>
                             </div>
                             <div>
-                                <div class="text-xs text-gray-500">Revenue</div>
-                                <div class="text-lg font-semibold text-gray-900">₹47,360</div>
+                                <div class="text-xs text-gray-500">Total Price</div>
+                                <div class="text-lg font-semibold text-gray-900">৳{{ number_format($foodItem->total_price, 2) }}</div>
                             </div>
                             <div>
                                 <div class="text-xs text-gray-500">Your Earnings</div>
-                                <div class="text-lg font-semibold text-green-600">₹41,676</div>
+                                <div class="text-lg font-semibold text-green-600">
+                                    ৳{{ number_format($foodItem->base_price * ($foodItem->sold_today ?? 0), 2) }}
+                                </div>
                             </div>
                         </div>
+                        
+                        <!-- Recent Popularity -->
+                        @if($foodItem->daily_quantity && $foodItem->daily_quantity > 0)
+                        <div class="mt-4 pt-4 border-t border-gray-200">
+                            <div class="text-xs text-gray-500 mb-2">Popularity Trend (Today)</div>
+                            <div class="flex items-center">
+                                <div class="flex-1 bg-gray-200 rounded-full h-2">
+                                    <div class="bg-green-500 h-2 rounded-full" style="width: {{ min(100, (($foodItem->sold_today ?? 0) / max(1, $foodItem->daily_quantity)) * 100) }}%"></div>
+                                </div>
+                                <span class="ml-2 text-xs font-medium text-gray-700">
+                                    {{ number_format(min(100, (($foodItem->sold_today ?? 0) / max(1, $foodItem->daily_quantity)) * 100), 1) }}%
+                                </span>
+                            </div>
+                        </div>
+                        @endif
                     </div>
                 </div>
             </div>
@@ -433,19 +418,16 @@
                    class="inline-flex justify-center py-2 px-4 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                     Cancel
                 </a>
-                    <button type="button"
+                <button type="button"
                         class="ml-3 inline-flex justify-center py-2 px-4 border border-red-300 shadow-sm text-sm font-medium rounded-md text-red-700 bg-white hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 delete-btn"
-                        data-id="{{ $itemId ?? 1 }}">
-                        <i class="fas fa-trash mr-2"></i> Delete
-                    </button>
-                    <button type="button"
-                        class="ml-3 inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-gray-600 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
-                        Save as Draft
-                    </button>
-                    <button type="submit"
+                        data-id="{{ $foodItem->id }}"
+                        onclick="showDeleteConfirmation({{ $foodItem->id }})">
+                    <i class="fas fa-trash mr-2"></i> Delete
+                </button>
+                <button type="submit"
                         class="ml-3 inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                        <i class="fas fa-save mr-2"></i> Update Item
-                    </button>
+                    <i class="fas fa-save mr-2"></i> Update Item
+                </button>
             </div>
         </form>
     </div>
@@ -467,17 +449,24 @@
 <script>
     function menuItemForm() {
         return {
-            itemName: 'Butter Chicken',
-            price: 320,
-            commission: 38.4,
-            earnings: 281.6,
+            itemName: '{{ $foodItem ? addslashes($foodItem->name) : '' }}',
+            basePrice: {{ $foodItem ? $foodItem->base_price : 0 }},
+            commission: {{ $foodItem ? $foodItem->base_price * ($foodItem->commission_rate ?? 8.00) / 100 : 0 }},
+            totalPrice: {{ $foodItem ? $foodItem->total_price : 0 }},
             imagePreview: '',
-            showSpecialPrice: true,
+            removeImageFlag: false,
+            
+            init() {
+                if (this.basePrice > 0) {
+                    this.calculateCommission();
+                }
+                this.updateCharCount();
+            },
             
             calculateCommission() {
-                const commissionRate = 0.12; // 12% default
-                this.commission = this.price * commissionRate;
-                this.earnings = this.price - this.commission;
+                const commissionRate = {{ $foodItem ? ($foodItem->commission_rate ?? 8.00) / 100 : 0.08 }};
+                this.commission = this.basePrice * commissionRate;
+                this.totalPrice = this.basePrice + this.commission;
             },
             
             updateImagePreview(event) {
@@ -493,38 +482,58 @@
             
             removeImage() {
                 this.imagePreview = '';
+                this.removeImageFlag = true;
                 document.getElementById('image').value = '';
+            },
+            
+            updateCharCount() {
+                const textarea = document.getElementById('description');
+                const count = textarea.value.length;
+                document.getElementById('char-count').textContent = count;
+                
+                if (count > 500) {
+                    document.getElementById('char-count').classList.add('text-red-600');
+                } else {
+                    document.getElementById('char-count').classList.remove('text-red-600');
+                }
             }
         };
     }
     
     function showDeleteConfirmation(itemId) {
-        showConfirmation({
-            id: 'delete-item-modal',
-            title: 'Delete Menu Item',
-            message: `Are you sure you want to delete menu item #${itemId}? This action cannot be undone.`,
-            confirmText: 'Delete',
-            onConfirm: `deleteMenuItem(${itemId})`
-        });
+        // Show the modal (assuming you have a modal component)
+        const modal = document.getElementById('delete-item-modal');
+        if (modal) {
+            modal.style.display = 'block';
+        }
+        
+        // Set up delete action
+        document.getElementById('confirm-delete').onclick = function() {
+            deleteMenuItem(itemId);
+        };
     }
     
     function deleteMenuItem(itemId) {
-        // Add your delete logic here
-        console.log(`Deleting item ${itemId}`);
-        window.location.href = "{{ route('food-provider.menu.items.index') }}";
+        fetch(`/food-provider/menu/items/${itemId}`, {
+            method: 'DELETE',
+            headers: {
+                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                window.location.href = "{{ route('food-provider.menu.items.index') }}";
+            } else {
+                alert('Error deleting item: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while deleting the item');
+        });
     }
-    
-    // Character counter
-    document.getElementById('description').addEventListener('input', function() {
-        const count = this.value.length;
-        document.getElementById('char-count').textContent = count;
-        
-        if (count > 500) {
-            document.getElementById('char-count').classList.add('text-red-600');
-        } else {
-            document.getElementById('char-count').classList.remove('text-red-600');
-        }
-    });
 </script>
 @endpush
 @endsection

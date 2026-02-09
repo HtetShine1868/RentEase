@@ -32,7 +32,7 @@
                                 </div>
                                 <div class="mt-2 flex items-center text-sm text-gray-500">
                                     <i class="fas fa-clock mr-2"></i>
-                                    Active since {{ auth()->user()->created_at->format('M Y') }}
+                                   Active since {{ auth()->user()->created_at?->format('M Y') ?? 'N/A' }}
                                 </div>
                             </div>
                         </div>
