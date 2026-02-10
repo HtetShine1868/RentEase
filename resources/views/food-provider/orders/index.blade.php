@@ -349,14 +349,33 @@
                                 </div>
                                 <div class="text-sm">{{ $order->user->name ?? 'Unknown Customer' }}</div>
                             </div>
-                        </div>
-                        
-                        <div class="mt-2 grid grid-cols-2 gap-2 text-sm">
-                            <div>
-                                <span class="text-gray-500">Type:</span>
-                                <span class="ml-1 font-medium">
-                                    {{ ($order->order_type ?? 'PAY_PER_EAT') === 'SUBSCRIPTION_MEAL' ? 'Subscription' : 'Pay-per-eat' }}
-                                </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            <div class="flex space-x-2">
+                                <a href="{{ url('food-provider/orders/show', $i) }}" 
+                                   class="text-indigo-600 hover:text-indigo-900"
+                                   title="View Details">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                @if($order['status'] === 'pending')
+                                <button type="button" 
+                                        class="text-green-600 hover:text-green-900"
+                                        title="Accept Order">
+                                    <i class="fas fa-check"></i>
+                                </button>
+                                @endif
+                                @if($order['status'] === 'preparing')
+                                <button type="button" 
+                                        class="text-blue-600 hover:text-blue-900"
+                                        title="Mark as Ready">
+                                    <i class="fas fa-check-circle"></i>
+                                </button>
+                                @endif
+                                <button type="button" 
+                                        class="text-gray-600 hover:text-gray-900"
+                                        title="Print">
+                                    <i class="fas fa-print"></i>
+                                </button>
                             </div>
                             <div>
                                 <span class="text-gray-500">Items:</span>
