@@ -398,6 +398,14 @@
                     <i class="fas fa-search text-lg w-6 text-center"></i>
                     <span class="ml-3 truncate sidebar-text">Find Properties</span>
                 </a>
+                <!-- My Hostels -->
+                <a href="{{ route('rental.index') }}" 
+                   @click.prevent="navigate('{{ route('rental.index') }}')"
+                   :class="currentPage === 'rental' ? 'bg-gray-800 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white'"
+                   class="group flex items-center px-3 py-3 rounded-md sidebar-transition">
+                    <i class="fas fa-calendar-alt text-lg w-6 text-center"></i>
+                    <span class="ml-3 truncate sidebar-text">My Bookings</span>
+                </a>
 
                 <!-- Food Services -->
                 <a href="{{ route('food.index') }}" 
@@ -413,15 +421,6 @@
                    class="text-gray-300 hover:bg-gray-700 hover:text-white group flex items-center px-3 py-3 rounded-md sidebar-transition">
                     <i class="fas fa-tshirt text-lg w-6 text-center"></i>
                     <span class="ml-3 truncate sidebar-text">Laundry Services</span>
-                </a>
-
-                <!-- My Bookings -->
-                <a href="{{ route('rental.index') }}" 
-                   @click.prevent="navigate('{{ route('rental.index') }}')"
-                   :class="currentPage === 'rental' ? 'bg-gray-800 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white'"
-                   class="group flex items-center px-3 py-3 rounded-md sidebar-transition">
-                    <i class="fas fa-calendar-alt text-lg w-6 text-center"></i>
-                    <span class="ml-3 truncate sidebar-text">My Bookings</span>
                 </a>
 
                 <!-- My Orders - Updated with dropdown -->

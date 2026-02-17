@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('dashboard')
 
 @section('title', 'Search Rental Properties')
 
@@ -99,7 +99,7 @@
                 <!-- Filter Actions -->
                 <div class="lg:col-span-6 flex justify-between items-center pt-4 border-t border-gray-200">
                     @if(request()->anyFilled(['search', 'type', 'min_price', 'max_price', 'city', 'gender_policy']))
-                        <a href="{{ route('rental.search') }}" 
+                        <a href="{{ route('properties.search') }}" 
                            class="text-sm text-gray-600 hover:text-gray-900">
                             Clear All Filters
                         </a>

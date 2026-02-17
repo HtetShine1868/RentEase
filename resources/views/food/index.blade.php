@@ -3,7 +3,7 @@
 @section('title', 'Food Services')
 
 @section('content')
-<div class="space-y-6">
+<div class="space-y-6" x-data="foodServices()" x-init="init()">
     <!-- Header with Stats -->
     <div class="bg-white rounded-lg shadow p-6">
         <div class="flex justify-between items-center">
@@ -13,15 +13,15 @@
             </div>
             <div class="flex space-x-4">
                 <div class="text-center">
-                    <div class="text-2xl font-bold text-indigo-600">{{ $totalOrders ?? 0 }}</div>
+                    <div class="text-2xl font-bold text-indigo-600">{{ $stats['totalOrders'] ?? 0 }}</div>
                     <div class="text-sm text-gray-500">Total Orders</div>
                 </div>
                 <div class="text-center">
-                    <div class="text-2xl font-bold text-green-600">{{ $activeSubscriptions ?? 0 }}</div>
+                    <div class="text-2xl font-bold text-green-600">{{ $stats['activeSubscriptions'] ?? 0 }}</div>
                     <div class="text-sm text-gray-500">Active Subscriptions</div>
                 </div>
                 <div class="text-center">
-                    <div class="text-2xl font-bold text-yellow-600">{{ $pendingOrders ?? 0 }}</div>
+                    <div class="text-2xl font-bold text-yellow-600">{{ $stats['pendingOrders'] ?? 0 }}</div>
                     <div class="text-sm text-gray-500">Pending</div>
                 </div>
             </div>
@@ -51,580 +51,127 @@
         </div>
 
         <!-- Tab Content -->
-        <div x-data="foodServices()" x-init="init()" class="p-6">
+        <div class="p-6">
+            <!-- Loading Indicator -->
+            <div x-show="isLoading" class="text-center py-12">
+                <div class="loading-spinner"></div>
+                <p class="mt-4 text-gray-600">Loading...</p>
+            </div>
+
             <!-- Restaurants Tab -->
             <div x-show="activeTab === 'restaurants'" x-cloak>
-                <!-- Search and Filters -->
-                <div class="mb-6">
-                    <div class="flex flex-col md:flex-row gap-4">
-                        <div class="flex-1">
-                            <div class="relative">
-                                <input type="text" 
-                                       x-model="searchQuery"
-                                       @input.debounce.500ms="searchRestaurants"
-                                       placeholder="Search restaurants or dishes..." 
-                                       class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
-                                <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
-                            </div>
-                        </div>
-                        <div class="flex gap-2">
-                            <select x-model="selectedMealType" @change="filterRestaurants" class="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500">
-                                <option value="">All Meal Types</option>
-                                @foreach($mealTypes as $mealType)
-                                <option value="{{ $mealType->id }}">{{ $mealType->name }}</option>
-                                @endforeach
-                            </select>
-                            <select x-model="sortBy" @change="sortRestaurants" class="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500">
-                                <option value="rating">Rating</option>
-                                <option value="distance">Distance</option>
-                                <option value="delivery_time">Delivery Time</option>
-                                <option value="total_orders">Most Orders</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Restaurant Grid -->
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    <!-- Initial restaurants loaded from server -->
-                    @foreach($initialRestaurants as $restaurant)
-                    <div class="border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition-shadow">
-                        <div class="h-48 bg-gray-100 flex items-center justify-center">
-                            <i class="fas fa-utensils text-gray-300 text-4xl"></i>
-                        </div>
-                        
-                        <div class="p-4">
-                            <div class="flex justify-between items-start">
-                                <div>
-                                    <h3 class="font-bold text-lg text-gray-900">{{ $restaurant->business_name }}</h3>
-                                    <div class="flex items-center mt-1">
-                                        <div class="flex text-yellow-400">
-                                            @for($i = 1; $i <= 5; $i++)
-                                                @if($i <= floor($restaurant->rating ?? 0))
-                                                <i class="fas fa-star"></i>
-                                                @elseif($i - 0.5 <= ($restaurant->rating ?? 0))
-                                                <i class="fas fa-star-half-alt"></i>
-                                                @else
-                                                <i class="far fa-star"></i>
-                                                @endif
-                                            @endfor
-                                        </div>
-                                        <span class="ml-2 text-gray-600">{{ number_format($restaurant->rating ?? 0, 1) }}</span>
-                                        <span class="ml-2 text-gray-400">({{ $restaurant->total_orders ?? 0 }} orders)</span>
-                                    </div>
-                                    <p class="mt-2 text-gray-600 text-sm">{{ Str::limit($restaurant->description ?? 'No description', 100) }}</p>
-                                </div>
-                                <div class="text-right">
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                        <i class="fas fa-clock mr-1"></i>
-                                        <span>~45 min</span>
-                                    </span>
-                                </div>
-                            </div>
-                            
-                            <div class="mt-4 pt-4 border-t border-gray-100">
-                                <div class="flex justify-between items-center">
-                                    <div>
-                                        <span class="text-gray-900 font-semibold">5.0 km away</span>
-                                        <p class="text-sm text-gray-500">{{ $restaurant->city ?? 'Dhaka' }}</p>
-                                    </div>
-                                    <button @click="viewRestaurant({{ $restaurant->id }})"
-                                            class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors">
-                                        View Menu
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    @endforeach
-                    
-                    <!-- Dynamic restaurants loaded via AJAX -->
-                    <template x-for="restaurant in restaurants" :key="restaurant.id">
-                        <div class="border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition-shadow">
-                            <div class="h-48 bg-gray-100 flex items-center justify-center">
-                                <i class="fas fa-utensils text-gray-300 text-4xl"></i>
-                            </div>
-                            
-                            <div class="p-4">
-                                <div class="flex justify-between items-start">
-                                    <div>
-                                        <h3 class="font-bold text-lg text-gray-900" x-text="restaurant.business_name"></h3>
-                                        <div class="flex items-center mt-1">
-                                            <div class="flex text-yellow-400">
-                                                <template x-for="i in 5" :key="i">
-                                                    <i :class="i <= Math.floor(restaurant.rating) ? 'fas fa-star' : (i - 0.5 <= restaurant.rating ? 'fas fa-star-half-alt' : 'far fa-star')"></i>
-                                                </template>
-                                            </div>
-                                            <span class="ml-2 text-gray-600" x-text="restaurant.rating.toFixed(1)"></span>
-                                            <span class="ml-2 text-gray-400">(<span x-text="restaurant.total_orders"></span> orders)</span>
-                                        </div>
-                                        <p class="mt-2 text-gray-600 text-sm" x-text="restaurant.description ? restaurant.description.substring(0, 100) + '...' : 'No description available'"></p>
-                                    </div>
-                                    <div class="text-right">
-                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                            <i class="fas fa-clock mr-1"></i>
-                                            <span x-text="`~${restaurant.estimated_delivery_minutes || 45} min`"></span>
-                                        </span>
-                                    </div>
-                                </div>
-                                
-                                <div class="mt-4 pt-4 border-t border-gray-100">
-                                    <div class="flex justify-between items-center">
-                                        <div>
-                                            <span class="text-gray-900 font-semibold" x-text="`${restaurant.distance_km || 5.0} km away`"></span>
-                                            <p class="text-sm text-gray-500" x-text="restaurant.city"></p>
-                                        </div>
-                                        <button @click="viewRestaurant(restaurant.id)"
-                                                class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors">
-                                            View Menu
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </template>
-                </div>
-
-                <!-- Empty State -->
-                <div x-show="restaurants.length === 0 && !hasInitialRestaurants" x-cloak class="text-center py-12">
-                    <i class="fas fa-search text-gray-300 text-5xl mb-4"></i>
-                    <h3 class="text-lg font-medium text-gray-900">No restaurants found</h3>
-                    <p class="mt-2 text-gray-500">Try adjusting your search or filters</p>
-                </div>
+                @include('food.partials.restaurants-tab')
             </div>
 
             <!-- Orders Tab -->
             <div x-show="activeTab === 'orders'" x-cloak>
-                <div class="mb-6">
-                    <div class="flex justify-between items-center">
-                        <h3 class="text-lg font-semibold text-gray-900">Recent Orders</h3>
-                        <select x-model="orderStatusFilter" @change="loadOrders" class="border border-gray-300 rounded-lg px-3 py-2">
-                            <option value="">All Status</option>
-                            <option value="PENDING">Pending</option>
-                            <option value="ACCEPTED">Accepted</option>
-                            <option value="PREPARING">Preparing</option>
-                            <option value="OUT_FOR_DELIVERY">Out for Delivery</option>
-                            <option value="DELIVERED">Delivered</option>
-                            <option value="CANCELLED">Cancelled</option>
-                        </select>
-                    </div>
-                </div>
-
-                <!-- Initial orders from server -->
-                @if(count($recentOrders) > 0)
-                @foreach($recentOrders as $order)
-                <div class="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 mb-4">
-                    <div class="flex justify-between items-start">
-                        <div>
-                            <div class="flex items-center">
-                                <span class="font-semibold text-gray-900">{{ $order->order_reference }}</span>
-                                <span class="{{ 
-                                    $order->status === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
-                                    ($order->status === 'ACCEPTED' ? 'bg-blue-100 text-blue-800' :
-                                    ($order->status === 'PREPARING' ? 'bg-purple-100 text-purple-800' :
-                                    ($order->status === 'OUT_FOR_DELIVERY' ? 'bg-indigo-100 text-indigo-800' :
-                                    ($order->status === 'DELIVERED' ? 'bg-green-100 text-green-800' :
-                                    ($order->status === 'CANCELLED' ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800')))))
-                                }} ml-3 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium">
-                                    <span>{{ str_replace('_', ' ', $order->status) }}</span>
-                                </span>
-                            </div>
-                            <p class="text-sm text-gray-600 mt-1">
-                                <span>{{ $order->business_name }}</span> • 
-                                <span>{{ \Carbon\Carbon::parse($order->created_at)->format('M d, Y') }}</span> • 
-                                <span>{{ $order->meal_type }}</span>
-                            </p>
-                            <p class="text-sm text-gray-500 mt-1">{{ $order->delivery_address ?? 'Address not specified' }}</p>
-                        </div>
-                        <div class="text-right">
-                            <div class="text-lg font-bold text-gray-900">৳{{ number_format($order->total_amount, 2) }}</div>
-                            <div class="text-sm text-gray-500">{{ $order->created_at_formatted }}</div>
-                        </div>
-                    </div>
-                </div>
-                @endforeach
-                @endif
-
-                <!-- Dynamic orders loaded via AJAX -->
-                <div class="space-y-4">
-                    <template x-for="order in orders" :key="order.id">
-                        <div class="border border-gray-200 rounded-lg p-4 hover:bg-gray-50">
-                            <div class="flex justify-between items-start">
-                                <div>
-                                    <div class="flex items-center">
-                                        <span class="font-semibold text-gray-900" x-text="order.order_reference"></span>
-                                        <span :class="getStatusBadgeClass(order.status)" 
-                                              class="ml-3 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium">
-                                            <span x-text="order.status.replace('_', ' ')"></span>
-                                        </span>
-                                    </div>
-                                    <p class="text-sm text-gray-600 mt-1">
-                                        <span x-text="order.business_name"></span> • 
-                                        <span x-text="new Date(order.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })"></span> • 
-                                        <span x-text="order.meal_type"></span>
-                                    </p>
-                                    <p class="text-sm text-gray-500 mt-1" x-text="order.delivery_address"></p>
-                                </div>
-                                <div class="text-right">
-                                    <div class="text-lg font-bold text-gray-900" x-text="`৳${order.total_amount}`"></div>
-                                    <div class="text-sm text-gray-500" x-text="order.created_at_formatted"></div>
-                                </div>
-                            </div>
-                            
-                            <div class="mt-4 pt-4 border-t border-gray-100">
-                                <div class="flex justify-between items-center">
-                                    <div>
-                                        <template x-for="item in order.items" :key="item.id">
-                                            <span class="text-sm text-gray-600">
-                                                <span x-text="item.name"></span> × <span x-text="item.quantity"></span>
-                                                <span class="text-gray-400 mx-2">•</span>
-                                            </span>
-                                        </template>
-                                    </div>
-                                    <div class="flex space-x-2">
-                                        <button @click="viewOrderDetails(order.id)"
-                                                class="text-indigo-600 hover:text-indigo-900 px-3 py-1 text-sm font-medium">
-                                            Details
-                                        </button>
-                                        <button x-show="order.status === 'PENDING' || order.status === 'ACCEPTED'"
-                                                @click="cancelOrder(order.id)"
-                                                class="text-red-600 hover:text-red-900 px-3 py-1 text-sm font-medium">
-                                            Cancel
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </template>
-                </div>
-
-                <!-- Empty State -->
-                <div x-show="orders.length === 0 && {{ count($recentOrders) }} === 0" x-cloak class="text-center py-12">
-                    <i class="fas fa-shopping-bag text-gray-300 text-5xl mb-4"></i>
-                    <h3 class="text-lg font-medium text-gray-900">No orders yet</h3>
-                    <p class="mt-2 text-gray-500">Your food orders will appear here</p>
-                </div>
+                @include('food.partials.orders-tab')
             </div>
 
             <!-- Subscriptions Tab -->
             <div x-show="activeTab === 'subscriptions'" x-cloak>
-                <div class="mb-6">
-                    <div class="flex justify-between items-center">
-                        <h3 class="text-lg font-semibold text-gray-900">My Subscriptions</h3>
-                        <button @click="showNewSubscriptionModal = true"
-                                class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors">
-                            <i class="fas fa-plus mr-2"></i>New Subscription
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Initial subscriptions from server -->
-                @if(count($subscriptions) > 0)
-                @foreach($subscriptions as $subscription)
-                <div class="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 mb-4">
-                    <div class="flex justify-between items-start">
-                        <div>
-                            <div class="flex items-center">
-                                <span class="font-semibold text-gray-900">{{ $subscription->business_name }}</span>
-                                <span class="{{ 
-                                    $subscription->status === 'ACTIVE' ? 'bg-green-100 text-green-800' :
-                                    ($subscription->status === 'PAUSED' ? 'bg-yellow-100 text-yellow-800' :
-                                    ($subscription->status === 'CANCELLED' ? 'bg-red-100 text-red-800' :
-                                    ($subscription->status === 'COMPLETED' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800')))
-                                }} ml-3 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium">
-                                    <span>{{ $subscription->status }}</span>
-                                </span>
-                            </div>
-                            <p class="text-sm text-gray-600 mt-1">
-                                <span>{{ $subscription->meal_type }}</span> • 
-                                <span>{{ \Carbon\Carbon::parse($subscription->delivery_time)->format('h:i A') }}</span> • 
-                                <span>{{ $subscription->delivery_days_text }}</span>
-                            </p>
-                            <p class="text-sm text-gray-500 mt-1">
-                                <span>{{ $subscription->start_date_formatted }}</span> to <span>{{ $subscription->end_date_formatted }}</span>
-                            </p>
-                        </div>
-                        <div class="text-right">
-                            <div class="text-lg font-bold text-gray-900">৳{{ number_format($subscription->daily_price, 2) }}/day</div>
-                            <div class="text-sm text-gray-500">Total: ৳{{ number_format($subscription->total_price, 2) }}</div>
-                        </div>
-                    </div>
-                    
-                    <div class="mt-4 pt-4 border-t border-gray-100">
-                        <div class="flex justify-between items-center">
-                            <div class="text-sm text-gray-600">
-                                <span>Discount: ৳{{ number_format($subscription->discount_amount, 2) }}</span>
-                            </div>
-                            <div class="flex space-x-2">
-                                <button class="text-indigo-600 hover:text-indigo-900 px-3 py-1 text-sm font-medium">
-                                    Details
-                                </button>
-                                @if($subscription->status === 'ACTIVE')
-                                <button class="text-yellow-600 hover:text-yellow-900 px-3 py-1 text-sm font-medium">
-                                    Pause
-                                </button>
-                                @endif
-                                @if(in_array($subscription->status, ['ACTIVE', 'PAUSED']))
-                                <button class="text-red-600 hover:text-red-900 px-3 py-1 text-sm font-medium">
-                                    Cancel
-                                </button>
-                                @endif
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                @endforeach
-                @endif
-
-                <!-- Dynamic subscriptions loaded via AJAX -->
-                <div class="space-y-4">
-                    <template x-for="subscription in subscriptions" :key="subscription.id">
-                        <div class="border border-gray-200 rounded-lg p-4 hover:bg-gray-50">
-                            <div class="flex justify-between items-start">
-                                <div>
-                                    <div class="flex items-center">
-                                        <span class="font-semibold text-gray-900" x-text="subscription.business_name"></span>
-                                        <span :class="getSubscriptionStatusBadgeClass(subscription.status)" 
-                                              class="ml-3 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium">
-                                            <span x-text="subscription.status"></span>
-                                        </span>
-                                    </div>
-                                    <p class="text-sm text-gray-600 mt-1">
-                                        <span x-text="subscription.meal_type"></span> • 
-                                        <span x-text="subscription.delivery_time"></span> • 
-                                        <span x-text="subscription.delivery_days_text"></span>
-                                    </p>
-                                    <p class="text-sm text-gray-500 mt-1">
-                                        <span x-text="subscription.start_date_formatted"></span> to <span x-text="subscription.end_date_formatted"></span>
-                                    </p>
-                                </div>
-                                <div class="text-right">
-                                    <div class="text-lg font-bold text-gray-900" x-text="`৳${subscription.daily_price}/day`"></div>
-                                    <div class="text-sm text-gray-500" x-text="`Total: ৳${subscription.total_price}`"></div>
-                                </div>
-                            </div>
-                            
-                            <div class="mt-4 pt-4 border-t border-gray-100">
-                                <div class="flex justify-between items-center">
-                                    <div class="text-sm text-gray-600">
-                                        <span x-text="`Discount: ৳${subscription.discount_amount}`"></span>
-                                    </div>
-                                    <div class="flex space-x-2">
-                                        <button class="text-indigo-600 hover:text-indigo-900 px-3 py-1 text-sm font-medium">
-                                            Details
-                                        </button>
-                                        <button x-show="subscription.status === 'ACTIVE'"
-                                                @click="pauseSubscription(subscription.id)"
-                                                class="text-yellow-600 hover:text-yellow-900 px-3 py-1 text-sm font-medium">
-                                            Pause
-                                        </button>
-                                        <button x-show="subscription.status === 'ACTIVE' || subscription.status === 'PAUSED'"
-                                                @click="cancelSubscription(subscription.id)"
-                                                class="text-red-600 hover:text-red-900 px-3 py-1 text-sm font-medium">
-                                            Cancel
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </template>
-                </div>
-
-                <!-- Empty State -->
-                <div x-show="subscriptions.length === 0 && {{ count($subscriptions) }} === 0" x-cloak class="text-center py-12">
-                    <i class="fas fa-calendar-alt text-gray-300 text-5xl mb-4"></i>
-                    <h3 class="text-lg font-medium text-gray-900">No active subscriptions</h3>
-                    <p class="mt-2 text-gray-500">Subscribe to your favorite meals for regular delivery</p>
-                </div>
+                @include('food.partials.subscriptions-tab')
             </div>
         </div>
     </div>
-</div>
 
-<!-- Restaurant Menu Modal -->
-<div x-show="showMenuModal" x-cloak class="fixed inset-0 z-50 overflow-y-auto" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
-    <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-        <div class="fixed inset-0 transition-opacity" aria-hidden="true">
-            <div class="absolute inset-0 bg-gray-500 opacity-75" @click="showMenuModal = false"></div>
-        </div>
-        
-        <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full">
-            <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                <div class="sm:flex sm:items-start">
-                    <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
-                        <div class="flex justify-between items-center mb-6">
-                            <h3 class="text-lg leading-6 font-medium text-gray-900" x-text="selectedRestaurant?.business_name"></h3>
-                            <button @click="showMenuModal = false" class="text-gray-400 hover:text-gray-500">
-                                <i class="fas fa-times"></i>
-                            </button>
-                        </div>
-                        
-                        <!-- Menu Content -->
-                        <div x-show="selectedRestaurant" x-cloak>
-                            <div class="mb-6 p-4 bg-gray-50 rounded-lg">
-                                <div class="flex justify-between items-center">
-                                    <div>
-                                        <p class="text-gray-600" x-text="selectedRestaurant.description"></p>
-                                        <p class="text-sm text-gray-500 mt-1">
-                                            <i class="fas fa-clock mr-1"></i>
-                                            <span x-text="`${selectedRestaurant.opening_time || '08:00'} - ${selectedRestaurant.closing_time || '22:00'}`"></span>
-                                            <span class="mx-2">•</span>
-                                            <i class="fas fa-map-marker-alt mr-1"></i>
-                                            <span x-text="selectedRestaurant.address"></span>
-                                        </p>
-                                    </div>
-                                    <div class="text-right">
-                                        <div class="text-lg font-bold text-indigo-600" x-text="`৳${cartTotal}`"></div>
-                                        <p class="text-sm text-gray-500">Cart Total</p>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <!-- Meal Type Tabs -->
-                            <div class="border-b border-gray-200 mb-6">
-                                <nav class="-mb-px flex space-x-8" aria-label="Meal Types">
-                                    @foreach($mealTypes as $mealType)
-                                    <button @click="selectMealType({{ $mealType->id }})"
-                                            :class="selectedMealTypeId === {{ $mealType->id }} ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
-                                            class="whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm">
-                                        {{ $mealType->name }}
-                                    </button>
-                                    @endforeach
-                                </nav>
-                            </div>
-                            
-                            <!-- Food Items Grid -->
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 max-h-96 overflow-y-auto">
-                                <template x-for="item in filteredMenuItems" :key="item.id">
-                                    <div class="border border-gray-200 rounded-lg p-4">
-                                        <div class="flex justify-between items-start">
-                                            <div class="flex-1">
-                                                <h4 class="font-semibold text-gray-900" x-text="item.name"></h4>
-                                                <p class="text-sm text-gray-600 mt-1" x-text="item.description || 'No description available'"></p>
-                                                <div class="mt-2">
-                                                    <template x-for="tag in item.dietary_tags" :key="tag">
-                                                        <span class="inline-block bg-green-100 text-green-800 text-xs px-2 py-1 rounded mr-1" x-text="tag"></span>
-                                                    </template>
-                                                </div>
-                                            </div>
-                                            <div class="text-right ml-4">
-                                                <div class="text-lg font-bold text-gray-900" x-text="`৳${item.total_price}`"></div>
-                                                <div class="text-sm text-gray-500 line-through" x-text="`৳${item.base_price}`"></div>
-                                            </div>
-                                        </div>
-                                        
-                                        <div class="mt-4 pt-4 border-t border-gray-100">
-                                            <div class="flex justify-between items-center">
-                                                <div class="text-sm text-gray-500">
-                                                    <span x-text="item.calories ? `${item.calories} cal` : ''"></span>
-                                                    <span x-show="item.daily_quantity" class="ml-2">
-                                                        <span x-text="`${item.daily_quantity - item.sold_today} left`"></span>
-                                                    </span>
-                                                </div>
-                                                <div class="flex items-center space-x-2">
-                                                    <button @click="decreaseQuantity(item.id)"
-                                                            class="w-8 h-8 rounded-full border border-gray-300 text-gray-600 hover:bg-gray-100"
-                                                            :disabled="getCartQuantity(item.id) <= 0">
-                                                        <i class="fas fa-minus"></i>
-                                                    </button>
-                                                    <span class="w-8 text-center font-medium" x-text="getCartQuantity(item.id)"></span>
-                                                    <button @click="increaseQuantity(item.id)"
-                                                            class="w-8 h-8 rounded-full border border-gray-300 text-gray-600 hover:bg-gray-100"
-                                                            :disabled="item.daily_quantity && getCartQuantity(item.id) >= (item.daily_quantity - item.sold_today)">
-                                                        <i class="fas fa-plus"></i>
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </template>
-                            </div>
-                            
-                            <!-- Order Actions -->
-                            <div class="border-t border-gray-200 pt-6">
-                                <div class="flex justify-between items-center">
-                                    <div>
-                                        <h4 class="font-semibold text-gray-900">Delivery Options</h4>
-                                        <div class="mt-2 space-y-2">
-                                            <label class="flex items-center">
-                                                <input type="radio" x-model="orderType" value="PAY_PER_EAT" class="mr-2" checked>
-                                                <span>Pay Per Meal</span>
-                                            </label>
-                                            <label class="flex items-center" x-show="selectedRestaurant.supports_subscription">
-                                                <input type="radio" x-model="orderType" value="SUBSCRIPTION" class="mr-2">
-                                                <span>Subscribe for Regular Delivery</span>
-                                            </label>
-                                        </div>
-                                    </div>
-                                    <div class="space-x-3">
-                                        <button @click="showMenuModal = false"
-                                                class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">
-                                            Cancel
-                                        </button>
-                                        <button @click="proceedToCheckout"
-                                                :disabled="cartTotal === 0"
-                                                :class="cartTotal === 0 ? 'bg-gray-300 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700'"
-                                                class="px-6 py-2 rounded-lg text-white">
-                                            <span x-text="orderType === 'SUBSCRIPTION' ? 'Subscribe' : 'Order Now'"></span>
-                                            <span x-text="` (৳${cartTotal})`"></span>
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+    <!-- Restaurant Menu Modal -->
+    <template x-if="showMenuModal">
+        @include('food.partials.menu-modal')
+    </template>
+
+    <!-- New Subscription Modal -->
+    <template x-if="showSubscriptionModal">
+        @include('food.partials.subscription-modal')
+    </template>
+
+    <!-- Order Details Modal -->
+    <template x-if="showOrderDetailsModal">
+        @include('food.partials.order-details-modal')
+    </template>
+
+    <!-- Reviews Modal -->
+    <template x-if="showReviewsModal">
+        @include('food.partials.reviews-modal')
+    </template>
+
+    <!-- Location Modal - This one is separate because it has its own x-data -->
+    @include('food.partials.location-modal')
 </div>
 
 <script>
 function foodServices() {
     return {
+        // Tab state
         activeTab: 'restaurants',
+        
+        // Filters
         searchQuery: '',
         selectedMealType: '',
         sortBy: 'rating',
         orderStatusFilter: '',
         
-        // Data
+        // Data - initialize all arrays
         restaurants: [],
         orders: [],
         subscriptions: [],
+        selectedRestaurant: null,
+        selectedOrder: null,
+        selectedSubscription: null,
         mealTypes: @json($mealTypes ?? []),
         
-        // Flags
-        hasInitialRestaurants: {{ count($initialRestaurants) > 0 ? 'true' : 'false' }},
+        // UI State - initialize all boolean flags
         isLoading: false,
+        showMenuModal: false,
+        showSubscriptionModal: false,
+        showOrderDetailsModal: false,
+        showReviewsModal: false,
         
-        // Cart
+        // Cart - initialize
         cart: {},
+        cartItems: [],
         cartTotal: 0,
         
-        // Modals
-        showMenuModal: false,
-        showCheckoutModal: false,
-        showNewSubscriptionModal: false,
-        
-        // Selected items
-        selectedRestaurant: null,
+        // Selected items - initialize
         selectedMealTypeId: {{ $mealTypes->first()->id ?? 'null' }},
         orderType: 'PAY_PER_EAT',
         
-        // Methods
-        async init() {
-            // Initial data is already loaded from server
-            console.log('Food services initialized');
+        // Pagination
+        currentPage: 1,
+        lastPage: 1,
+        
+        // Reviews - initialize
+        selectedRestaurantForReviews: null,
+        reviewsData: null,
+        isLoadingReviews: false,
+        
+        // Initialize
+        init() {
+            console.log('Food services initialized', this);
+            this.setupEventListeners();
         },
         
-        async loadRestaurants() {
+        setupEventListeners() {
+            // Listen for restaurant selection
+            window.addEventListener('view-restaurant', (event) => {
+                this.viewRestaurant(event.detail.restaurantId);
+            });
+            
+            // Listen for review view
+            window.addEventListener('view-reviews', (event) => {
+                this.viewReviews(event.detail.restaurantId);
+            });
+        },
+        
+        // API Methods
+        async loadRestaurants(page = 1) {
             this.isLoading = true;
             try {
                 const params = new URLSearchParams({
                     search: this.searchQuery,
                     meal_type: this.selectedMealType,
-                    sort: this.sortBy
+                    sort: this.sortBy,
+                    page: page
                 });
                 
                 const response = await fetch(`/food/api/restaurants?${params}`, {
@@ -634,26 +181,21 @@ function foodServices() {
                     }
                 });
                 
-                // Check if response is HTML (error page)
-                const contentType = response.headers.get("content-type");
-                if (contentType && contentType.indexOf("text/html") !== -1) {
-                    throw new Error('Server returned HTML instead of JSON. Check your route.');
-                }
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
+                if (!response.ok) throw new Error('Failed to load restaurants');
                 
                 const data = await response.json();
                 if (data.success) {
-                    this.restaurants = data.restaurants || [];
-                } else {
-                    console.error('Error loading restaurants:', data.message);
-                    this.showError(data.message || 'Failed to load restaurants');
+                    if (page === 1) {
+                        this.restaurants = data.restaurants;
+                    } else {
+                        this.restaurants = [...this.restaurants, ...data.restaurants];
+                    }
+                    this.currentPage = data.current_page || page;
+                    this.lastPage = data.last_page || 1;
                 }
             } catch (error) {
                 console.error('Error loading restaurants:', error);
-                this.showError('Failed to load restaurants. Please check your connection.');
+                this.showError('Failed to load restaurants');
             } finally {
                 this.isLoading = false;
             }
@@ -674,26 +216,15 @@ function foodServices() {
                     }
                 });
                 
-                // Check if response is HTML (error page)
-                const contentType = response.headers.get("content-type");
-                if (contentType && contentType.indexOf("text/html") !== -1) {
-                    throw new Error('Server returned HTML instead of JSON. Check your route.');
-                }
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
+                if (!response.ok) throw new Error('Failed to load orders');
                 
                 const data = await response.json();
                 if (data.success) {
-                    this.orders = data.orders || [];
-                } else {
-                    console.error('Error loading orders:', data.message);
-                    this.showError(data.message || 'Failed to load orders');
+                    this.orders = data.orders;
                 }
             } catch (error) {
                 console.error('Error loading orders:', error);
-                this.showError('Failed to load orders. Please check your connection.');
+                this.showError('Failed to load orders');
             } finally {
                 this.isLoading = false;
             }
@@ -709,224 +240,298 @@ function foodServices() {
                     }
                 });
                 
-                // Check if response is HTML (error page)
-                const contentType = response.headers.get("content-type");
-                if (contentType && contentType.indexOf("text/html") !== -1) {
-                    throw new Error('Server returned HTML instead of JSON. Check your route.');
-                }
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
+                if (!response.ok) throw new Error('Failed to load subscriptions');
                 
                 const data = await response.json();
                 if (data.success) {
-                    this.subscriptions = data.subscriptions || [];
-                } else {
-                    console.error('Error loading subscriptions:', data.message);
-                    this.showError(data.message || 'Failed to load subscriptions');
+                    this.subscriptions = data.subscriptions;
                 }
             } catch (error) {
                 console.error('Error loading subscriptions:', error);
-                this.showError('Failed to load subscriptions. Please check your connection.');
+                this.showError('Failed to load subscriptions');
             } finally {
                 this.isLoading = false;
             }
         },
         
-        searchRestaurants() {
-            clearTimeout(this.searchTimeout);
-            this.searchTimeout = setTimeout(() => {
-                this.loadRestaurants();
-            }, 500);
-        },
-        
-        filterRestaurants() {
-            this.loadRestaurants();
-        },
-        
-        sortRestaurants() {
-            this.loadRestaurants();
-        },
-        
         async viewRestaurant(restaurantId) {
+            console.log('========== VIEW RESTAURANT CALLED ==========');
+            console.log('Restaurant ID:', restaurantId);
+            console.log('Current showMenuModal:', this.showMenuModal);
+            
+            this.isLoading = true;
             try {
-                const response = await fetch(`/food/api/restaurant/${restaurantId}/menu`, {
+                const url = `/food/api/restaurant/${restaurantId}/menu`;
+                console.log('Fetching from URL:', url);
+                
+                const response = await fetch(url, {
                     headers: {
                         'Accept': 'application/json',
                         'X-Requested-With': 'XMLHttpRequest'
                     }
                 });
                 
-                // Check if response is HTML (error page)
-                const contentType = response.headers.get("content-type");
-                if (contentType && contentType.indexOf("text/html") !== -1) {
-                    throw new Error('Server returned HTML instead of JSON. Check your route.');
-                }
+                console.log('Response status:', response.status);
                 
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
                 
                 const data = await response.json();
+                console.log('Restaurant menu data:', data);
+                
                 if (data.success) {
                     this.selectedRestaurant = data.restaurant;
-                    this.selectedRestaurant.menu_items = data.menu_items || [];
-                    this.selectedMealTypeId = this.mealTypes[0]?.id;
+                    this.selectedRestaurant.menu_items = data.menu_items;
+                    this.selectedMealTypeId = this.mealTypes && this.mealTypes.length > 0 ? this.mealTypes[0].id : null;
+                    
+                    console.log('Setting showMenuModal to true');
                     this.showMenuModal = true;
-                    this.cart = {};
-                    this.cartTotal = 0;
-                    this.orderType = 'PAY_PER_EAT'; // Reset order type
+                    
+                    this.resetCart();
+                    console.log('Menu modal opened, showMenuModal =', this.showMenuModal);
+                    console.log('Selected restaurant:', this.selectedRestaurant);
                 } else {
+                    console.error('Failed to load menu:', data.message);
                     this.showError(data.message || 'Failed to load restaurant menu');
                 }
             } catch (error) {
                 console.error('Error loading restaurant:', error);
-                this.showError('Failed to load restaurant menu');
+                this.showError('Failed to load restaurant menu: ' + error.message);
+            } finally {
+                this.isLoading = false;
+                console.log('viewRestaurant completed, isLoading =', this.isLoading);
             }
         },
         
-        get filteredMenuItems() {
-            if (!this.selectedRestaurant?.menu_items) return [];
-            return this.selectedRestaurant.menu_items.filter(item => 
-                item.meal_type_id == this.selectedMealTypeId
-            );
+        async viewOrderDetails(orderId) {
+            const order = this.orders.find(o => o.id === orderId);
+            if (order) {
+                this.selectedOrder = order;
+                this.showOrderDetailsModal = true;
+            }
         },
         
-        selectMealType(mealTypeId) {
-            this.selectedMealTypeId = mealTypeId;
+        // Reviews Method
+        async viewReviews(restaurantId) {
+            console.log('Viewing reviews for restaurant:', restaurantId);
+            
+            // Find restaurant from either initial or loaded restaurants
+            const initialRestaurants = @json($initialRestaurants);
+            this.selectedRestaurantForReviews = this.restaurants.find(r => r.id === restaurantId) || 
+                                                initialRestaurants.find(r => r.id === restaurantId);
+            
+            this.showReviewsModal = true;
+            this.isLoadingReviews = true;
+            this.reviewsData = null;
+            
+            try {
+                const response = await fetch(`/food/api/restaurant/${restaurantId}/ratings`, {
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                console.log('Reviews data:', data);
+                
+                if (data.success) {
+                    this.reviewsData = {
+                        ratings: data.ratings || [],
+                        stats: data.stats || {
+                            average: 0,
+                            total: 0,
+                            quality_avg: 0,
+                            delivery_avg: 0,
+                            value_avg: 0,
+                            breakdown: {5:0, 4:0, 3:0, 2:0, 1:0}
+                        }
+                    };
+                } else {
+                    console.error('Failed to load reviews:', data.message);
+                    this.showError('Failed to load reviews');
+                }
+            } catch (error) {
+                console.error('Error loading reviews:', error);
+                this.showError('Failed to load reviews. Please try again.');
+            } finally {
+                this.isLoadingReviews = false;
+            }
+        },
+        
+        // Cart Methods
+        addToCart(item) {
+            if (!this.cart[item.id]) {
+                this.cart[item.id] = {
+                    ...item,
+                    quantity: 0
+                };
+            }
+            this.increaseQuantity(item.id);
         },
         
         increaseQuantity(itemId) {
-            const item = this.filteredMenuItems.find(i => i.id == itemId);
+            const item = this.cart[itemId] || this.findMenuItem(itemId);
             if (!item) return;
             
-            // Check quantity limit
-            if (item.daily_quantity && this.getCartQuantity(itemId) >= (item.daily_quantity - item.sold_today)) {
+            if (item.daily_quantity && (item.sold_today + (this.cart[itemId]?.quantity || 0) + 1) > item.daily_quantity) {
                 this.showError(`Only ${item.daily_quantity - item.sold_today} items available`);
                 return;
             }
             
             if (!this.cart[itemId]) {
-                this.cart[itemId] = 0;
+                this.cart[itemId] = { ...item, quantity: 0 };
             }
-            this.cart[itemId]++;
+            
+            this.cart[itemId].quantity++;
             this.calculateCartTotal();
+            this.updateCartItems();
         },
         
         decreaseQuantity(itemId) {
-            if (this.cart[itemId] && this.cart[itemId] > 0) {
-                this.cart[itemId]--;
-                if (this.cart[itemId] === 0) {
+            if (this.cart[itemId] && this.cart[itemId].quantity > 0) {
+                this.cart[itemId].quantity--;
+                if (this.cart[itemId].quantity === 0) {
                     delete this.cart[itemId];
                 }
                 this.calculateCartTotal();
+                this.updateCartItems();
             }
         },
         
         getCartQuantity(itemId) {
-            return this.cart[itemId] || 0;
+            return this.cart[itemId]?.quantity || 0;
+        },
+        
+        findMenuItem(itemId) {
+            return this.selectedRestaurant?.menu_items?.find(i => i.id == itemId);
         },
         
         calculateCartTotal() {
             let total = 0;
-            for (const [itemId, quantity] of Object.entries(this.cart)) {
-                const item = this.selectedRestaurant?.menu_items?.find(i => i.id == itemId);
-                if (item) {
-                    total += parseFloat(item.total_price) * quantity;
-                }
+            for (const item of Object.values(this.cart)) {
+                total += parseFloat(item.total_price) * item.quantity;
             }
-            this.cartTotal = total.toFixed(2);
+            this.cartTotal = total;
         },
         
-        async proceedToCheckout() {
-            if (this.cartTotal === 0) {
-                this.showError('Please add items to cart');
-                return;
-            }
-            
-            if (this.orderType === 'SUBSCRIPTION') {
-                this.showNewSubscriptionModal = true;
-                return;
-            }
-            
-            // Prepare order items
-            const orderItems = [];
-            for (const [itemId, quantity] of Object.entries(this.cart)) {
-                const item = this.selectedRestaurant.menu_items.find(i => i.id == itemId);
-                if (item) {
-                    orderItems.push({
-                        food_item_id: parseInt(itemId),
-                        quantity: quantity
-                    });
-                }
-            }
-            
-            // Prepare order data
-            const today = new Date().toISOString().split('T')[0];
-            
-            const orderData = {
-                service_provider_id: this.selectedRestaurant.id,
-                meal_type_id: this.selectedMealTypeId,
-                meal_date: today,
-                delivery_address: 'Your delivery address',
-                delivery_latitude: 23.8103,
-                delivery_longitude: 90.4125,
-                items: orderItems
-            };
-            
-            try {
-                const response = await fetch('/food/api/order', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                    },
-                    body: JSON.stringify(orderData)
+        updateCartItems() {
+            this.cartItems = Object.values(this.cart);
+        },
+        
+        resetCart() {
+            this.cart = {};
+            this.cartItems = [];
+            this.cartTotal = 0;
+        },
+        
+        // Order Methods
+async placeOrder() {
+    console.log('========== PLACE ORDER CALLED ==========');
+    console.log('Cart Total:', this.cartTotal);
+    console.log('Order Type:', this.orderType);
+    console.log('Cart Items:', this.cartItems);
+    console.log('Selected Restaurant:', this.selectedRestaurant);
+    
+    if (this.cartTotal == 0) {
+        this.showError('Please add items to cart');
+        return;
+    }
+    
+    if (this.orderType === 'SUBSCRIPTION') {
+        this.showSubscriptionModal = true;
+        return;
+    }
+    
+    // Validate that we have a selected restaurant
+    if (!this.selectedRestaurant || !this.selectedRestaurant.id) {
+        this.showError('Restaurant information is missing');
+        return;
+    }
+    
+    this.isLoading = true;
+    
+    try {
+        // Prepare order items
+        const orderItems = [];
+        for (const item of Object.values(this.cart)) {
+            if (item.quantity > 0) {
+                orderItems.push({
+                    food_item_id: parseInt(item.id),
+                    quantity: item.quantity
                 });
-                
-                // Check if response is HTML (error page)
-                const contentType = response.headers.get("content-type");
-                if (contentType && contentType.indexOf("text/html") !== -1) {
-                    throw new Error('Server returned HTML instead of JSON. Check your route.');
-                }
-                
-                const result = await response.json();
-                
-                if (result.success) {
-                    this.showMenuModal = false;
-                    this.showSuccess('Order placed successfully!');
-                    this.cart = {};
-                    this.cartTotal = 0;
-                    await this.loadOrders();
-                } else {
-                    this.showError(result.message || 'Failed to place order');
-                }
-            } catch (error) {
-                console.error('Error placing order:', error);
-                this.showError('Failed to place order');
             }
-        },
+        }
         
+        console.log('Order Items:', orderItems);
+        
+        // Get user location
+        const location = await this.getUserLocation();
+        console.log('User Location:', location);
+        
+        // Get today's date in YYYY-MM-DD format
+        const today = new Date();
+        const mealDate = today.toISOString().split('T')[0];
+        
+        const orderData = {
+            service_provider_id: this.selectedRestaurant.id,
+            meal_type_id: this.selectedMealTypeId,
+            meal_date: mealDate,
+            delivery_address: location.address || 'Current Location',
+            delivery_latitude: location.latitude,
+            delivery_longitude: location.longitude,
+            items: orderItems
+        };
+        
+        console.log('Order Data:', orderData);
+        
+        const response = await fetch('/food/api/order/place', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            },
+            body: JSON.stringify(orderData)
+        });
+        
+        console.log('Response status:', response.status);
+        
+        const result = await response.json();
+        console.log('Order Result:', result);
+        
+        if (result.success) {
+            this.showMenuModal = false;
+            this.showSuccess('Order placed successfully!');
+            this.resetCart();
+            await this.loadOrders();
+            this.activeTab = 'orders';
+        } else {
+            this.showError(result.message || 'Failed to place order');
+        }
+    } catch (error) {
+        console.error('Error placing order:', error);
+        this.showError('Failed to place order: ' + error.message);
+    } finally {
+        this.isLoading = false;
+    }
+},
         async cancelOrder(orderId) {
             if (!confirm('Are you sure you want to cancel this order?')) return;
             
+            this.isLoading = true;
             try {
                 const response = await fetch(`/food/api/order/${orderId}/cancel`, {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json',
                         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
                     }
                 });
-                
-                // Check if response is HTML (error page)
-                const contentType = response.headers.get("content-type");
-                if (contentType && contentType.indexOf("text/html") !== -1) {
-                    throw new Error('Server returned HTML instead of JSON. Check your route.');
-                }
                 
                 const result = await response.json();
                 
@@ -939,27 +544,99 @@ function foodServices() {
             } catch (error) {
                 console.error('Error cancelling order:', error);
                 this.showError('Failed to cancel order');
+            } finally {
+                this.isLoading = false;
             }
         },
         
-        async cancelSubscription(subscriptionId) {
-            if (!confirm('Are you sure you want to cancel this subscription?')) return;
-            
+        async reorderItems(orderId) {
             try {
-                const response = await fetch(`/food/api/subscription/${subscriptionId}/cancel`, {
+                const response = await fetch(`/food/api/order/${orderId}/reorder`, {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json',
                         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
                     }
                 });
                 
-                // Check if response is HTML (error page)
-                const contentType = response.headers.get("content-type");
-                if (contentType && contentType.indexOf("text/html") !== -1) {
-                    throw new Error('Server returned HTML instead of JSON. Check your route.');
+                const result = await response.json();
+                
+                if (result.success) {
+                    this.showSuccess('Items added to cart!');
+                    this.viewRestaurant(result.restaurant_id);
+                    setTimeout(() => {
+                        result.items.forEach(item => {
+                            for(let i = 0; i < item.quantity; i++) {
+                                this.increaseQuantity(item.food_item_id);
+                            }
+                        });
+                    }, 500);
+                } else {
+                    this.showError(result.message || 'Failed to reorder');
                 }
+            } catch (error) {
+                console.error('Error reordering:', error);
+                this.showError('Failed to reorder');
+            }
+        },
+        
+        // Subscription Methods
+async createSubscription(event) {
+    const formData = new FormData(event.target);
+    const data = Object.fromEntries(formData.entries());
+    
+    // Format delivery days as integer
+    let deliveryDays = 0;
+    const dayCheckboxes = event.target.querySelectorAll('input[name="delivery_days[]"]:checked');
+    dayCheckboxes.forEach(checkbox => {
+        deliveryDays |= parseInt(checkbox.value);
+    });
+    data.delivery_days = deliveryDays;
+    
+    // Add items from cart
+    data.items = this.cartItems.map(item => ({
+        food_item_id: item.id,
+        quantity: item.quantity
+    }));
+    
+    this.isLoading = true;
+    try {
+        const response = await fetch('/food/api/subscription/create', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            },
+            body: JSON.stringify(data)
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            this.showSubscriptionModal = false;
+            this.showSuccess('Subscription created successfully!');
+            await this.loadSubscriptions();
+            this.activeTab = 'subscriptions';
+        } else {
+            this.showError(result.message || 'Failed to create subscription');
+        }
+    } catch (error) {
+        console.error('Error creating subscription:', error);
+        this.showError('Failed to create subscription');
+    } finally {
+        this.isLoading = false;
+    }
+},
+        async cancelSubscription(subscriptionId) {
+            if (!confirm('Are you sure you want to cancel this subscription?')) return;
+            
+            this.isLoading = true;
+            try {
+                const response = await fetch(`/food/api/subscription/${subscriptionId}/cancel`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                    }
+                });
                 
                 const result = await response.json();
                 
@@ -972,7 +649,118 @@ function foodServices() {
             } catch (error) {
                 console.error('Error cancelling subscription:', error);
                 this.showError('Failed to cancel subscription');
+            } finally {
+                this.isLoading = false;
             }
+        },
+        
+        async pauseSubscription(subscriptionId) {
+            this.isLoading = true;
+            try {
+                const response = await fetch(`/food/api/subscription/${subscriptionId}/pause`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                    }
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    this.showSuccess('Subscription paused successfully');
+                    await this.loadSubscriptions();
+                } else {
+                    this.showError(result.message || 'Failed to pause subscription');
+                }
+            } catch (error) {
+                console.error('Error pausing subscription:', error);
+                this.showError('Failed to pause subscription');
+            } finally {
+                this.isLoading = false;
+            }
+        },
+        
+        async resumeSubscription(subscriptionId) {
+            this.isLoading = true;
+            try {
+                const response = await fetch(`/food/api/subscription/${subscriptionId}/resume`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                    }
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    this.showSuccess('Subscription resumed successfully');
+                    await this.loadSubscriptions();
+                } else {
+                    this.showError(result.message || 'Failed to resume subscription');
+                }
+            } catch (error) {
+                console.error('Error resuming subscription:', error);
+                this.showError('Failed to resume subscription');
+            } finally {
+                this.isLoading = false;
+            }
+        },
+        
+        async markHelpful(reviewId) {
+            try {
+                const response = await fetch(`/food/api/rating/${reviewId}/helpful`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                    }
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    this.showSuccess('Thank you for your feedback!');
+                }
+            } catch (error) {
+                console.error('Error marking helpful:', error);
+            }
+        },
+        
+        // Helper Methods
+        getUserLocation() {
+            return new Promise((resolve) => {
+                @if(isset($defaultAddress) && $defaultAddress)
+                    resolve({
+                        latitude: {{ $defaultAddress->latitude ?? 'null' }},
+                        longitude: {{ $defaultAddress->longitude ?? 'null' }},
+                        address: "{{ $defaultAddress->full_address ?? 'Current Location' }}"
+                    });
+                @else
+                    if (navigator.geolocation) {
+                        navigator.geolocation.getCurrentPosition(
+                            (position) => {
+                                resolve({
+                                    latitude: position.coords.latitude,
+                                    longitude: position.coords.longitude,
+                                    address: 'Current Location'
+                                });
+                            },
+                            () => {
+                                resolve({
+                                    latitude: 23.8103,
+                                    longitude: 90.4125,
+                                    address: 'Dhaka, Bangladesh'
+                                });
+                            }
+                        );
+                    } else {
+                        resolve({
+                            latitude: 23.8103,
+                            longitude: 90.4125,
+                            address: 'Dhaka, Bangladesh'
+                        });
+                    }
+                @endif
+            });
         },
         
         getStatusBadgeClass(status) {
@@ -997,34 +785,42 @@ function foodServices() {
             return classes[status] || 'bg-gray-100 text-gray-800';
         },
         
-        showSuccess(message) {
-            // Use SweetAlert or Toastr for better notifications
-            if (typeof Swal !== 'undefined') {
-                Swal.fire({
-                    icon: 'success',
-                    title: 'Success',
-                    text: message,
-                    timer: 3000
-                });
-            } else {
-                alert('Success: ' + message);
+        getMealTypeName(mealTypeId) {
+            const mealType = this.mealTypes.find(m => m.id == mealTypeId);
+            return mealType ? mealType.name : '';
+        },
+        
+        get filteredMenuItems() {
+            if (!this.selectedRestaurant?.menu_items) return [];
+            return this.selectedRestaurant.menu_items.filter(item => 
+                item.meal_type_id == this.selectedMealTypeId
+            );
+        },
+        
+        selectMealType(mealTypeId) {
+            this.selectedMealTypeId = mealTypeId;
+        },
+        
+        loadMore() {
+            if (this.currentPage < this.lastPage) {
+                this.loadRestaurants(this.currentPage + 1);
             }
         },
         
+        showSuccess(message) {
+            alert('Success: ' + message);
+        },
+        
         showError(message) {
-            // Use SweetAlert or Toastr for better notifications
-            if (typeof Swal !== 'undefined') {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error',
-                    text: message
-                });
-            } else {
-                alert('Error: ' + message);
-            }
+            alert('Error: ' + message);
         }
     };
 }
+
+// Make the Alpine component globally accessible for debugging
+document.addEventListener('alpine:init', () => {
+    console.log('Alpine initialized');
+});
 </script>
 
 <style>
@@ -1032,13 +828,12 @@ function foodServices() {
     display: none !important;
 }
 
-/* Loading spinner */
 .loading-spinner {
     border: 3px solid #f3f3f3;
-    border-top: 3px solid #3498db;
+    border-top: 3px solid #4f46e5;
     border-radius: 50%;
-    width: 30px;
-    height: 30px;
+    width: 40px;
+    height: 40px;
     animation: spin 1s linear infinite;
     margin: 0 auto;
 }
@@ -1047,6 +842,24 @@ function foodServices() {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
 }
-</style>
 
+/* Custom scrollbar for modals */
+.overflow-y-auto::-webkit-scrollbar {
+    width: 6px;
+}
+
+.overflow-y-auto::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+}
+
+.overflow-y-auto::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 10px;
+}
+
+.overflow-y-auto::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+</style>
 @endsection

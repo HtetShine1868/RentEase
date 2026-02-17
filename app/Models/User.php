@@ -134,10 +134,6 @@ public function verifyCode($code)
     }
 
     // Relationships
-    public function addresses()
-    {
-        return $this->hasMany(UserAddress::class);
-    }
 
     public function roles()
     {
@@ -210,10 +206,21 @@ public function verifyCode($code)
         return $this->addresses()->where('is_default', true)->first();
     }
 
+    public function addresses()
+    {
+        return $this->hasMany(UserAddress::class);
+    }
+
+    public function defaultAddress()
+    {
+        return $this->hasOne(UserAddress::class)->where('is_default', true);
+    }
+    
     public function scopeActive($query)
     {
         return $query->where('status', 'ACTIVE');
     }
+
 
     public function scopeBanned($query)
     {

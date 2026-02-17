@@ -255,13 +255,7 @@
                     <span class="truncate">My Bookings</span>
                 </a>
 
-                <!-- My Orders -->
-                <a href="{{ route('food.orders') }}" 
-                class="text-gray-300 hover:bg-gray-700 hover:text-white group flex items-center px-3 py-2 text-sm font-medium rounded-md"
-                @click="mobileMenuOpen = false">
-                    <i class="fas fa-shopping-bag mr-3 text-gray-400 group-hover:text-gray-300 flex-shrink-0"></i>
-                    <span class="truncate">My Orders</span>
-                </a>
+           
 
                 <!-- Role Application (for regular users) -->
                 @if(auth()->user()->hasRole('USER') && !auth()->user()->isOwner() && !auth()->user()->isFoodProvider() && !auth()->user()->isLaundryProvider())

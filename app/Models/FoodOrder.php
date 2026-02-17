@@ -227,4 +227,16 @@ class FoodOrder extends Model
     {
         return '₹' . number_format($this->provider_earnings, 2);
     }
+    public function rating()
+    {
+        return $this->hasOne(ServiceRating::class, 'order_id')
+            ->where('order_type', 'FOOD');
+    }
+
+    public function canBeRated()
+    {
+        return $this->status === 'DELIVERED' && 
+            $this->actual_delivery_time && 
+            !$this->rating()->exists();
+    }
 }

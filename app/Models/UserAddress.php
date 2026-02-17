@@ -33,4 +33,9 @@ class UserAddress extends Model
     {
         return $this->belongsTo(User::class);
     }
+        public function getFullAddressAttribute()
+    {
+        $parts = [$this->address_line1, $this->address_line2, $this->city, $this->state, $this->country];
+        return implode(', ', array_filter($parts));
+    }
 }

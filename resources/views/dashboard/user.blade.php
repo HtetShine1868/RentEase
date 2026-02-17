@@ -20,14 +20,13 @@
             <div class="flex items-center justify-between">
                 <div>
                     <p class="text-sm opacity-90">Active Bookings</p>
-                    <p class="text-3xl font-bold mt-2">2</p>
+                    <p class="text-3xl font-bold mt-2">{{ $stats['active_bookings'] ?? 0 }}</p>
                 </div>
                 <div class="h-12 w-12 rounded-full bg-blue-400 bg-opacity-20 flex items-center justify-center">
                     <i class="fas fa-home text-xl"></i>
                 </div>
             </div>
-            <!-- USING EXISTING ROUTE: rental.index -->
-            <a href="{{ route('rental.index') }}" class="text-sm opacity-90 hover:opacity-100 inline-flex items-center mt-4">
+            <a href="{{ route('bookings.my-bookings') }}" class="text-sm opacity-90 hover:opacity-100 inline-flex items-center mt-4">
                 View all <i class="fas fa-arrow-right ml-1"></i>
             </a>
         </div>
@@ -37,16 +36,22 @@
             <div class="flex items-center justify-between">
                 <div>
                     <p class="text-sm opacity-90">Pending Orders</p>
-                    <p class="text-3xl font-bold mt-2">3</p>
+                    <p class="text-3xl font-bold mt-2">{{ $stats['pending_orders'] ?? 0 }}</p>
                 </div>
                 <div class="h-12 w-12 rounded-full bg-green-400 bg-opacity-20 flex items-center justify-center">
                     <i class="fas fa-shopping-bag text-xl"></i>
                 </div>
             </div>
-            <!-- USING EXISTING ROUTE: food.orders (since orders doesn't exist) -->
-            <a href="{{ route('food.orders') }}" class="text-sm opacity-90 hover:opacity-100 inline-flex items-center mt-4">
-                View all <i class="fas fa-arrow-right ml-1"></i>
-            </a>
+            <!-- Use existing routes or create a new one -->
+           @if(isset($stats['pending_orders']) && $stats['pending_orders'] > 0)
+                <a href="{{ route('food.orders') ?? route('food.index') }}" class="text-sm opacity-90 hover:opacity-100 inline-flex items-center mt-4">
+                    View all <i class="fas fa-arrow-right ml-1"></i>
+                </a>
+            @else
+                <span class="text-sm opacity-90 inline-flex items-center mt-4">
+                    No pending orders
+                </span>
+            @endif
         </div>
 
         <!-- Total Spent -->
@@ -54,13 +59,12 @@
             <div class="flex items-center justify-between">
                 <div>
                     <p class="text-sm opacity-90">Total Spent</p>
-                    <p class="text-3xl font-bold mt-2">৳ 12,500</p>
+                    <p class="text-3xl font-bold mt-2">৳ {{ number_format($stats['total_spent'] ?? 0) }}</p>
                 </div>
                 <div class="h-12 w-12 rounded-full bg-purple-400 bg-opacity-20 flex items-center justify-center">
                     <i class="fas fa-wallet text-xl"></i>
                 </div>
             </div>
-            <!-- USING EXISTING ROUTE: payments.index -->
             <a href="{{ route('payments.index') }}" class="text-sm opacity-90 hover:opacity-100 inline-flex items-center mt-4">
                 View details <i class="fas fa-arrow-right ml-1"></i>
             </a>
@@ -72,14 +76,14 @@
                 <div>
                     <p class="text-sm opacity-90">Your Rating</p>
                     <div class="flex items-center mt-2">
-                        <span class="text-3xl font-bold">4.5</span>
+                        <span class="text-3xl font-bold">{{ number_format($stats['avg_rating'] ?? 0, 1) }}</span>
                         <div class="ml-2">
                             <div class="flex">
                                 @for($i = 1; $i <= 5; $i++)
-                                    <i class="fas fa-star text-sm {{ $i <= 4.5 ? 'text-yellow-300' : 'text-gray-300' }}"></i>
+                                    <i class="fas fa-star text-sm {{ $i <= ($stats['avg_rating'] ?? 0) ? 'text-yellow-300' : 'text-gray-300' }}"></i>
                                 @endfor
                             </div>
-                            <p class="text-xs opacity-90">Based on 12 reviews</p>
+                            <p class="text-xs opacity-90">Based on {{ $stats['total_reviews'] ?? 0 }} reviews</p>
                         </div>
                     </div>
                 </div>
@@ -89,15 +93,22 @@
             </div>
         </div>
     </div>
-
     <!-- Welcome Banner -->
     <div class="bg-gradient-to-r from-indigo-500 to-purple-600 rounded-xl shadow-lg text-white p-8 mb-8">
         <div class="flex flex-col md:flex-row items-center justify-between">
             <div class="md:w-2/3">
                 <h2 class="text-2xl font-bold mb-2">Welcome to RMS!</h2>
                 <p class="text-indigo-100 mb-4">
-                    You're logged in as a regular user. Complete your profile to get better recommendations 
-                    and start booking properties or ordering services.
+                    @if(Auth::user()->hasRole('OWNER'))
+                        You're logged in as a property owner. Manage your properties and bookings from here.
+                    @elseif(Auth::user()->hasRole('LAUNDRY'))
+                        You're logged in as a laundry service provider. Manage your orders and services.
+                    @elseif(Auth::user()->hasRole('FOOD'))
+                        You're logged in as a food service provider. Manage your menu and orders.
+                    @else
+                        You're logged in as a regular user. Complete your profile to get better recommendations 
+                        and start booking properties or ordering services.
+                    @endif
                 </p>
                 <div class="flex flex-wrap gap-3">
                     @if(!Auth::user()->phone || !Auth::user()->gender)
@@ -107,14 +118,14 @@
                         </a>
                     @endif
                     
-                    @if(!Auth::user()->defaultAddress)
+                    @if(empty($userAddresses))
                         <a href="{{ route('profile.address.edit') }}" 
                            class="inline-flex items-center px-4 py-2 bg-white text-indigo-600 rounded-lg hover:bg-gray-100">
                             <i class="fas fa-map-marker-alt mr-2"></i> Add Address
                         </a>
                     @endif
 
-                    @if(auth()->user()->hasRole('USER') && !auth()->user()->isOwner() && !auth()->user()->isFoodProvider() && !auth()->user()->isLaundryProvider())
+                    @if(auth()->user()->hasRole('USER') && !auth()->user()->hasRole('OWNER') && !auth()->user()->hasRole('FOOD') && !auth()->user()->hasRole('LAUNDRY'))
                         <a href="{{ route('role.apply.index') }}" 
                            class="inline-flex items-center px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600">
                             <i class="fas fa-user-plus mr-2"></i> Apply for Provider Role
@@ -124,71 +135,79 @@
             </div>
             <div class="mt-6 md:mt-0">
                 <div class="h-40 w-40 rounded-full bg-white bg-opacity-10 flex items-center justify-center border-4 border-white border-opacity-20">
-                    <i class="fas fa-home text-6xl text-white opacity-80"></i>
+                    @if(Auth::user()->avatar_url)
+                        <img src="{{ Auth::user()->avatar_url }}" alt="Avatar" class="h-36 w-36 rounded-full object-cover">
+                    @else
+                        <i class="fas fa-user text-6xl text-white opacity-80"></i>
+                    @endif
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Quick Actions -->
-    <div class="mb-8">
-        <h3 class="text-xl font-semibold text-gray-900 mb-4">Quick Actions</h3>
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <!-- Find Properties -->
-            <div class="bg-white border border-gray-200 rounded-xl p-6 hover:shadow-md transition-shadow">
-                <div class="flex items-center mb-4">
-                    <div class="h-12 w-12 rounded-lg bg-blue-100 flex items-center justify-center">
-                        <i class="fas fa-search text-blue-600 text-xl"></i>
+    <!-- Role-specific Content -->
+    @if(Auth::user()->hasRole('OWNER'))
+        @include('dashboard.parts.owner-dashboard')
+    @elseif(Auth::user()->hasRole('LAUNDRY') || Auth::user()->hasRole('FOOD'))
+        @include('dashboard.parts.provider-dashboard')
+    @else
+        <!-- Quick Actions for Regular Users -->
+        <div class="mb-8">
+            <h3 class="text-xl font-semibold text-gray-900 mb-4">Quick Actions</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Find Properties -->
+                <div class="bg-white border border-gray-200 rounded-xl p-6 hover:shadow-md transition-shadow">
+                    <div class="flex items-center mb-4">
+                        <div class="h-12 w-12 rounded-lg bg-blue-100 flex items-center justify-center">
+                            <i class="fas fa-search text-blue-600 text-xl"></i>
+                        </div>
+                        <div class="ml-4">
+                            <h4 class="text-lg font-medium text-gray-900">Find Properties</h4>
+                            <p class="text-sm text-gray-500">Browse hostels & apartments</p>
+                        </div>
                     </div>
-                    <div class="ml-4">
-                        <h4 class="text-lg font-medium text-gray-900">Find Properties</h4>
-                        <p class="text-sm text-gray-500">Browse hostels & apartments</p>
-                    </div>
+                    <a href="{{ route('properties.search') }}" 
+                       class="inline-flex items-center text-blue-600 hover:text-blue-700 font-medium">
+                        Start Searching <i class="fas fa-arrow-right ml-2"></i>
+                    </a>
                 </div>
-                <!-- USING EXISTING ROUTE: rental.index (properties doesn't exist) -->
-                <a href="{{ route('properties.search') }}" 
-                   class="inline-flex items-center text-blue-600 hover:text-blue-700 font-medium">
-                    Start Searching <i class="fas fa-arrow-right ml-2"></i>
-                </a>
-            </div>
 
-            <!-- Order Food -->
-            <div class="bg-white border border-gray-200 rounded-xl p-6 hover:shadow-md transition-shadow">
-                <div class="flex items-center mb-4">
-                    <div class="h-12 w-12 rounded-lg bg-green-100 flex items-center justify-center">
-                        <i class="fas fa-utensils text-green-600 text-xl"></i>
+                <!-- Order Food -->
+                <div class="bg-white border border-gray-200 rounded-xl p-6 hover:shadow-md transition-shadow">
+                    <div class="flex items-center mb-4">
+                        <div class="h-12 w-12 rounded-lg bg-green-100 flex items-center justify-center">
+                            <i class="fas fa-utensils text-green-600 text-xl"></i>
+                        </div>
+                        <div class="ml-4">
+                            <h4 class="text-lg font-medium text-gray-900">Order Food</h4>
+                            <p class="text-sm text-gray-500">Subscribe or order meals</p>
+                        </div>
                     </div>
-                    <div class="ml-4">
-                        <h4 class="text-lg font-medium text-gray-900">Order Food</h4>
-                        <p class="text-sm text-gray-500">Subscribe or order meals</p>
-                    </div>
+                    <a href="{{ route('food.index') }}" 
+                       class="inline-flex items-center text-green-600 hover:text-green-700 font-medium">
+                        View Restaurants <i class="fas fa-arrow-right ml-2"></i>
+                    </a>
                 </div>
-                <!-- USING EXISTING ROUTE: food.index (food.services doesn't exist) -->
-                <a href="#" 
-                   class="inline-flex items-center text-green-600 hover:text-green-700 font-medium">
-                    View Restaurants <i class="fas fa-arrow-right ml-2"></i>
-                </a>
-            </div>
 
-            <!-- Laundry Service -->
-            <div class="bg-white border border-gray-200 rounded-xl p-6 hover:shadow-md transition-shadow">
-                <div class="flex items-center mb-4">
-                    <div class="h-12 w-12 rounded-lg bg-purple-100 flex items-center justify-center">
-                        <i class="fas fa-tshirt text-purple-600 text-xl"></i>
+                <!-- Laundry Service -->
+                <div class="bg-white border border-gray-200 rounded-xl p-6 hover:shadow-md transition-shadow">
+                    <div class="flex items-center mb-4">
+                        <div class="h-12 w-12 rounded-lg bg-purple-100 flex items-center justify-center">
+                            <i class="fas fa-tshirt text-purple-600 text-xl"></i>
+                        </div>
+                        <div class="ml-4">
+                            <h4 class="text-lg font-medium text-gray-900">Laundry Service</h4>
+                            <p class="text-sm text-gray-500">Schedule pickup & delivery</p>
+                        </div>
                     </div>
-                    <div class="ml-4">
-                        <h4 class="text-lg font-medium text-gray-900">Laundry Service</h4>
-                        <p class="text-sm text-gray-500">Schedule pickup & delivery</p>
-                    </div>
+                    <a href="{{ route('laundry.index') }}" 
+                       class="inline-flex items-center text-purple-600 hover:text-purple-700 font-medium">
+                        Find Services <i class="fas fa-arrow-right ml-2"></i>
+                    </a>
                 </div>
-                <!-- USING EXISTING ROUTE: laundry.index (laundry.services doesn't exist) -->
-                <a href="#" 
-                   class="inline-flex items-center text-purple-600 hover:text-purple-700 font-medium">
-                    Find Services <i class="fas fa-arrow-right ml-2"></i>
-                </a>
             </div>
         </div>
-    </div>
+    @endif
 
     <!-- Recent Activity & Quick Stats -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -196,120 +215,173 @@
         <div>
             <div class="flex items-center justify-between mb-4">
                 <h3 class="text-xl font-semibold text-gray-900">Recent Activity</h3>
-                <!-- REMOVED: activity link since route doesn't exist -->
-                <span class="text-sm text-gray-400">Recent activity</span>
+                <a href="#" class="text-sm text-indigo-600 hover:text-indigo-500">
+                    View all
+                </a>
             </div>
             <div class="bg-white border border-gray-200 rounded-xl overflow-hidden">
                 <div class="divide-y divide-gray-100">
-                    @php
-                        $activities = [
-                            ['icon' => 'fa-home', 'color' => 'text-blue-500', 'bg' => 'bg-blue-50', 
-                             'title' => 'Booking Confirmed', 'desc' => 'Sunrise Hostel - Room 203', 
-                             'time' => '2 hours ago', 'status' => 'success'],
-                            ['icon' => 'fa-utensils', 'color' => 'text-green-500', 'bg' => 'bg-green-50', 
-                             'title' => 'Food Order Delivered', 'desc' => 'Spicy Bites Restaurant', 
-                             'time' => 'Yesterday', 'status' => 'success'],
-                            ['icon' => 'fa-tshirt', 'color' => 'text-purple-500', 'bg' => 'bg-purple-50', 
-                             'title' => 'Laundry Pickup Scheduled', 'desc' => 'Fresh Clean Laundry', 
-                             'time' => '2 days ago', 'status' => 'pending'],
-                            ['icon' => 'fa-user-check', 'color' => 'text-indigo-500', 'bg' => 'bg-indigo-50', 
-                             'title' => 'Profile Updated', 'desc' => 'Added phone number', 
-                             'time' => '3 days ago', 'status' => 'info'],
-                        ];
-                    @endphp
-                    
-                    @foreach($activities as $activity)
+                    @forelse($recentActivities ?? [] as $activity)
                         <div class="p-4 hover:bg-gray-50">
                             <div class="flex">
                                 <div class="flex-shrink-0">
-                                    <div class="h-10 w-10 rounded-lg {{ $activity['bg'] }} flex items-center justify-center">
-                                        <i class="fas {{ $activity['icon'] }} {{ $activity['color'] }}"></i>
+                                    @php
+                                        $iconConfig = [
+                            'BOOKING' => ['icon' => 'fa-home', 'color' => 'text-blue-500', 'bg' => 'bg-blue-50'],
+                            'ORDER' => ['icon' => 'fa-shopping-bag', 'color' => 'text-green-500', 'bg' => 'bg-green-50'],
+                            'PAYMENT' => ['icon' => 'fa-wallet', 'color' => 'text-purple-500', 'bg' => 'bg-purple-50'],
+                            'FOOD' => ['icon' => 'fa-utensils', 'color' => 'text-green-500', 'bg' => 'bg-green-50'],
+                            'LAUNDRY' => ['icon' => 'fa-tshirt', 'color' => 'text-purple-500', 'bg' => 'bg-purple-50'],
+                            'default' => ['icon' => 'fa-bell', 'color' => 'text-gray-500', 'bg' => 'bg-gray-50']
+                        ];
+                        $config = $iconConfig[$activity->type] ?? $iconConfig['default'];
+                                    @endphp
+                                    <div class="h-10 w-10 rounded-lg {{ $config['bg'] }} flex items-center justify-center">
+                                        <i class="fas {{ $config['icon'] }} {{ $config['color'] }}"></i>
                                     </div>
                                 </div>
                                 <div class="ml-4 flex-1">
                                     <div class="flex items-center justify-between">
-                                        <p class="text-sm font-medium text-gray-900">{{ $activity['title'] }}</p>
-                                        <span class="text-xs text-gray-500">{{ $activity['time'] }}</span>
+                                        <p class="text-sm font-medium text-gray-900">{{ $activity->title }}</p>
+                                        <span class="text-xs text-gray-500">{{ $activity->created_at->diffForHumans() }}</span>
                                     </div>
-                                    <p class="text-sm text-gray-500 mt-1">{{ $activity['desc'] }}</p>
-                                    <div class="mt-2">
-                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium 
-                                            {{ $activity['status'] == 'success' ? 'bg-green-100 text-green-800' : 
-                                              ($activity['status'] == 'pending' ? 'bg-yellow-100 text-yellow-800' : 'bg-blue-100 text-blue-800') }}">
-                                            {{ ucfirst($activity['status']) }}
-                                        </span>
-                                    </div>
+                                    <p class="text-sm text-gray-500 mt-1">{{ $activity->message }}</p>
+                                    @if($activity->related_entity_type && $activity->related_entity_id)
+                                        <div class="mt-2">
+                                            <a href="#" class="text-xs text-indigo-600 hover:text-indigo-500">
+                                                View Details
+                                            </a>
+                                        </div>
+                                    @endif
                                 </div>
                             </div>
                         </div>
-                    @endforeach
+                    @empty
+                        <div class="p-8 text-center">
+                            <i class="fas fa-bell text-gray-300 text-4xl mb-3"></i>
+                            <p class="text-gray-500">No recent activity</p>
+                        </div>
+                    @endforelse
                 </div>
             </div>
         </div>
 
-        <!-- Upcoming Bookings -->
+        <!-- Upcoming Bookings/Orders -->
         <div>
             <div class="flex items-center justify-between mb-4">
-                <h3 class="text-xl font-semibold text-gray-900">Upcoming Bookings</h3>
-                <!-- REMOVED: bookings link since route doesn't exist -->
-                <span class="text-sm text-gray-400">Your bookings</span>
+                <h3 class="text-xl font-semibold text-gray-900">
+                    @if(Auth::user()->hasRole('USER'))
+                        Upcoming Bookings
+                    @elseif(Auth::user()->hasRole('OWNER'))
+                        Recent Bookings
+                    @else
+                        Recent Orders
+                    @endif
+                </h3>
+                @if(Auth::user()->hasRole('USER'))
+                    <a href="{{ route('bookings.my-bookings') }}" class="text-sm text-indigo-600 hover:text-indigo-500">
+                        View all
+                    </a>
+                @endif
             </div>
             <div class="bg-white border border-gray-200 rounded-xl overflow-hidden">
-                @php
-                    $bookings = [
-                        ['property' => 'Sunrise Hostel', 'room' => 'Room 203', 
-                         'dates' => 'Jan 25 - Feb 25, 2024', 'status' => 'confirmed', 'amount' => '৳ 8,500'],
-                        ['property' => 'Green Valley Apartment', 'room' => 'Unit 4B', 
-                         'dates' => 'Feb 1 - Aug 1, 2024', 'status' => 'upcoming', 'amount' => '৳ 45,000'],
-                    ];
-                @endphp
-                
-                @foreach($bookings as $booking)
-                    <div class="p-4 hover:bg-gray-50 border-b border-gray-100 last:border-b-0">
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <h4 class="text-sm font-medium text-gray-900">{{ $booking['property'] }}</h4>
-                                <p class="text-sm text-gray-500">{{ $booking['room'] }}</p>
-                                <p class="text-xs text-gray-400 mt-1">{{ $booking['dates'] }}</p>
+                @if(Auth::user()->hasRole('USER'))
+                     @forelse($upcomingBookings ?? [] as $booking)
+                        <div class="p-4 hover:bg-gray-50 border-b border-gray-100 last:border-b-0">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <h4 class="text-sm font-medium text-gray-900">{{ $booking->property->name }}</h4>
+                                    <p class="text-sm text-gray-500">
+                                        @if($booking->room)
+                                            {{ $booking->room->room_number }}
+                                        @else
+                                            Apartment
+                                        @endif
+                                    </p>
+                                    <p class="text-xs text-gray-400 mt-1">
+                                        {{ \Carbon\Carbon::parse($booking->check_in)->format('M d') }} - 
+                                        {{ \Carbon\Carbon::parse($booking->check_out)->format('M d, Y') }}
+                                    </p>
+                                </div>
+                                <div class="text-right">
+                                    @php
+                                        $statusColors = [
+                                            'PENDING' => 'bg-yellow-100 text-yellow-800',
+                                            'CONFIRMED' => 'bg-green-100 text-green-800',
+                                            'CHECKED_IN' => 'bg-blue-100 text-blue-800',
+                                            'CHECKED_OUT' => 'bg-gray-100 text-gray-800',
+                                            'CANCELLED' => 'bg-red-100 text-red-800'
+                                        ];
+                                    @endphp
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium {{ $statusColors[$booking->status] ?? 'bg-gray-100 text-gray-800' }}">
+                                        {{ str_replace('_', ' ', $booking->status) }}
+                                    </span>
+                                    <p class="text-sm font-medium text-gray-900 mt-1">৳ {{ number_format($booking->total_amount) }}</p>
+                                </div>
                             </div>
-                            <div class="text-right">
-                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium 
-                                    {{ $booking['status'] == 'confirmed' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800' }}">
-                                    {{ ucfirst($booking['status']) }}
-                                </span>
-                                <p class="text-sm font-medium text-gray-900 mt-1">{{ $booking['amount'] }}</p>
+                            <div class="flex space-x-2 mt-3">
+                                <a href="{{ route('bookings.show', $booking) }}" class="flex-1 text-center px-3 py-2 text-xs font-medium bg-indigo-50 text-indigo-600 rounded hover:bg-indigo-100">
+                                    <i class="fas fa-eye mr-1"></i> View
+                                </a>
+                                @if($booking->status == 'CONFIRMED')
+                                    <a href="{{ route('bookings.reschedule', $booking) }}" class="flex-1 text-center px-3 py-2 text-xs font-medium bg-gray-50 text-gray-600 rounded hover:bg-gray-100">
+                                        <i class="fas fa-calendar mr-1"></i> Reschedule
+                                    </a>
+                                    <form action="{{ route('bookings.cancel', $booking) }}" method="POST" class="flex-1" onsubmit="return confirm('Are you sure you want to cancel this booking?')">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="w-full px-3 py-2 text-xs font-medium bg-red-50 text-red-600 rounded hover:bg-red-100">
+                                            <i class="fas fa-times mr-1"></i> Cancel
+                                        </button>
+                                    </form>
+                                @endif
                             </div>
                         </div>
-                        <div class="flex space-x-2 mt-3">
-                            <a href="#" class="flex-1 text-center px-3 py-2 text-xs font-medium bg-indigo-50 text-indigo-600 rounded hover:bg-indigo-100">
-                                <i class="fas fa-eye mr-1"></i> View
-                            </a>
-                            <a href="#" class="flex-1 text-center px-3 py-2 text-xs font-medium bg-gray-50 text-gray-600 rounded hover:bg-gray-100">
-                                <i class="fas fa-calendar mr-1"></i> Reschedule
-                            </a>
-                            <a href="#" class="flex-1 text-center px-3 py-2 text-xs font-medium bg-red-50 text-red-600 rounded hover:bg-red-100">
-                                <i class="fas fa-times mr-1"></i> Cancel
+                    @empty
+                        <div class="p-8 text-center">
+                            <i class="fas fa-calendar text-gray-300 text-4xl mb-3"></i>
+                            <p class="text-gray-500">No upcoming bookings</p>
+                            <a href="{{ route('properties.search') }}" class="mt-3 inline-flex items-center text-sm text-indigo-600 hover:text-indigo-500">
+                                <i class="fas fa-search mr-1"></i> Find Properties
                             </a>
                         </div>
-                    </div>
-                @endforeach
-                
-                @if(count($bookings) === 0)
-                    <div class="p-8 text-center">
-                        <i class="fas fa-calendar text-gray-300 text-4xl mb-3"></i>
-                        <p class="text-gray-500">No upcoming bookings</p>
-                        <!-- USING EXISTING ROUTE: rental.index -->
-                        <a href="{{ route('rental.index') }}" class="mt-3 inline-flex items-center text-sm text-indigo-600 hover:text-indigo-500">
-                            <i class="fas fa-search mr-1"></i> Find Properties
-                        </a>
-                    </div>
+                    @endforelse
+                @elseif(Auth::user()->hasRole('OWNER'))
+                    <!-- Owner specific content -->
+                    @forelse($recentBookings as $booking)
+                        <!-- Similar booking display for owner -->
+                    @empty
+                        <div class="p-8 text-center">
+                            <i class="fas fa-calendar text-gray-300 text-4xl mb-3"></i>
+                            <p class="text-gray-500">No recent bookings</p>
+                        </div>
+                    @endforelse
+                @else
+                    <!-- Service provider orders -->
+                    @forelse($recentOrders as $order)
+                        <!-- Display recent orders for service providers -->
+                    @empty
+                        <div class="p-8 text-center">
+                            <i class="fas fa-shopping-bag text-gray-300 text-4xl mb-3"></i>
+                            <p class="text-gray-500">No recent orders</p>
+                        </div>
+                    @endforelse
                 @endif
             </div>
         </div>
     </div>
 
     <!-- Profile Completion -->
-    @if(!Auth::user()->phone || !Auth::user()->gender || !Auth::user()->defaultAddress)
+    @php
+        $totalFields = 3;
+        $completedFields = 0;
+        if(Auth::user()->phone) $completedFields++;
+        if(Auth::user()->gender) $completedFields++;
+        if(!empty($userAddresses)) $completedFields++;
+        $percentage = ($completedFields / $totalFields) * 100;
+    @endphp
+    
+    @if($percentage < 100)
         <div class="mt-8 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100 rounded-xl p-6">
             <div class="flex items-center justify-between">
                 <div>
@@ -331,7 +403,7 @@
                             </div>
                         @endif
                         
-                        @if(!Auth::user()->defaultAddress)
+                        @if(empty($userAddresses))
                             <div class="flex items-center">
                                 <i class="fas fa-map-marker-alt text-gray-400 mr-3"></i>
                                 <span class="text-gray-700">Add delivery address</span>
@@ -341,15 +413,6 @@
                 </div>
                 
                 <div class="text-center">
-                    @php
-                        $totalFields = 3;
-                        $completedFields = 0;
-                        if(Auth::user()->phone) $completedFields++;
-                        if(Auth::user()->gender) $completedFields++;
-                        if(Auth::user()->defaultAddress) $completedFields++;
-                        $percentage = ($completedFields / $totalFields) * 100;
-                    @endphp
-                    
                     <div class="relative w-32 h-32">
                         <svg class="w-full h-full" viewBox="0 0 36 36">
                             <path d="M18 2.0845

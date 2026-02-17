@@ -11,7 +11,12 @@ use App\Http\Controllers\RoomController;
 use App\Http\Controllers\BookingController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\RentalController;
+use App\Http\Controllers\FoodController;
+use App\Http\Controllers\FoodApiController;
 use App\Http\Controllers\FoodServiceController;
+use App\Http\Controllers\FoodRatingController;
+use App\Http\Controllers\FoodProvider\MenuItemController;
+use App\Http\Controllers\FoodProvider\ReviewController;
 use App\Http\Controllers\VerificationController;
 use Illuminate\Support\Facades\Route;
 
@@ -53,47 +58,48 @@ Route::middleware('auth')->group(function () {
       
         // ============ USER SERVICE ROUTES ============
         // Food Services
-        Route::prefix('food')->name('food.')->group(function () {
-            // Main dashboard
-            Route::get('/', [FoodServiceController::class, 'index'])->name('index');
-            
-            // AJAX API endpoints
-            Route::prefix('api')->name('api.')->group(function () {
-                Route::get('/restaurants', [FoodServiceController::class, 'getRestaurants'])->name('restaurants');
-                Route::get('/restaurant/{id}/menu', [FoodServiceController::class, 'getRestaurantMenu'])->name('restaurant.menu');
-                Route::get('/orders', [FoodServiceController::class, 'getOrders'])->name('orders');
-                Route::get('/subscriptions', [FoodServiceController::class, 'getSubscriptions'])->name('subscriptions');
-                
-                // Order actions
-                Route::post('/order', [FoodServiceController::class, 'placeOrder'])->name('order.place');
-                Route::post('/order/{id}/cancel', [FoodServiceController::class, 'cancelOrder'])->name('order.cancel');
-                
-                // Subscription actions
-                Route::post('/subscription', [FoodServiceController::class, 'createSubscription'])->name('subscription.create');
-                Route::post('/subscription/{id}/cancel', [FoodServiceController::class, 'cancelSubscription'])->name('subscription.cancel');
-            });
-            
-            // Traditional pages (optional)
-            Route::get('/restaurants', [FoodServiceController::class, 'restaurantsPage'])->name('restaurants');
-            Route::get('/restaurant/{id}', [FoodServiceController::class, 'restaurant'])->name('restaurant.show');
-            Route::get('/orders', [FoodServiceController::class, 'ordersPage'])->name('orders');
-            Route::get('/orders/{id}', [FoodServiceController::class, 'orderDetails'])->name('order.show');
-            Route::get('/subscriptions', [FoodServiceController::class, 'subscriptionsPage'])->name('subscriptions');
-            Route::get('/subscriptions/create', [FoodServiceController::class, 'createSubscriptionForm'])->name('subscriptions.create');
-            Route::post('/subscriptions', [FoodServiceController::class, 'storeSubscription'])->name('subscriptions.store');
-            Route::post('/subscriptions/{id}/pause', [FoodServiceController::class, 'pauseSubscription'])->name('subscriptions.pause');
-        });
+    Route::get('/food', [FoodController::class, 'index'])->name('food.index');
+    
+    // API endpoints for AJAX calls
+    Route::prefix('food/api')->name('food.api.')->group(function () {
+        Route::get('/restaurants', [FoodApiController::class, 'getRestaurants'])->name('restaurants');
+        Route::get('/restaurant/{id}/menu', [FoodApiController::class, 'getRestaurantMenu'])->name('restaurant.menu');
+        Route::get('/restaurant/{id}/ratings', [FoodApiController::class, 'getRestaurantRatings'])->name('restaurant.ratings');
+        Route::get('/orders', [FoodApiController::class, 'getOrders'])->name('orders');
+        Route::get('/subscriptions', [FoodApiController::class, 'getSubscriptions'])->name('subscriptions');
+        Route::post('/order/place', [FoodApiController::class, 'placeOrder'])->name('order.place');
+        Route::post('/order/{id}/cancel', [FoodApiController::class, 'cancelOrder'])->name('order.cancel');
+        Route::post('/order/{id}/reorder', [FoodApiController::class, 'reorder'])->name('order.reorder');
+        Route::post('/subscription/create', [FoodApiController::class, 'createSubscription'])->name('subscription.create');
+        Route::post('/subscription/{id}/cancel', [FoodApiController::class, 'cancelSubscription'])->name('subscription.cancel');
+        Route::post('/subscription/{id}/pause', [FoodApiController::class, 'pauseSubscription'])->name('subscription.pause');
+        Route::post('/subscription/{id}/resume', [FoodApiController::class, 'resumeSubscription'])->name('subscription.resume');
+    });
+    
+    // Rating Routes (web views, not API)
+    Route::prefix('food/orders/rate')->name('food.rate.')->group(function () {
+        Route::get('/{order}', [FoodRatingController::class, 'show'])->name('show');
+        Route::post('/{order}', [FoodRatingController::class, 'store'])->name('store');
+        Route::get('/{order}/edit', [FoodRatingController::class, 'edit'])->name('edit');
+        Route::put('/{order}', [FoodRatingController::class, 'update'])->name('update');
+        Route::delete('/{order}', [FoodRatingController::class, 'destroy'])->name('destroy');
+    });
+    
+    // My ratings page
+    Route::get('/food/my-ratings', [FoodRatingController::class, 'myRatings'])->name('food.ratings.my');
 
-        // Laundry Services
-        Route::prefix('laundry')->name('laundry.')->group(function () {
-            Route::get('/', function () {
-                return view('laundry.index');
-            })->name('index');
-            
-            Route::get('/orders', function () {
-                return view('laundry.orders');
-            })->name('orders');
-        });
+    // Laundry routes
+    Route::get('/laundry', [App\Http\Controllers\LaundryController::class, 'index'])->name('laundry.index');
+    
+    // Laundry API routes
+    Route::prefix('laundry/api')->name('laundry.api.')->group(function () {
+        Route::get('/providers', [App\Http\Controllers\LaundryApiController::class, 'getProviders'])->name('providers');
+        Route::get('/provider/{id}/items', [App\Http\Controllers\LaundryApiController::class, 'getProviderItems'])->name('provider.items');
+        Route::get('/orders', [App\Http\Controllers\LaundryApiController::class, 'getOrders'])->name('orders');
+        Route::get('/order/{id}', [App\Http\Controllers\LaundryApiController::class, 'getOrder'])->name('order');
+        Route::post('/order/place', [App\Http\Controllers\LaundryApiController::class, 'placeOrder'])->name('order.place');
+        Route::post('/order/{id}/cancel', [App\Http\Controllers\LaundryApiController::class, 'cancelOrder'])->name('order.cancel');
+    });
 
         // Payments
         Route::prefix('payments')->name('payments.')->group(function () {
@@ -298,23 +304,49 @@ Route::middleware(['auth', 'role:FOOD'])->group(function () {
             Route::post('/reset-sold', [\App\Http\Controllers\FoodProvider\MenuItemController::class, 'resetSoldToday'])->name('reset-sold');
         });
         
-        // Orders & Subscriptions
-        Route::get('/orders', function () {
-            return view('food-provider.orders.index');
-        })->name('orders.index');
+        // Order Routes
+        Route::prefix('orders')->name('orders.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\FoodProvider\OrderController::class, 'index'])
+                ->name('index');
+            Route::get('/{id}', [\App\Http\Controllers\FoodProvider\OrderController::class, 'show'])
+                ->name('show');
+            Route::patch('/{id}/status', [\App\Http\Controllers\FoodProvider\OrderController::class, 'updateStatus'])
+                ->name('update-status');
+            Route::post('/bulk-status', [\App\Http\Controllers\FoodProvider\OrderController::class, 'bulkUpdateStatus'])
+                ->name('bulk-status');
+            Route::get('/export', [\App\Http\Controllers\FoodProvider\OrderController::class, 'export'])
+                ->name('export');
+            Route::get('/{id}/print', [\App\Http\Controllers\FoodProvider\OrderController::class, 'printInvoice'])
+                ->name('print');
+        });
+
+        // Food Provider Subscription Routes
+        Route::prefix('subscriptions')->name('subscriptions.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\FoodProvider\SubscriptionController::class, 'index'])
+                ->name('index');
+            Route::get('/today', [\App\Http\Controllers\FoodProvider\SubscriptionController::class, 'todayDeliveries'])
+                ->name('today');
+            Route::post('/generate-today', [\App\Http\Controllers\FoodProvider\SubscriptionController::class, 'generateTodayOrders'])
+                ->name('generate-today');
+            Route::get('/{id}', [\App\Http\Controllers\FoodProvider\SubscriptionController::class, 'show'])
+                ->name('show');
+            Route::post('/{id}/status', [\App\Http\Controllers\FoodProvider\SubscriptionController::class, 'updateStatus'])
+                ->name('update-status');
+            Route::get('/statistics/data', [\App\Http\Controllers\FoodProvider\SubscriptionController::class, 'statistics'])
+                ->name('statistics');
+        });
         
-        Route::get('/subscriptions', function () {
-            return view('food-provider.subscriptions.index');
-        })->name('subscriptions.index');
-        
-        // Earnings & Reviews
-        Route::get('/earnings', function () {
-            return view('food-provider.earnings.index');
-        })->name('earnings.index');
-        
-        Route::get('/reviews', function () {
-            return view('food-provider.reviews.index');
-        })->name('reviews.index');
+        // Food Provider Review Routes
+        Route::prefix('reviews')->name('reviews.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\FoodProvider\ReviewController::class, 'index'])
+                ->name('index');
+            Route::get('/export', [\App\Http\Controllers\FoodProvider\ReviewController::class, 'export'])
+                ->name('export');
+            Route::get('/{id}', [\App\Http\Controllers\FoodProvider\ReviewController::class, 'show'])
+                ->name('show');
+            Route::post('/{id}/reply', [\App\Http\Controllers\FoodProvider\ReviewController::class, 'reply'])
+                ->name('reply');
+        });
         
         // Notifications & Settings
         Route::get('/notifications', function () {

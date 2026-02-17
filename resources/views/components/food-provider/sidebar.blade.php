@@ -48,13 +48,6 @@
                 Subscriptions
             </a>
             
-            <!-- Earnings -->
-            <a href="{{ route('food-provider.earnings.index') }}" 
-               class="{{ request()->routeIs('food-provider.earnings.*') ? 'bg-indigo-50 text-indigo-700' : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900' }} group flex items-center px-2 py-2 text-sm font-medium rounded-md">
-                <i class="fas fa-money-bill-wave mr-3 text-gray-400 group-hover:text-gray-500 {{ request()->routeIs('food-provider.earnings.*') ? 'text-indigo-500' : '' }}"></i>
-                Earnings
-            </a>
-            
             <!-- Reviews -->
             <a href="{{ route('food-provider.reviews.index') }}" 
                class="{{ request()->routeIs('food-provider.reviews.*') ? 'bg-indigo-50 text-indigo-700' : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900' }} group flex items-center px-2 py-2 text-sm font-medium rounded-md">

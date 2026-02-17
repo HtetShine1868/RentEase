@@ -14,87 +14,178 @@ use Carbon\Carbon;
 
 class RentalController extends Controller
 {
-    public function search(Request $request)
-    {
-        $query = Property::query()->with(['primaryImage', 'amenities', 'reviews']);
-        
-        // Only show active properties for non-owners
-        if (!Auth::check() || (!Auth::user()->hasRole('OWNER') && !Auth::user()->hasRole('SUPERADMIN'))) {
-            $query->active();
-        }
-        
-        // Search by keyword
-        if ($request->filled('search')) {
-            $search = $request->search;
-            $query->where(function($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('description', 'like', "%{$search}%")
-                  ->orWhere('address', 'like', "%{$search}%")
-                  ->orWhere('city', 'like', "%{$search}%")
-                  ->orWhere('area', 'like', "%{$search}%");
-            });
-        }
-        
-        // Filter by property type
-        if ($request->filled('type')) {
-            $query->where('type', $request->type);
-        }
-        
-        // Filter by price range
-        if ($request->filled('min_price')) {
-            $query->where('base_price', '>=', $request->min_price);
-        }
-        
-        if ($request->filled('max_price')) {
-            $query->where('base_price', '<=', $request->max_price);
-        }
-        
-        // Filter by city
-        if ($request->filled('city')) {
-            $query->where('city', $request->city);
-        }
-        
-        // Filter by area
-        if ($request->filled('area')) {
-            $query->where('area', 'like', "%{$request->area}%");
-        }
-        
-        // Filter by gender policy
-        if ($request->filled('gender_policy')) {
-            $query->where('gender_policy', $request->gender_policy);
-        }
-        
-        // Filter by minimum rating
-        if ($request->filled('min_rating')) {
-            $query->whereHas('reviews', function($q) use ($request) {
-                $q->havingRaw('AVG(overall_rating) >= ?', [$request->min_rating]);
-            });
-        }
-        
-        // Sorting
-        $sort = $request->get('sort', 'latest');
-        switch ($sort) {
-            case 'price_low':
-                $query->orderBy('base_price', 'asc');
-                break;
-            case 'price_high':
-                $query->orderBy('base_price', 'desc');
-                break;
-            case 'rating':
-                $query->withAvg('reviews', 'overall_rating')->orderByDesc('reviews_avg_overall_rating');
-                break;
-            default:
-                $query->latest();
-                break;
-        }
-        
-        // Get distinct cities for filter dropdown
-        $cities = Property::active()->distinct()->pluck('city')->sort();
-        
-        $properties = $query->paginate(12)->withQueryString();
-        
-        return view('rental.search', compact('properties', 'cities'));
+/**
+ * Search for available properties excluding those already rented by the user
+ */
+public function search(Request $request)
+{
+    $user = Auth::user();
+    
+    $query = Property::query()->with(['primaryImage', 'amenities', 'reviews']);
+    
+    // Only show active properties for non-owners
+    if (!Auth::check() || (!Auth::user()->hasRole('OWNER') && !Auth::user()->hasRole('SUPERADMIN'))) {
+        $query->where('status', 'ACTIVE');
     }
+    
+    // =====================================================
+    // EXCLUDE PROPERTIES ALREADY RENTED BY CURRENT USER
+    // =====================================================
+    if ($user) {
+        // Get IDs of properties that the user has active/confirmed bookings for
+        $rentedPropertyIds = Booking::where('user_id', $user->id)
+            ->whereIn('status', ['CONFIRMED', 'CHECKED_IN']) // Only exclude active rentals
+            ->where('check_out', '>=', now()) // Still ongoing
+            ->pluck('property_id')
+            ->toArray();
+        
+        // Also exclude properties where user has pending bookings (optional)
+        $pendingPropertyIds = Booking::where('user_id', $user->id)
+            ->where('status', 'PENDING')
+            ->pluck('property_id')
+            ->toArray();
+        
+        $excludeIds = array_merge($rentedPropertyIds, $pendingPropertyIds);
+        
+        if (!empty($excludeIds)) {
+            $query->whereNotIn('id', $excludeIds);
+        }
+    }
+    
+    // Search by keyword
+    if ($request->filled('search')) {
+        $search = $request->search;
+        $query->where(function($q) use ($search) {
+            $q->where('name', 'like', "%{$search}%")
+              ->orWhere('description', 'like', "%{$search}%")
+              ->orWhere('address', 'like', "%{$search}%")
+              ->orWhere('city', 'like', "%{$search}%")
+              ->orWhere('area', 'like', "%{$search}%");
+        });
+    }
+    
+    // Filter by property type
+    if ($request->filled('type')) {
+        $query->where('type', $request->type);
+    }
+    
+    // Filter by price range
+    if ($request->filled('min_price') && is_numeric($request->min_price) && $request->min_price >= 0) {
+        $query->where('base_price', '>=', $request->min_price);
+    }
+    
+    if ($request->filled('max_price') && is_numeric($request->max_price) && $request->max_price > 0) {
+        $query->where('base_price', '<=', $request->max_price);
+    }
+    
+    // Filter by city
+    if ($request->filled('city')) {
+        $query->where('city', $request->city);
+    }
+    
+    // Filter by area
+    if ($request->filled('area')) {
+        $query->where('area', 'like', "%{$request->area}%");
+    }
+    
+    // Filter by gender policy
+    if ($request->filled('gender_policy')) {
+        $query->where('gender_policy', $request->gender_policy);
+    }
+    
+    // Filter by furnishing status (for apartments)
+    if ($request->filled('furnishing_status')) {
+        $query->where('furnishing_status', $request->furnishing_status);
+    }
+    
+    // Filter by minimum bedrooms (for apartments)
+    if ($request->filled('bedrooms') && is_numeric($request->bedrooms)) {
+        $query->where('bedrooms', '>=', $request->bedrooms);
+    }
+    
+    // Filter by minimum rating
+    if ($request->filled('min_rating') && is_numeric($request->min_rating)) {
+        $query->whereHas('reviews', function($q) use ($request) {
+            $q->havingRaw('AVG(overall_rating) >= ?', [$request->min_rating]);
+        });
+    }
+    
+    // For hostels, only show properties with at least one available room
+    if ($request->filled('type') && $request->type === 'HOSTEL') {
+        $query->whereHas('rooms', function($q) {
+            $q->where('status', 'AVAILABLE');
+        });
+    }
+    
+    // For apartments, check if they're available (no active bookings)
+    if ($request->filled('type') && $request->type === 'APARTMENT') {
+        $query->whereDoesntHave('bookings', function($q) {
+            $q->whereIn('status', ['CONFIRMED', 'CHECKED_IN'])
+              ->where('check_out', '>=', now());
+        });
+    }
+    
+    // Sorting
+    $sort = $request->get('sort', 'latest');
+    switch ($sort) {
+        case 'price_low':
+            $query->orderBy('base_price', 'asc');
+            break;
+        case 'price_high':
+            $query->orderBy('base_price', 'desc');
+            break;
+        case 'rating':
+            $query->withAvg('reviews', 'overall_rating')
+                  ->orderByDesc('reviews_avg_overall_rating');
+            break;
+        case 'newest':
+            $query->orderBy('created_at', 'desc');
+            break;
+        case 'oldest':
+            $query->orderBy('created_at', 'asc');
+            break;
+        default:
+            $query->latest();
+            break;
+    }
+    
+    // Get distinct cities for filter dropdown
+    $cities = Property::where('status', 'ACTIVE')
+        ->distinct()
+        ->pluck('city')
+        ->filter()
+        ->sort()
+        ->values();
+    
+    // Get distinct areas for filter dropdown based on selected city
+    $areas = [];
+    if ($request->filled('city')) {
+        $areas = Property::where('status', 'ACTIVE')
+            ->where('city', $request->city)
+            ->distinct()
+            ->pluck('area')
+            ->filter()
+            ->sort()
+            ->values();
+    }
+    
+    // Get min and max price range for price slider
+    $priceRange = [
+        'min' => Property::where('status', 'ACTIVE')->min('base_price') ?? 0,
+        'max' => Property::where('status', 'ACTIVE')->max('base_price') ?? 100000
+    ];
+    
+    // Paginate results
+    $properties = $query->paginate(12)->withQueryString();
+    
+    // Pass all data to the view
+    return view('rental.search', compact(
+        'properties', 
+        'cities', 
+        'areas', 
+        'priceRange'
+    ));
+}
     
     public function show(Property $property)
     {
@@ -569,9 +660,4 @@ public function showComplaint(Complaint $complaint)
 
     return view('rental.complaint-details', compact('complaint'));
 }
-
-
-    
-
-
 }

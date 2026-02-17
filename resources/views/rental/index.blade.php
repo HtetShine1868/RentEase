@@ -2,7 +2,7 @@
     use Carbon\Carbon;
 @endphp
 
-@extends('layouts.app')
+@extends('dashboard')
 
 @section('title', 'My Rental')
 

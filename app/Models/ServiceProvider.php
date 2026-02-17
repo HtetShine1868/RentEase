@@ -40,7 +40,7 @@ class ServiceProvider extends Model
         return $this->belongsTo(User::class);
     }
 
-     public function foodServiceConfig()
+     public function foodConfig()
     {
 
         return $this->hasOne(FoodServiceConfig::class, 'service_provider_id');
@@ -101,5 +101,38 @@ class ServiceProvider extends Model
     {
 
         return $this->belongsToMany(MealType::class, 'food_service_meal_types', 'service_provider_id', 'meal_type_id');
+    }    
+    public function subscriptions()
+    {
+        return $this->hasMany(FoodSubscription::class, 'service_provider_id');
+    }// In app/Models/ServiceProvider.php
+
+    public function serviceRatings()
+    {
+        return $this->hasMany(ServiceRating::class, 'service_provider_id');
     }
-}
+
+    public function averageRating()
+    {
+        return $this->serviceRatings()
+            ->selectRaw('AVG(overall_rating) as average, service_provider_id')
+            ->groupBy('service_provider_id');
+    }
+
+    // Accessor for average rating
+    public function getAvgRatingAttribute()
+    {
+        return $this->serviceRatings()->avg('overall_rating') ?? 0;
+    }
+
+    // Get rating breakdown
+    public function getRatingBreakdownAttribute()
+    {
+        return [
+            'quality' => $this->serviceRatings()->avg('quality_rating') ?? 0,
+            'delivery' => $this->serviceRatings()->avg('delivery_rating') ?? 0,
+            'value' => $this->serviceRatings()->avg('value_rating') ?? 0,
+            'total' => $this->serviceRatings()->count()
+        ];
+    }
+    }
