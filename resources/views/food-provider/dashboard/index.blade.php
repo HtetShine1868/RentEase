@@ -492,15 +492,7 @@
                     <span class="text-sm font-medium text-gray-900">Restaurant Settings</span>
                     <span class="text-xs text-gray-500 mt-1">Update profile</span>
                 </a>
-                
-                <a href="{{ route('food-provider.earnings.index') }}" 
-                   class="flex flex-col items-center justify-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 hover:border-purple-300 transition-colors">
-                    <div class="h-12 w-12 rounded-full bg-purple-100 flex items-center justify-center mb-3">
-                        <i class="fas fa-chart-bar text-purple-600 text-xl"></i>
-                    </div>
-                    <span class="text-sm font-medium text-gray-900">View Earnings</span>
-                    <span class="text-xs text-gray-500 mt-1">₹15,240 this month</span>
-                </a>
+            
             </div>
         </div>
     </div>

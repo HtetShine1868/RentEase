@@ -9,7 +9,7 @@
     <!-- Header -->
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
         <div>
-            <h2 class="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl">
+            <h2 class="text-2xl font-bold leading-7 text-gray-900 sm:textq-3xl">
                 Order Management
             </h2>
             <p class="mt-1 text-sm text-gray-500">
