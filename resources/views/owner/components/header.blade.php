@@ -1,7 +1,6 @@
 <header class="bg-white shadow-sm border-b border-gray-200 h-16 md:h-20 flex items-center justify-between px-4 md:px-6 z-20">
     <!-- Left Section: Mobile Menu Button & Title -->
     <div class="flex items-center space-x-4">
-      
         
         <!-- Page Title (Hidden on mobile when sidebar is open) -->
         <div>
@@ -28,85 +27,7 @@
             <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
         </div>
         
-        <!-- Notifications Dropdown -->
-        <div class="relative">
-            <button id="notifications-btn" class="relative p-2 text-gray-600 hover:text-gray-900 focus:outline-none">
-                <i class="fas fa-bell text-xl"></i>
-                <span class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">5</span>
-            </button>
-            
-            <!-- Notifications Dropdown Menu -->
-            <div id="notifications-dropdown" class="hidden absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-xl border border-gray-200 z-50">
-                <div class="p-4 border-b border-gray-200">
-                    <div class="flex justify-between items-center">
-                        <h3 class="font-semibold text-gray-800">Notifications</h3>
-                        <span class="text-sm text-blue-600 cursor-pointer hover:text-blue-800">Mark all read</span>
-                    </div>
-                </div>
-                
-                <div class="max-h-96 overflow-y-auto">
-                    <!-- Notification Item 1 -->
-                    <div class="p-4 border-b border-gray-100 hover:bg-gray-50 cursor-pointer">
-                        <div class="flex items-start">
-                            <div class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center mr-3">
-                                <i class="fas fa-calendar-check text-green-600"></i>
-                            </div>
-                            <div class="flex-1">
-                                <p class="text-sm text-gray-800 font-medium">New booking received</p>
-                                <p class="text-xs text-gray-500 mt-1">Apartment #302 booked for 6 months</p>
-                                <p class="text-xs text-gray-400 mt-1">2 hours ago</p>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Notification Item 2 -->
-                    <div class="p-4 border-b border-gray-100 hover:bg-gray-50 cursor-pointer">
-                        <div class="flex items-start">
-                            <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center mr-3">
-                                <i class="fas fa-money-bill-wave text-blue-600"></i>
-                            </div>
-                            <div class="flex-1">
-                                <p class="text-sm text-gray-800 font-medium">Payment received</p>
-                                <p class="text-xs text-gray-500 mt-1">$850 payment for Hostel Room #12</p>
-                                <p class="text-xs text-gray-400 mt-1">5 hours ago</p>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Notification Item 3 -->
-                    <div class="p-4 border-b border-gray-100 hover:bg-gray-50 cursor-pointer">
-                        <div class="flex items-start">
-                            <div class="w-10 h-10 rounded-full bg-yellow-100 flex items-center justify-center mr-3">
-                                <i class="fas fa-exclamation-triangle text-yellow-600"></i>
-                            </div>
-                            <div class="flex-1">
-                                <p class="text-sm text-gray-800 font-medium">Complaint submitted</p>
-                                <p class="text-xs text-gray-500 mt-1">New complaint about water supply</p>
-                                <p class="text-xs text-gray-400 mt-1">1 day ago</p>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Notification Item 4 -->
-                    <div class="p-4 hover:bg-gray-50 cursor-pointer">
-                        <div class="flex items-start">
-                            <div class="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center mr-3">
-                                <i class="fas fa-star text-purple-600"></i>
-                            </div>
-                            <div class="flex-1">
-                                <p class="text-sm text-gray-800 font-medium">New review received</p>
-                                <p class="text-xs text-gray-500 mt-1">★★★★★ rating for Sunshine Apartments</p>
-                                <p class="text-xs text-gray-400 mt-1">2 days ago</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="p-3 border-t border-gray-200 text-center">
-                    <a href="{{ route('owner.notifications') }}" class="text-sm text-blue-600 hover:text-blue-800 font-medium">View All Notifications</a>
-                </div>
-            </div>
-        </div>
+
         
         <!-- Profile Dropdown -->
         <div class="relative">
@@ -132,14 +53,6 @@
                     <a href="{{ route('owner.profile') }}" class="flex items-center px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg">
                         <i class="fas fa-user-circle w-5 mr-2 text-gray-500"></i>
                         My Profile
-                    </a>
-                    <a href="{{ route('owner.settings.index') }}" class="flex items-center px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg">
-                        <i class="fas fa-cog w-5 mr-2 text-gray-500"></i>
-                        Settings
-                    </a>
-                    <a href="{{ route('owner.earnings.index') }}" class="flex items-center px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg">
-                        <i class="fas fa-wallet w-5 mr-2 text-gray-500"></i>
-                        Earnings
                     </a>
                 </div>
                 

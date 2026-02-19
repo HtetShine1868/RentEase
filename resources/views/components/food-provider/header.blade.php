@@ -18,7 +18,8 @@
                     <i class="fas fa-circle text-xs mr-1 text-green-500"></i>
                     <span id="restaurant-status">Online</span>
                     <span class="mx-2">•</span>
-                    <span id="coverage-radius">5 km coverage</span>
+                    <span id="welcome-message">Welcome back, {{ auth()->user()->name ?? 'Food Provider' }}!</span>
+
                 </p>
             </div>
         </div>
@@ -37,49 +38,6 @@
                     <div class="text-xs text-gray-500">Earnings</div>
                 </div>
             </div>
-            
-            <!-- Notification Bell -->
-            <div class="relative" x-data="{ open: false }">
-                <button @click="open = !open" 
-                        class="relative p-2 text-gray-400 hover:text-gray-500 focus:outline-none">
-                    <i class="fas fa-bell h-6 w-6"></i>
-                    <span class="absolute top-1 right-1 h-2 w-2 bg-red-500 rounded-full" id="notification-badge"></span>
-                </button>
-                
-                <!-- Notification Dropdown -->
-                <div x-show="open" 
-                     @click.away="open = false"
-                     x-transition
-                     class="absolute right-0 mt-2 w-80 bg-white rounded-md shadow-lg py-1 z-50 border border-gray-200">
-                    <div class="px-4 py-2 border-b border-gray-100">
-                        <h3 class="text-sm font-medium text-gray-900">Notifications</h3>
-                        <p class="text-xs text-gray-500 mt-1">You have <span class="font-medium">5</span> unread</p>
-                    </div>
-                    <div class="max-h-60 overflow-y-auto">
-                        <!-- Notification items would go here -->
-                        <div class="px-4 py-3 hover:bg-gray-50 border-b border-gray-100">
-                            <div class="flex items-start">
-                                <div class="flex-shrink-0">
-                                    <i class="fas fa-shopping-cart text-blue-500"></i>
-                                </div>
-                                <div class="ml-3 flex-1">
-                                    <p class="text-sm text-gray-800">
-                                        New order received
-                                    </p>
-                                    <p class="text-xs text-gray-500 mt-1">
-                                        10 minutes ago
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="border-t border-gray-100 px-4 py-2">
-                        <a href="{{ route('food-provider.notifications.index') }}" 
-                           class="text-xs font-medium text-indigo-600 hover:text-indigo-500">
-                            View all notifications →
-                        </a>
-                    </div>
-                </div>
             </div>
             
             <!-- Profile Dropdown -->
@@ -106,10 +64,6 @@
                     <a href="{{ route('food-provider.profile.index') }}" 
                        class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                         <i class="fas fa-user-circle mr-2"></i> Your Profile
-                    </a>
-                    <a href="{{ route('food-provider.settings.index') }}" 
-                       class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                        <i class="fas fa-cog mr-2"></i> Settings
                     </a>
                     <div class="border-t border-gray-100 my-1"></div>
                     <form method="POST" action="{{ route('logout') }}">

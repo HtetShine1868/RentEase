@@ -13,39 +13,45 @@
                 <i class="fas fa-chart-line"></i>
             </div>
             <div class="welcome-text">
-                <h1>Welcome back, Owner!</h1>
+                <h1>Welcome back, {{ Auth::user()->name }}!</h1>
                 <p>Track your properties, manage bookings, and monitor earnings in real-time.</p>
                 <div class="welcome-stats">
                     <div class="stat-item">
-                        <span class="stat-number">12</span>
+                        <span class="stat-number">{{ $totalProperties }}</span>
                         <span class="stat-label">Properties</span>
                     </div>
                     <div class="stat-item">
-                        <span class="stat-number">48</span>
+                        <span class="stat-number">{{ $totalBookings }}</span>
                         <span class="stat-label">Bookings</span>
                     </div>
                     <div class="stat-item">
-                        <span class="stat-number">$24.5K</span>
+                        <span class="stat-number">
+                            @if($totalRevenue >= 1000)
+                                ${{ number_format($totalRevenue / 1000, 1) }}K
+                            @else
+                                ${{ number_format($totalRevenue, 0) }}
+                            @endif
+                        </span>
                         <span class="stat-label">Revenue</span>
                     </div>
                 </div>
             </div>
         </div>
         <div class="welcome-actions">
-            <button class="btn-primary">
+            <a href="{{ route('owner.properties.create') }}" class="btn-primary">
                 <i class="fas fa-plus"></i>
                 Add New Property
-            </button>
-            <button class="btn-secondary">
-                <i class="fas fa-chart-bar"></i>
-                View Reports
-            </button>
+            </a>
+            <a href="{{ route('owner.bookings.index') }}" class="btn-secondary">
+                <i class="fas fa-calendar-check"></i>
+                View Bookings
+            </a>
         </div>
     </div>
 
-    <!-- Stats Grid -->
+    <!-- Stats Grid - Combining property and booking stats -->
     <div class="stats-grid">
-        <!-- Property Stats -->
+        <!-- Property Stats (from properties page) -->
         <div class="stat-card stat-card-blue">
             <div class="stat-header">
                 <div class="stat-icon">
@@ -53,125 +59,133 @@
                 </div>
                 <div>
                     <h3 class="stat-title">Property Overview</h3>
-                    <p class="stat-subtitle">Total properties & occupancy</p>
+                    <p class="stat-subtitle">Total properties & status</p>
                 </div>
             </div>
             <div class="stat-content">
                 <div class="stat-main">
-                    <span class="stat-number">12</span>
+                    <span class="stat-number">{{ $totalProperties }}</span>
                     <span class="stat-unit">Properties</span>
                 </div>
                 <div class="stat-details">
                     <div class="stat-detail">
-                        <span class="detail-label">Hostels</span>
-                        <span class="detail-value">8</span>
+                        <span class="detail-label">Active</span>
+                        <span class="detail-value success">{{ $activeProperties }}</span>
                     </div>
                     <div class="stat-detail">
-                        <span class="detail-label">Apartments</span>
-                        <span class="detail-value">4</span>
+                        <span class="detail-label">Inactive</span>
+                        <span class="detail-value warning">{{ $inactiveProperties }}</span>
                     </div>
                     <div class="stat-detail">
-                        <span class="detail-label">Occupancy</span>
-                        <span class="detail-value success">83%</span>
+                        <span class="detail-label">Draft</span>
+                        <span class="detail-value">{{ $draftProperties }}</span>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Booking Stats -->
+        <!-- Property Type Stats -->
         <div class="stat-card stat-card-green">
+            <div class="stat-header">
+                <div class="stat-icon">
+                    <i class="fas fa-door-open"></i>
+                </div>
+                <div>
+                    <h3 class="stat-title">Property Types</h3>
+                    <p class="stat-subtitle">Hostels & Apartments</p>
+                </div>
+            </div>
+            <div class="stat-content">
+                <div class="stat-main">
+                    <span class="stat-number">{{ $totalProperties }}</span>
+                    <span class="stat-unit">Total</span>
+                </div>
+                <div class="stat-details">
+                    <div class="stat-detail">
+                        <span class="detail-label">Hostels</span>
+                        <span class="detail-value">{{ $hostelCount }}</span>
+                    </div>
+                    <div class="stat-detail">
+                        <span class="detail-label">Apartments</span>
+                        <span class="detail-value">{{ $apartmentCount }}</span>
+                    </div>
+                    <div class="stat-detail">
+                        <span class="detail-label">Occupancy</span>
+                        <span class="detail-value success">{{ $occupancyRate }}%</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Booking Stats (from bookings page) -->
+        <div class="stat-card stat-card-purple">
             <div class="stat-header">
                 <div class="stat-icon">
                     <i class="fas fa-calendar-check"></i>
                 </div>
                 <div>
-                    <h3 class="stat-title">Bookings</h3>
-                    <p class="stat-subtitle">Current & upcoming bookings</p>
+                    <h3 class="stat-title">Booking Status</h3>
+                    <p class="stat-subtitle">Current bookings</p>
                 </div>
             </div>
             <div class="stat-content">
                 <div class="stat-main">
-                    <span class="stat-number">8</span>
+                    <span class="stat-number">{{ $activeBookings }}</span>
                     <span class="stat-unit">Active</span>
                 </div>
                 <div class="stat-details">
                     <div class="stat-detail">
                         <span class="detail-label">Pending</span>
-                        <span class="detail-value warning">3</span>
+                        <span class="detail-value warning">{{ $pendingBookings }}</span>
                     </div>
                     <div class="stat-detail">
-                        <span class="detail-label">Completed</span>
-                        <span class="detail-value">37</span>
+                        <span class="detail-label">Confirmed</span>
+                        <span class="detail-value success">{{ $confirmedBookings }}</span>
                     </div>
                     <div class="stat-detail">
-                        <span class="detail-label">Revenue</span>
-                        <span class="detail-value success">$2,450</span>
+                        <span class="detail-label">Checked In</span>
+                        <span class="detail-value info">{{ $checkedInBookings }}</span>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Financial Stats -->
-        <div class="stat-card stat-card-purple">
+        <!-- Revenue Stats -->
+        <div class="stat-card stat-card-yellow">
             <div class="stat-header">
                 <div class="stat-icon">
                     <i class="fas fa-money-bill-wave"></i>
                 </div>
                 <div>
-                    <h3 class="stat-title">Financial Summary</h3>
-                    <p class="stat-subtitle">Earnings & revenue</p>
+                    <h3 class="stat-title">Revenue</h3>
+                    <p class="stat-subtitle">Earnings & commission</p>
                 </div>
             </div>
             <div class="stat-content">
                 <div class="stat-main">
-                    <span class="stat-number">$24.5K</span>
-                    <span class="stat-unit">Total</span>
+                    <span class="stat-number">
+                        @if($monthlyRevenue >= 1000)
+                            ${{ number_format($monthlyRevenue / 1000, 1) }}K
+                        @else
+                            ${{ number_format($monthlyRevenue, 0) }}
+                        @endif
+                    </span>
+                    <span class="stat-unit">This Month</span>
                 </div>
                 <div class="stat-details">
                     <div class="stat-detail">
-                        <span class="detail-label">This Month</span>
-                        <span class="detail-value success">$2,450</span>
+                        <span class="detail-label">Total</span>
+                        <span class="detail-value">${{ number_format($totalRevenue, 0) }}</span>
                     </div>
                     <div class="stat-detail">
                         <span class="detail-label">Growth</span>
-                        <span class="detail-value success">+14%</span>
+                        <span class="detail-value {{ $revenueGrowth >= 0 ? 'success' : 'warning' }}">
+                            {{ $revenueGrowth >= 0 ? '+' : '' }}{{ $revenueGrowth }}%
+                        </span>
                     </div>
                     <div class="stat-detail">
                         <span class="detail-label">Commission</span>
-                        <span class="detail-value">5%</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Performance Stats -->
-        <div class="stat-card stat-card-yellow">
-            <div class="stat-header">
-                <div class="stat-icon">
-                    <i class="fas fa-star"></i>
-                </div>
-                <div>
-                    <h3 class="stat-title">Performance</h3>
-                    <p class="stat-subtitle">Ratings & satisfaction</p>
-                </div>
-            </div>
-            <div class="stat-content">
-                <div class="stat-main">
-                    <span class="stat-number">4.7</span>
-                    <span class="stat-unit">/5 Rating</span>
-                </div>
-                <div class="stat-details">
-                    <div class="stat-detail">
-                        <span class="detail-label">Satisfaction</span>
-                        <span class="detail-value success">98%</span>
-                    </div>
-                    <div class="stat-detail">
-                        <span class="detail-label">Response Time</span>
-                        <span class="detail-value">2.4h</span>
-                    </div>
-                    <div class="stat-detail">
-                        <span class="detail-label">Success Rate</span>
-                        <span class="detail-value success">94%</span>
+                        <span class="detail-value">{{ $commissionRate }}%</span>
                     </div>
                 </div>
             </div>
@@ -180,7 +194,7 @@
 
     <!-- Main Content Area -->
     <div class="content-grid">
-        <!-- Recent Bookings - New Table Design -->
+        <!-- Recent Bookings (from bookings page) -->
         <div class="content-card content-card-wide">
             <div class="card-header">
                 <div class="card-title-section">
@@ -188,15 +202,18 @@
                     <p class="card-subtitle">Latest property reservations</p>
                 </div>
                 <div class="card-actions">
-                    <select class="card-select">
-                        <option>All Properties</option>
-                        <option>Hostels</option>
-                        <option>Apartments</option>
-                    </select>
-                    <button class="card-button">
-                        <i class="fas fa-download"></i>
-                        Export
-                    </button>
+                    <form method="GET" action="{{ route('owner.bookings.index') }}" class="flex gap-2">
+                        <select name="property_filter" class="card-select" onchange="this.form.submit()">
+                            <option value="all">All Properties</option>
+                            @foreach($properties as $property)
+                                <option value="{{ $property->id }}">{{ $property->name }}</option>
+                            @endforeach
+                        </select>
+                        <a href="{{ route('owner.bookings.export') }}" class="card-button">
+                            <i class="fas fa-download"></i>
+                            Export
+                        </a>
+                    </form>
                 </div>
             </div>
             
@@ -214,143 +231,123 @@
                         </tr>
                     </thead>
                     <tbody>
+                        @forelse($recentBookings as $booking)
                         <tr>
-                            <td><span class="booking-id">#BK-2024-001</span></td>
-                            <td><span class="guest">John Doe</span></td>
-                            <td><span class="property">Sunshine Apartments Unit #302</span></td>
-                            <td><span class="dates">Mar 15 - Apr 30</span><span class="days-badge">47 days</span></td>
-                            <td><span class="amount">$1,250</span> <span style="color: #10b981; font-weight: 600;">Paid</span></td>
-                            <td><span class="status status-active">Active</span></td>
+                            <td><span class="booking-id">#{{ $booking->booking_reference ?? 'BK-' . str_pad($booking->id, 6, '0', STR_PAD_LEFT) }}</span></td>
+                            <td><span class="guest">{{ $booking->user->name ?? 'N/A' }}</span></td>
+                            <td>
+                                <span class="property">{{ $booking->property->name ?? 'N/A' }} 
+                                    @if($booking->room)
+                                        <br><small>Room #{{ $booking->room->room_number ?? '' }}</small>
+                                    @endif
+                                </span>
+                            </td>
+                            <td>
+                                <span class="dates">{{ \Carbon\Carbon::parse($booking->check_in)->format('M d') }} - {{ \Carbon\Carbon::parse($booking->check_out)->format('M d, Y') }}</span>
+                                <span class="days-badge">{{ $booking->duration_days ?? $booking->check_in->diffInDays($booking->check_out) }} days</span>
+                            </td>
+                            <td>
+                                <span class="amount">${{ number_format($booking->total_amount ?? 0, 0) }}</span> 
+                                <span style="color: {{ ($booking->payment_status ?? 'pending') == 'completed' ? '#10b981' : '#f59e0b' }}; font-weight: 600;">
+                                    {{ ucfirst($booking->payment_status ?? 'pending') }}
+                                </span>
+                            </td>
+                            <td>
+                                @php
+                                    $statusClasses = [
+                                        'pending' => 'status-pending',
+                                        'confirmed' => 'status-active',
+                                        'checked_in' => 'status-active',
+                                        'checked_out' => 'status-completed',
+                                        'cancelled' => 'status-cancelled'
+                                    ];
+                                    $statusText = [
+                                        'pending' => 'Pending',
+                                        'confirmed' => 'Confirmed',
+                                        'checked_in' => 'Checked In',
+                                        'checked_out' => 'Completed',
+                                        'cancelled' => 'Cancelled'
+                                    ];
+                                    $status = $booking->status ?? 'pending';
+                                    $statusClass = $statusClasses[$status] ?? 'status-pending';
+                                @endphp
+                                <span class="status {{ $statusClass }}">{{ $statusText[$status] ?? ucfirst($status) }}</span>
+                            </td>
                             <td>
                                 <div class="actions">
-                                    <button class="action-btn email-btn" title="Send Email">
+                                    <a href="mailto:{{ $booking->user->email ?? '' }}" class="action-btn email-btn" title="Send Email">
                                         <i class="fas fa-envelope"></i>
-                                    </button>
-                                    <button class="action-btn email-btn" title="Send Reminder">
-                                        <i class="fas fa-bell"></i>
-                                    </button>
-                                    <button class="action-btn email-btn" title="View Details">
+                                    </a>
+                                    <a href="{{ route('owner.bookings.show', $booking->id) }}" class="action-btn view-btn" title="View Details">
                                         <i class="fas fa-eye"></i>
+                                    </a>
+                                    @if($booking->status == 'pending')
+                                    <button onclick="updateBookingStatus({{ $booking->id }}, 'confirmed')" 
+                                            class="action-btn confirm-btn" title="Confirm Booking">
+                                        <i class="fas fa-check"></i>
                                     </button>
+                                    @endif
                                 </div>
                             </td>
                         </tr>
+                        @empty
                         <tr>
-                            <td><span class="booking-id">#BK-2024-002</span></td>
-                            <td><span class="guest">Sarah Johnson</span></td>
-                            <td><span class="property">City Hostel Room #12</span></td>
-                            <td><span class="dates">Mar 1 - Jun 1</span><span class="days-badge">92 days</span></td>
-                            <td><span class="amount">$850</span> <span style="color: #f59e0b; font-weight: 600;">Pending</span></td>
-                            <td><span class="status status-pending">Pending</span></td>
-                            <td>
-                                <div class="actions">
-                                    <button class="action-btn cancel-btn" title="Cancel Booking">
-                                        <i class="fas fa-times"></i>
-                                    </button>
-                                    <button class="action-btn cancel-btn" title="Send Warning">
-                                        <i class="fas fa-exclamation-triangle"></i>
-                                    </button>
-                                    <button class="action-btn cancel-btn" title="Delete">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
+                            <td colspan="7" style="text-align: center; padding: 40px;">
+                                <div style="color: #6b7280;">
+                                    <i class="fas fa-calendar-times fa-2x mb-2"></i>
+                                    <p>No recent bookings</p>
                                 </div>
                             </td>
                         </tr>
-                        <tr>
-                            <td><span class="booking-id">#BK-2024-003</span></td>
-                            <td><span class="guest">Michael Chen</span></td>
-                            <td><span class="property">Luxury Apartments Unit #405</span></td>
-                            <td><span class="dates">Jan 15 - Feb 15</span><span class="days-badge">31 days</span></td>
-                            <td><span class="amount">$2,100</span> <span style="color: #10b981; font-weight: 600;">Paid</span></td>
-                            <td><span class="status status-completed">Completed</span></td>
-                            <td>
-                                <div class="actions">
-                                    <button class="action-btn email-btn" title="Send Email">
-                                        <i class="fas fa-envelope"></i>
-                                    </button>
-                                    <button class="action-btn email-btn" title="Request Review">
-                                        <i class="fas fa-star"></i>
-                                    </button>
-                                    <button class="action-btn email-btn" title="View Details">
-                                        <i class="fas fa-eye"></i>
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
+                        @endforelse
                     </tbody>
                 </table>
             </div>
             
             <div class="card-footer">
-                <div class="pagination-info">
-                    Showing <span class="font-semibold">1 to 3</span> of <span class="font-semibold">48</span> bookings
-                </div>
-                <div class="pagination-controls">
-                    <button class="pagination-btn disabled">
-                        <i class="fas fa-chevron-left"></i>
-                    </button>
-                    <button class="pagination-btn active">1</button>
-                    <button class="pagination-btn">2</button>
-                    <button class="pagination-btn">3</button>
-                    <span class="pagination-ellipsis">...</span>
-                    <button class="pagination-btn">10</button>
-                    <button class="pagination-btn">
-                        <i class="fas fa-chevron-right"></i>
-                    </button>
-                </div>
+                <a href="{{ route('owner.bookings.index') }}" class="view-all-link">
+                    View All Bookings <i class="fas fa-arrow-right ml-1"></i>
+                </a>
             </div>
         </div>
 
         <!-- Sidebar Content -->
         <div class="sidebar-grid">
-            <!-- Notifications -->
+            <!-- Quick Stats Summary -->
             <div class="content-card">
                 <div class="card-header">
-                    <h2 class="card-title">Notifications</h2>
-                    <button class="text-sm text-blue-600 hover:text-blue-800">
-                        Mark all read
-                    </button>
+                    <h2 class="card-title">Quick Summary</h2>
                 </div>
-                
-                <div class="notification-list">
-                    <div class="notification-item new">
-                        <div class="notification-icon">
-                            <i class="fas fa-calendar-check"></i>
+                <div class="p-6">
+                    <div class="space-y-4">
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600">Today's Bookings:</span>
+                            <span class="font-semibold text-purple-600">{{ $todayBookings }}</span>
                         </div>
-                        <div class="notification-content">
-                            <p class="notification-title">New booking received</p>
-                            <p class="notification-desc">Apartment #302 booked for 6 months</p>
-                            <p class="notification-time">2 hours ago</p>
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600">This Month:</span>
+                            <span class="font-semibold">{{ $monthBookings }} bookings</span>
                         </div>
-                    </div>
-                    
-                    <div class="notification-item">
-                        <div class="notification-icon icon-green">
-                            <i class="fas fa-money-bill-wave"></i>
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600">Completed:</span>
+                            <span class="font-semibold text-green-600">{{ $completedBookings }}</span>
                         </div>
-                        <div class="notification-content">
-                            <p class="notification-title">Payment confirmed</p>
-                            <p class="notification-desc">$850 payment for Hostel Room #12</p>
-                            <p class="notification-time">5 hours ago</p>
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600">Cancelled:</span>
+                            <span class="font-semibold text-red-600">{{ $cancelledBookings }}</span>
                         </div>
-                    </div>
-                    
-                    <div class="notification-item">
-                        <div class="notification-icon icon-yellow">
-                            <i class="fas fa-exclamation-triangle"></i>
+                        <div class="flex justify-between items-center pt-2 border-t">
+                            <span class="text-gray-600">Average Rating:</span>
+                            <span class="font-semibold">
+                                {{ $averageRating }} / 5 
+                                <i class="fas fa-star text-yellow-500 ml-1"></i>
+                            </span>
                         </div>
-                        <div class="notification-content">
-                            <p class="notification-title">Complaint received</p>
-                            <p class="notification-desc">New complaint about water supply</p>
-                            <p class="notification-time">1 day ago</p>
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600">Satisfaction:</span>
+                            <span class="font-semibold text-green-600">{{ $satisfactionRate }}%</span>
                         </div>
                     </div>
-                </div>
-                
-                <div class="card-footer">
-                    <a href="{{ route('owner.notifications') }}" class="view-all-link">
-                        View all notifications
-                    </a>
                 </div>
             </div>
 
@@ -358,36 +355,63 @@
             <div class="content-card">
                 <h2 class="card-title">Quick Actions</h2>
                 <div class="quick-actions-grid">
-                    <button class="quick-action-btn">
+                    <a href="{{ route('owner.bookings.index') }}" class="quick-action-btn">
                         <div class="quick-action-icon">
-                            <i class="fas fa-plus"></i>
+                            <i class="fas fa-calendar-plus"></i>
                         </div>
-                        <span>New Booking</span>
-                    </button>
-                    <button class="quick-action-btn">
+                        <span>Manage Bookings</span>
+                    </a>
+                    <a href="{{ route('owner.properties.index') }}" class="quick-action-btn">
                         <div class="quick-action-icon">
-                            <i class="fas fa-print"></i>
+                            <i class="fas fa-building"></i>
                         </div>
-                        <span>Print Report</span>
-                    </button>
-                    <button class="quick-action-btn">
+                        <span>Properties</span>
+                    </a>
+                    <a href="{{ route('owner.complaints.index') }}" class="quick-action-btn">
                         <div class="quick-action-icon">
-                            <i class="fas fa-envelope"></i>
+                            <i class="fas fa-exclamation-circle"></i>
                         </div>
-                        <span>Send Emails</span>
-                    </button>
-                    <button class="quick-action-btn">
+                        <span>Complaints</span>
+                    </a>
+                    <a href="{{ route('owner.properties.create') }}" class="quick-action-btn">
                         <div class="quick-action-icon">
-                            <i class="fas fa-chart-pie"></i>
+                            <i class="fas fa-plus-circle"></i>
                         </div>
-                        <span>Analytics</span>
-                    </button>
+                        <span>Add Property</span>
+                    </a>
                 </div>
             </div>
+
+            <!-- Recent Complaints -->
+            @if($recentComplaints->count() > 0)
+            <div class="content-card">
+                <div class="card-header">
+                    <h2 class="card-title">Recent Complaints</h2>
+                    <a href="{{ route('owner.complaints.index') }}" class="text-sm text-purple-600 hover:text-purple-800">
+                        View all
+                    </a>
+                </div>
+                <div class="notification-list">
+                    @foreach($recentComplaints as $complaint)
+                    <div class="notification-item">
+                        <div class="notification-icon icon-red">
+                            <i class="fas fa-exclamation-triangle"></i>
+                        </div>
+                        <div class="notification-content">
+                            <p class="notification-title">{{ $complaint->title ?? 'Complaint' }}</p>
+                            <p class="notification-desc">{{ Str::limit($complaint->description ?? '', 40) }}</p>
+                            <p class="notification-time">{{ $complaint->created_at ? $complaint->created_at->diffForHumans() : '' }}</p>
+                        </div>
+                    </div>
+                    @endforeach
+                </div>
+            </div>
+            @endif
         </div>
     </div>
 </div>
 
+<!-- Keep all your existing styles from the original dashboard -->
 <style>
 /* Welcome Section */
 .welcome-section {
@@ -459,10 +483,11 @@
     padding: 0.75rem 1.5rem;
     border-radius: 0.5rem;
     font-weight: 600;
-    display: flex;
+    display: inline-flex;
     align-items: center;
     gap: 0.5rem;
     transition: all 0.2s;
+    text-decoration: none;
 }
 
 .btn-primary {
@@ -580,13 +605,13 @@
     margin-bottom: 1rem;
 }
 
-.stat-number {
+.stat-main .stat-number {
     font-size: 2rem;
     font-weight: bold;
     color: #1f2937;
 }
 
-.stat-unit {
+.stat-main .stat-unit {
     font-size: 0.875rem;
     color: #6b7280;
 }
@@ -621,6 +646,10 @@
     color: #f59e0b;
 }
 
+.detail-value.info {
+    color: #3b82f6;
+}
+
 /* Content Grid */
 .content-grid {
     display: grid;
@@ -638,6 +667,7 @@
     background: white;
     border-radius: 0.75rem;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
 }
 
 .content-card-wide {
@@ -683,7 +713,7 @@
 
 .card-select {
     padding: 0.5rem 2rem 0.5rem 0.75rem;
-    border: 1px solid #2c5bc9;
+    border: 1px solid #d1d5db;
     border-radius: 0.375rem;
     font-size: 0.875rem;
     background-color: white;
@@ -691,36 +721,38 @@
     background-position: right 0.5rem center;
     background-repeat: no-repeat;
     background-size: 1.5em 1.5em;
+    appearance: none;
 }
 
 .card-button {
     padding: 0.5rem 1rem;
-    background: #142f9d;
+    background: #3b82f6;
     color: white;
     border-radius: 0.375rem;
     font-size: 0.875rem;
     font-weight: 500;
-    display: flex;
+    display: inline-flex;
     align-items: center;
     gap: 0.5rem;
     transition: all 0.2s;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
 }
 
 .card-button:hover {
-    background: #8d149d;
+    background: #2563eb;
 }
 
-/* New Table Styles from your HTML */
+/* Table Styles */
 .table-container {
     background-color: #ffffff;
     border-radius: 12px;
-    border: 1px solid #e2e8f0; /* NEW */
-    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.06);
+    border: 1px solid #e2e8f0;
     overflow: hidden;
     overflow-x: auto;
     margin: 1.5rem;
 }
-
 
 .table-container table {
     width: 100%;
@@ -730,10 +762,8 @@
 
 .table-container thead {
     background-color: #f8fafc;
-    border-bottom: 1.5px solid #cbd5f5;
+    border-bottom: 1.5px solid #e2e8f0;
 }
-
-
 
 .table-container th {
     padding: 18px 16px;
@@ -751,13 +781,11 @@
     border-right: none;
 }
 
-
 .table-container td {
     padding: 18px 16px;
-    border-bottom: 1px solid #e5e7eb; /* cleaner line */
+    border-bottom: 1px solid #e5e7eb;
     vertical-align: middle;
 }
-
 
 .table-container tbody tr {
     transition: background-color 0.15s ease, box-shadow 0.15s ease;
@@ -765,9 +793,8 @@
 
 .table-container tbody tr:hover {
     background-color: #f8fafc;
-    box-shadow: inset 3px 0 0 #3b82f6; /* subtle left accent */
+    box-shadow: inset 3px 0 0 #3b82f6;
 }
-
 
 .booking-id {
     font-weight: 600;
@@ -782,10 +809,17 @@
 .property {
     max-width: 200px;
     color: #475569;
+    display: block;
+}
+
+.property small {
+    font-size: 11px;
+    color: #6b7280;
 }
 
 .dates {
     color: #475569;
+    display: block;
 }
 
 .days-badge {
@@ -795,13 +829,14 @@
     font-size: 12px;
     padding: 3px 8px;
     border-radius: 10px;
-    margin-left: 8px;
+    margin-top: 4px;
     font-weight: 500;
 }
 
 .amount {
     font-weight: 700;
     color: #1e293b;
+    display: block;
 }
 
 .status {
@@ -829,6 +864,11 @@
     color: #3730a3;
 }
 
+.status-cancelled {
+    background-color: #fee2e2;
+    color: #b91c1c;
+}
+
 .actions {
     display: flex;
     gap: 10px;
@@ -845,6 +885,7 @@
     transition: all 0.2s ease;
     border: none;
     font-size: 16px;
+    text-decoration: none;
 }
 
 .action-btn:hover {
@@ -860,13 +901,22 @@
     background-color: #bfdbfe;
 }
 
-.cancel-btn {
-    background-color: #fee2e2;
-    color: #dc2626;
+.view-btn {
+    background-color: #e0e7ff;
+    color: #3730a3;
 }
 
-.cancel-btn:hover {
-    background-color: #fecaca;
+.view-btn:hover {
+    background-color: #c7d2fe;
+}
+
+.confirm-btn {
+    background-color: #d1fae5;
+    color: #059669;
+}
+
+.confirm-btn:hover {
+    background-color: #a7f3d0;
 }
 
 /* Card Footer */
@@ -880,47 +930,16 @@
     gap: 1rem;
 }
 
-.pagination-info {
+.view-all-link {
+    display: inline-block;
+    color: #3b82f6;
+    font-weight: 500;
     font-size: 0.875rem;
-    color: #6b7280;
+    text-decoration: none;
 }
 
-.pagination-controls {
-    display: flex;
-    align-items: center;
-    gap: 0.25rem;
-}
-
-.pagination-btn {
-    width: 2rem;
-    height: 2rem;
-    border: 1px solid #d1d5db;
-    border-radius: 0.375rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.875rem;
-    transition: all 0.2s;
-}
-
-.pagination-btn:hover:not(.disabled):not(.active) {
-    background: #f3f4f6;
-}
-
-.pagination-btn.active {
-    background: #3b82f6;
-    color: white;
-    border-color: #3b82f6;
-}
-
-.pagination-btn.disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-
-.pagination-ellipsis {
-    padding: 0 0.5rem;
-    color: #6b7280;
+.view-all-link:hover {
+    color: #2563eb;
 }
 
 /* Sidebar Grid */
@@ -946,13 +965,6 @@
     border-bottom: none;
 }
 
-.notification-item.new {
-    background: #f0f9ff;
-    margin: 0 -1.5rem;
-    padding: 0.75rem 1.5rem;
-    border-left: 4px solid #3b82f6;
-}
-
 .notification-icon {
     width: 2.5rem;
     height: 2.5rem;
@@ -965,14 +977,9 @@
     flex-shrink: 0;
 }
 
-.notification-icon.icon-green {
-    background: #d1fae5;
-    color: #10b981;
-}
-
-.notification-icon.icon-yellow {
-    background: #fef3c7;
-    color: #f59e0b;
+.notification-icon.icon-red {
+    background: #fee2e2;
+    color: #dc2626;
 }
 
 .notification-content {
@@ -996,19 +1003,6 @@
     color: #9ca3af;
 }
 
-.view-all-link {
-    display: block;
-    text-align: center;
-    color: #3b82f6;
-    font-weight: 500;
-    font-size: 0.875rem;
-    padding: 0.5rem;
-}
-
-.view-all-link:hover {
-    color: #2563eb;
-}
-
 /* Quick Actions */
 .quick-actions-grid {
     padding: 1.5rem;
@@ -1027,6 +1021,8 @@
     border: 1px solid #e5e7eb;
     border-radius: 0.5rem;
     transition: all 0.2s;
+    text-decoration: none;
+    color: inherit;
 }
 
 .quick-action-btn:hover {
@@ -1047,53 +1043,42 @@
     color: #3b82f6;
 }
 
-.quick-action-btn:nth-child(2) .quick-action-icon {
-    background: #d1fae5;
-    color: #10b981;
-}
-
-.quick-action-btn:nth-child(3) .quick-action-icon {
-    background: #ede9fe;
-    color: #8b5cf6;
-}
-
-.quick-action-btn:nth-child(4) .quick-action-icon {
-    background: #fef3c7;
-    color: #f59e0b;
-}
-
 .quick-action-btn span {
     font-size: 0.875rem;
     font-weight: 500;
     color: #1f2937;
 }
-
-/* Footer info from your HTML */
-.footer-info {
-    margin-top: 20px;
-    text-align: right;
-    color: #64748b;
-    font-size: 14px;
-    padding: 0 1.5rem 1.5rem;
-}
 </style>
 
 <script>
-    // Add interactivity to action buttons
-    document.addEventListener('DOMContentLoaded', function() {
-        document.querySelectorAll('.action-btn').forEach(button => {
-            button.addEventListener('click', function() {
-                const action = this.getAttribute('title');
-                const bookingId = this.closest('tr').querySelector('.booking-id').textContent;
-                const guest = this.closest('tr').querySelector('.guest').textContent;
-                
-                // Show a simple alert for demonstration
-                alert(`Action: ${action}\nBooking: ${bookingId}\nGuest: ${guest}`);
-                
-                // In a real application, you would trigger specific functionality here
-                // For example, open a modal, send an API request, etc.
-            });
+function updateBookingStatus(bookingId, status) {
+    if (confirm('Are you sure you want to update this booking status?')) {
+        fetch(`/owner/bookings/${bookingId}/status`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({ 
+                _method: 'PUT',
+                status: status 
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                window.location.reload();
+            } else {
+                alert('Error: ' + (data.message || 'Unknown error'));
+            }
+        })
+        .catch(error => {
+            alert('Error updating booking status');
+            console.error(error);
         });
-    });
+    }
+}
 </script>
 @endsection

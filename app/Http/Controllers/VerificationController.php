@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route; 
 use Illuminate\Support\Facades\Auth;
 
 class VerificationController extends Controller
@@ -84,7 +85,7 @@ class VerificationController extends Controller
                 Auth::login($user);
             }
             
-            return $this->redirectToDashboard()
+                return redirect()->route('dashboard')
                 ->with('success', 'Email verified successfully!');
         }
 
@@ -123,7 +124,6 @@ class VerificationController extends Controller
         return back()->with('success', 'New code sent! Check your email.');
     }
 
-    // Redirect to appropriate dashboard based on role
     private function redirectToDashboard()
     {
         $user = Auth::user();
@@ -137,7 +137,7 @@ class VerificationController extends Controller
         } elseif ($user->isLaundryProvider()) {
             return redirect()->route('laundry.dashboard');
         } else {
-            return redirect()->route('dashboard'); // Make sure this route exists
+            return redirect()->route('dashboard'); 
         }
     }
 }

@@ -38,7 +38,7 @@ class RegisteredUserController extends Controller
             'password' => Hash::make($request->password),
             'status' => 'ACTIVE',
             'gender' => null,
-            'email_verified_at' => null, // Explicitly set to null
+            'email_verified_at' => null, 
         ]);
 
         // Assign USER role
@@ -53,8 +53,7 @@ class RegisteredUserController extends Controller
         $code = $user->sendVerificationCode();
         \Log::info('Verification code sent', ['code' => $code]);
 
-        // IMPORTANT: Don't login here - just redirect to verification
-        // Store user email in session to identify them
+
         $request->session()->put('verifying_user_email', $user->email);
         
         \Log::info('Redirecting to verification', [

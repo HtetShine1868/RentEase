@@ -34,7 +34,7 @@ public function index(Request $request)
     // Build base query - FIXED: Use proper relationship loading
     $complaintsQuery = Complaint::with([
         'user:id,name,email,avatar_url',
-        'assignedUser:id,name,avatar_url',
+        'assignedToUser:id,name,avatar_url',
     ])->where(function($query) use ($ownerProperties, $ownerServiceProviders) {
         // Property complaints owned by this owner
         $query->where(function($q) use ($ownerProperties) {
@@ -237,7 +237,7 @@ private function getComplaintWithDetails($complaintId, $owner)
     // First, get the complaint without problematic relationships
     $complaint = Complaint::with([
         'user:id,name,email,avatar_url,phone',
-        'assignedUser:id,name,email,avatar_url',
+        'assignedToUser:id,name,email,avatar_url',
     ])->find($complaintId);
     
     if (!$complaint || !$this->verifyOwnership($complaint, $owner)) {

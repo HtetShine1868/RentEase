@@ -6,6 +6,7 @@ use App\Models\FoodOrder;
 use App\Models\ServiceProvider;
 use App\Models\ServiceRating;
 use Illuminate\Http\Request;
+use App\Traits\Notifiable;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
@@ -14,6 +15,7 @@ class FoodRatingController extends Controller
     /**
      * Show the rating form for a delivered order
      */
+    use Notifiable;
     public function show(FoodOrder $order)
     {
         // Check if order belongs to user

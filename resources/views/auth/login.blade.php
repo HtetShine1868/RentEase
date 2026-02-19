@@ -10,199 +10,488 @@
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
-
-    <!-- Scripts -->
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
-
     <!-- Font Awesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Alpine.js for interactivity -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <style>
+        /* Custom enhancements while keeping the new modern UI */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Figtree', 'Inter', sans-serif;
+            background: #f0f4f8;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 1.5rem;
+        }
+        .split-card {
+            max-width: 1100px;
+            width: 100%;
+            background: white;
+            border-radius: 2.5rem;
+            box-shadow: 0 30px 60px -15px rgba(0, 20, 30, 0.3);
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            overflow: hidden;
+            transition: all 0.2s ease;
+        }
+        /* BRAND PANEL – apartment/hostel vibe, warm & welcoming */
+        .brand-panel {
+            background: linear-gradient(155deg, #174455 0%, #286b7f 100%);
+            padding: 2.8rem 2.5rem;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            position: relative;
+            isolation: isolate;
+        }
+        .brand-panel::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 60" opacity="0.1"><path fill="white" d="M12 8h8v8h-8zM28 8h8v8h-8zM44 8h8v8h-8zM12 24h8v8h-8zM28 24h8v8h-8zM44 24h8v8h-8zM12 40h8v8h-8zM28 40h8v8h-8zM44 40h8v8h-8z"/></svg>');
+            background-size: 50px;
+            opacity: 0.2;
+            z-index: -1;
+        }
+        .brand-header {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            margin-bottom: 2rem;
+        }
+        .brand-header i {
+            font-size: 2.5rem;
+            color: #ffdb9f;
+            filter: drop-shadow(2px 4px 4px rgba(0,0,0,0.2));
+        }
+        .brand-header h1 {
+            font-weight: 700;
+            font-size: 2.2rem;
+            letter-spacing: -0.02em;
+            color: white;
+        }
+        .brand-header .badge {
+            background: rgba(255,255,240,0.2);
+            backdrop-filter: blur(4px);
+            padding: 0.25rem 0.9rem;
+            border-radius: 40px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            margin-left: 0.75rem;
+            border: 1px solid rgba(255,255,200,0.3);
+        }
+        .hero-text {
+            margin: 2rem 0 2.8rem;
+        }
+        .hero-text p {
+            font-size: 1.8rem;
+            font-weight: 500;
+            line-height: 1.2;
+            opacity: 0.95;
+            text-shadow: 0 2px 3px rgba(0,0,0,0.1);
+        }
+        .hero-text p:last-of-type {
+            font-size: 1.1rem;
+            font-weight: 400;
+            margin-top: 1rem;
+            opacity: 0.8;
+        }
+        .feature-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 1.2rem;
+            margin: 1.5rem 0 1rem;
+        }
+        .feature-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        .feature-item i {
+            width: 2rem;
+            font-size: 1.4rem;
+            color: #ffdb9f;
+        }
+        .feature-item span {
+            font-size: 1rem;
+            font-weight: 500;
+        }
+        /* RIGHT PANEL - LOGIN FORM */
+        .form-panel {
+            background: white;
+            padding: 2.8rem 2.5rem;
+            display: flex;
+            flex-direction: column;
+        }
+        .form-panel h2 {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #1e2f3d;
+            margin-bottom: 0.2rem;
+        }
+        .form-sub {
+            color: #59758b;
+            font-size: 0.95rem;
+            margin-bottom: 2rem;
+            border-left: 3px solid #286b7f;
+            padding-left: 0.9rem;
+        }
+        .input-group {
+            margin-bottom: 1.6rem;
+        }
+        .input-label {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.4rem;
+            font-weight: 500;
+            font-size: 0.9rem;
+            color: #2c3f50;
+        }
+        .input-label label {
+            font-weight: 600;
+        }
+        .forgot-link {
+            font-size: 0.85rem;
+            color: #286b7f;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .forgot-link:hover {
+            text-decoration: underline;
+        }
+        .input-field {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+        .input-field i.icon-left {
+            position: absolute;
+            left: 1rem;
+            color: #8faec2;
+            font-size: 1rem;
+        }
+        .input-field input {
+            width: 100%;
+            padding: 0.9rem 1rem 0.9rem 2.7rem;
+            border: 1.5px solid #e2eaf0;
+            border-radius: 1.2rem;
+            font-size: 1rem;
+            font-weight: 500;
+            transition: 0.2s;
+            background: #f9fcff;
+        }
+        .input-field input:focus {
+            outline: none;
+            border-color: #286b7f;
+            background: white;
+            box-shadow: 0 6px 12px -8px rgba(28, 85, 104, 0.3);
+        }
+        .toggle-pw {
+            position: absolute;
+            right: 1rem;
+            background: none;
+            border: none;
+            color: #7d9ab3;
+            font-size: 1.2rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.25rem;
+            transition: color 0.2s;
+        }
+        .toggle-pw:hover {
+            color: #174455;
+        }
+        .checkbox-row {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin: 1.8rem 0 1.5rem;
+        }
+        .checkbox-row input {
+            width: 1.1rem;
+            height: 1.1rem;
+            accent-color: #286b7f;
+        }
+        .checkbox-row label {
+            color: #345b70;
+            font-weight: 500;
+            font-size: 0.95rem;
+        }
+        .btn-signin {
+            background: #174455;
+            border: none;
+            color: white;
+            font-weight: 700;
+            font-size: 1.1rem;
+            padding: 1rem;
+            border-radius: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.6rem;
+            cursor: pointer;
+            transition: 0.2s;
+            box-shadow: 0 8px 14px -8px #0b2a36;
+            width: 100%;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .btn-signin:hover {
+            background: #1f556b;
+            transform: translateY(-2px);
+            box-shadow: 0 15px 20px -10px #0f3340;
+        }
+        .register-prompt {
+            text-align: center;
+            margin: 1.8rem 0 1.2rem;
+            font-size: 0.95rem;
+            color: #3e5e73;
+        }
+        .register-prompt a {
+            font-weight: 700;
+            color: #174455;
+            text-decoration: none;
+            border-bottom: 2px solid #ffdb9f;
+        }
+        .register-prompt a:hover {
+            color: #0b2a36;
+        }
+        .demo-section {
+            margin-top: 1.5rem;
+            background: #f0f7fb;
+            border-radius: 1.5rem;
+            padding: 1.3rem;
+        }
+        .demo-title {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 600;
+            color: #174455;
+            margin-bottom: 0.9rem;
+        }
+        .demo-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.7rem;
+        }
+        .demo-card {
+            background: white;
+            border-radius: 1rem;
+            padding: 0.6rem 0.8rem;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+            border: 1px solid #dde9f2;
+        }
+        .demo-card p {
+            font-weight: 600;
+            font-size: 0.8rem;
+            color: #1f4b5e;
+        }
+        .demo-card small {
+            font-size: 0.7rem;
+            color: #537a90;
+            display: block;
+        }
+        .demo-card code {
+            background: #174455;
+            color: white;
+            font-size: 0.65rem;
+            padding: 0.2rem 0.4rem;
+            border-radius: 1rem;
+            margin-top: 0.2rem;
+            display: inline-block;
+        }
+        footer {
+            margin-top: 1.5rem;
+            font-size: 0.75rem;
+            color: #7c9bb2;
+            text-align: center;
+        }
+        /* Status message styling */
+        .status-message {
+            background: #dff0d8;
+            border-left: 4px solid #3c763d;
+            color: #2b5e2b;
+            padding: 0.75rem 1rem;
+            border-radius: 0.75rem;
+            margin-bottom: 1.5rem;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .error-message {
+            background: #f2dede;
+            border-left: 4px solid #a94442;
+            color: #a12b2b;
+            padding: 0.75rem 1rem;
+            border-radius: 0.75rem;
+            margin-bottom: 1.5rem;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        @media (max-width: 750px) {
+            .split-card {
+                grid-template-columns: 1fr;
+                border-radius: 1.5rem;
+            }
+            .brand-panel {
+                padding: 2rem;
+            }
+        }
+    </style>
 </head>
-<body class="font-sans text-gray-900 antialiased bg-gray-50">
-    <div class="min-h-screen flex flex-col sm:justify-center items-center pt-6 sm:pt-0">
-        <!-- Header -->
-        <div class="w-full text-center mb-8">
-            <a href="{{ route('home') }}" class="inline-block">
-                <h1 class="text-3xl font-bold text-indigo-600">RMS</h1>
-                <p class="text-gray-600 mt-1">Rent & Service Management System</p>
-            </a>
+<body>
+    <div class="split-card">
+        <!-- LEFT: BRAND / HOSTEL & APARTMENT STORY (unchanged) -->
+        <div class="brand-panel">
+            <div>
+                <div class="brand-header">
+                    <i class="fas fa-building"></i>
+                    <h1>rms<span class="badge">rent & hostel</span></h1>
+                </div>
+                <div class="hero-text">
+                    <p>Find your perfect stay.<br>Effortless management.</p>
+                    <p><i class="fas fa-map-pin" style="margin-right: 4px;"></i> Apartments · Hostels · PGs</p>
+                </div>
+                <div class="feature-grid">
+                    <div class="feature-item"><i class="fas fa-key"></i><span>Smart room access & billing</span></div>
+                    <div class="feature-item"><i class="fas fa-utensils"></i><span>Food & meal plans (hostel ready)</span></div>
+                    <div class="feature-item"><i class="fas fa-hand-holding-heart"></i><span>Maintenance requests · 24/7</span></div>
+                </div>
+            </div>
+            <div style="font-size: 0.9rem; opacity: 0.7; display: flex; gap: 1.5rem;">
+                <span><i class="far fa-building"></i> 120+ properties</span>
+                <span><i class="far fa-smile"></i> 2.4k tenants</span>
+            </div>
         </div>
 
-        <div class="w-full sm:max-w-md mt-6 px-6 py-8 bg-white shadow-lg overflow-hidden sm:rounded-lg">
-            <h2 class="text-2xl font-bold text-gray-800 text-center mb-8">Sign In</h2>
+        <!-- RIGHT: LOGIN FORM with exact Laravel logic (CSRF, session status, errors) -->
+        <div class="form-panel" x-data="{ showPassword: false }">
+            <h2>welcome back</h2>
+            <div class="form-sub">sign in to your RMS account</div>
 
-            <!-- Session Status -->
-            <x-auth-session-status class="mb-4" :status="session('status')" />
+            <!-- Session Status (exact Laravel component) -->
+            @if (session('status'))
+                <div class="status-message">
+                    <i class="fas fa-check-circle"></i>
+                    {{ session('status') }}
+                </div>
+            @endif
 
-            <form method="POST" action="{{ route('login') }}" class="space-y-6">
+            <!-- Validation Errors (optional but good practice) -->
+            @if ($errors->any())
+                <div class="error-message">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <span>{{ $errors->first() }}</span>
+                </div>
+            @endif
+
+            <form method="POST" action="{{ route('login') }}">
                 @csrf
+                <!-- CSRF token is the key to fix 419 error -->
 
-                <!-- Email -->
-                <div>
-                    <label for="email" class="block text-sm font-medium text-gray-700 mb-1">
-                        Email Address
-                    </label>
-                    <div class="relative">
-                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <i class="fas fa-envelope text-gray-400"></i>
-                        </div>
+                <!-- Email field with old value and error handling -->
+                <div class="input-group">
+                    <div class="input-label">
+                        <label for="email">Email</label>
+                    </div>
+                    <div class="input-field">
+                        <i class="fas fa-envelope icon-left"></i>
                         <input 
                             id="email" 
                             type="email" 
                             name="email" 
                             value="{{ old('email') }}" 
+                            placeholder="you@example.com" 
                             required 
                             autofocus 
                             autocomplete="email"
-                            class="pl-10 block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 transition duration-150 ease-in-out"
-                            placeholder="you@example.com"
                         >
                     </div>
                     @error('email')
-                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                        <p style="color: #a94442; font-size: 0.75rem; margin-top: 0.3rem; margin-left: 0.5rem;">
+                            <i class="fas fa-exclamation-circle"></i> {{ $message }}
+                        </p>
                     @enderror
                 </div>
-                @if (session('status'))
-                <div class="mb-4 bg-green-50 border-l-4 border-green-400 p-4 rounded">
-                    <div class="flex">
-                        <div class="flex-shrink-0">
-                            <i class="fas fa-check-circle text-green-400"></i>
-                        </div>
-                        <div class="ml-3">
-                            <p class="text-sm text-green-700">{{ session('status') }}</p>
-                        </div>
-                    </div>
-                </div>
-                @endif
 
-                <!-- Password -->
-                <div>
-                    <div class="flex items-center justify-between mb-1">
-                        <label for="password" class="block text-sm font-medium text-gray-700">
-                            Password
-                        </label>
+                <!-- Password field with eye toggle (alpine) and error handling -->
+                <div class="input-group">
+                    <div class="input-label">
+                        <label for="password">Password</label>
                         @if (Route::has('password.request'))
-                            <a href="{{ route('password.request') }}" class="text-sm text-indigo-600 hover:text-indigo-500">
-                                Forgot password?
-                            </a>
+                            <a href="{{ route('password.request') }}" class="forgot-link">Forgot?</a>
                         @endif
                     </div>
-                    <div class="relative">
-                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <i class="fas fa-lock text-gray-400"></i>
-                        </div>
+                    <div class="input-field">
+                        <i class="fas fa-lock icon-left"></i>
                         <input 
                             id="password" 
                             :type="showPassword ? 'text' : 'password'" 
                             name="password" 
+                            placeholder="••••••••" 
                             required 
                             autocomplete="current-password"
-                            class="pl-10 pr-10 block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 transition duration-150 ease-in-out"
-                            placeholder="Enter your password"
                         >
-                        <div class="absolute inset-y-0 right-0 pr-3 flex items-center">
-                            <button 
-                                type="button"
-                                @click="showPassword = !showPassword"
-                                class="text-gray-400 hover:text-gray-500 focus:outline-none"
-                            >
-                                <i :class="showPassword ? 'fas fa-eye-slash' : 'fas fa-eye'" class="text-sm"></i>
-                            </button>
-                        </div>
+                        <button 
+                            type="button" 
+                            @click="showPassword = !showPassword" 
+                            class="toggle-pw" 
+                            :aria-label="showPassword ? 'Hide password' : 'Show password'"
+                        >
+                            <i :class="showPassword ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
+                        </button>
                     </div>
                     @error('password')
-                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                        <p style="color: #a94442; font-size: 0.75rem; margin-top: 0.3rem; margin-left: 0.5rem;">
+                            <i class="fas fa-exclamation-circle"></i> {{ $message }}
+                        </p>
                     @enderror
                 </div>
 
-                <!-- Remember Me -->
-                <div class="flex items-center">
+                <!-- Remember me checkbox -->
+                <div class="checkbox-row">
                     <input 
-                        id="remember_me" 
                         type="checkbox" 
                         name="remember" 
-                        class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                        id="remember" 
+                        {{ old('remember') ? 'checked' : '' }}
                     >
-                    <label for="remember_me" class="ml-2 block text-sm text-gray-700">
-                        Remember me
-                    </label>
+                    <label for="remember">Keep me signed in</label>
                 </div>
 
-                <!-- Submit Button -->
-                <div>
-                    <button 
-                        type="submit" 
-                        class="w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition duration-150 ease-in-out"
-                    >
-                        <i class="fas fa-sign-in-alt mr-2"></i>
-                        Sign In
-                    </button>
-                </div>
+                <!-- Submit button -->
+                <button type="submit" class="btn-signin">
+                    <i class="fas fa-arrow-right-to-bracket"></i> Sign in
+                </button>
 
-                <!-- Divider -->
-                <div class="relative">
-                    <div class="absolute inset-0 flex items-center">
-                        <div class="w-full border-t border-gray-300"></div>
-                    </div>
-                    <div class="relative flex justify-center text-sm">
-                        <span class="px-2 bg-white text-gray-500">New to RMS?</span>
-                    </div>
-                </div>
-
-                <!-- Register Link -->
-                <div class="text-center">
-                    <a 
-                        href="{{ route('register') }}" 
-                        class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition duration-150 ease-in-out"
-                    >
-                        <i class="fas fa-user-plus mr-2"></i>
-                        Create New Account
-                    </a>
+                <!-- Register link -->
+                <div class="register-prompt">
+                    New to RMS? <a href="{{ route('register') }}">Create account <i class="fas fa-angle-right"></i></a>
                 </div>
             </form>
-        </div>
 
-        <!-- Demo Accounts -->
-        <div class="w-full sm:max-w-md mt-8 bg-white rounded-lg shadow p-6">
-            <h3 class="text-lg font-medium text-gray-900 mb-4">Demo Accounts</h3>
-            <div class="space-y-3">
-                <div class="flex justify-between items-center p-3 bg-gray-50 rounded">
-                    <div>
-                        <p class="text-sm font-medium text-gray-900">Regular User</p>
-                        <p class="text-xs text-gray-500">user@rms.com</p>
-                    </div>
-                    <code class="text-xs bg-gray-100 px-2 py-1 rounded">password</code>
-                </div>
-                <div class="flex justify-between items-center p-3 bg-gray-50 rounded">
-                    <div>
-                        <p class="text-sm font-medium text-gray-900">Property Owner</p>
-                        <p class="text-xs text-gray-500">owner@rms.com</p>
-                    </div>
-                    <code class="text-xs bg-gray-100 px-2 py-1 rounded">password</code>
-                </div>
-                <div class="flex justify-between items-center p-3 bg-gray-50 rounded">
-                    <div>
-                        <p class="text-sm font-medium text-gray-900">Food Provider</p>
-                        <p class="text-xs text-gray-500">food@rms.com</p>
-                    </div>
-                    <code class="text-xs bg-gray-100 px-2 py-1 rounded">password</code>
-                </div>
-            </div>
-        </div>
 
-        <!-- Footer -->
-        <div class="mt-8 text-center text-sm text-gray-500">
-            <p>&copy; {{ date('Y') }} RMS System. All rights reserved.</p>
+
+            <footer>
+                © {{ date('Y') }} RMS — apartment & hostel suite
+            </footer>
         </div>
     </div>
-
-    <!-- Alpine.js for password visibility toggle -->
-    <script>
-        document.addEventListener('alpine:init', () => {
-            Alpine.data('loginForm', () => ({
-                showPassword: false
-            }));
-        });
-    </script>
-    <script src="//unpkg.com/alpinejs" defer></script>
 </body>
 </html>

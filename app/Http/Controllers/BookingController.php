@@ -28,7 +28,14 @@ class BookingController extends Controller
         }
         
         $booking->load(['property.images', 'room', 'payments']);
-        
+                \App\Models\Notification::where('user_id', Auth::id())
+            ->where('related_entity_type', 'booking')
+            ->where('related_entity_id', $booking->id)
+            ->where('is_read', false)
+            ->update([
+                'is_read' => true,
+                'read_at' => now()
+            ]);
         return view('rental.booking-details', compact('booking'));
     }
     
@@ -87,6 +94,28 @@ class BookingController extends Controller
             'total_amount' => $totalAmount,
             'status' => 'PENDING',
         ]);
+         $this->sendBookingNotification(
+            Auth::id(),
+            $booking->booking_reference,
+            'pending',
+            $booking->id
+        );
+                // 2. Send notification to property owner
+        $this->createNotification(
+            $property->owner_id,
+            'BOOKING',
+            'New Booking Received',
+            "New booking request for {$property->name} from " . Auth::user()->name,
+            'booking',
+            $booking->id
+        );
+
+        // 3. Send system notification
+        $this->sendSystemNotification(
+            Auth::id(),
+            'Booking Created Successfully',
+            'Your booking request has been submitted and is pending confirmation.'
+        );
         
        return redirect()->route('bookings.show', $booking)
             ->with('success', 'Apartment booking request submitted successfully! Please complete payment.');
@@ -143,6 +172,23 @@ class BookingController extends Controller
             'total_amount' => $totalAmount,
             'status' => 'PENDING',
         ]);
+
+                
+        $this->sendBookingNotification(
+            Auth::id(),
+            $booking->booking_reference,
+            'pending',
+            $booking->id
+        );
+
+        $this->createNotification(
+            $property->owner_id,
+            'BOOKING',
+            'New Room Booking',
+            "New booking for Room {$room->room_number} at {$property->name}",
+            'booking',
+            $booking->id
+        );
         
         // Update room status to reserved
         $room->update(['status' => 'RESERVED']);

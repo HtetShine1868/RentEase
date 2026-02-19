@@ -423,33 +423,22 @@
                     <span class="ml-3 truncate sidebar-text">Laundry Services</span>
                 </a>
 
-                <!-- My Orders - Updated with dropdown -->
-                <div x-data="{ ordersMenuOpen: false }">
-                    <button @click="ordersMenuOpen = !ordersMenuOpen"
-                            class="w-full text-left text-gray-300 hover:bg-gray-700 hover:text-white group flex items-center px-3 py-3 rounded-md sidebar-transition">
-                        <i class="fas fa-shopping-bag text-lg w-6 text-center"></i>
-                        <span class="ml-3 truncate sidebar-text">My Orders</span>
-                        <i class="fas fa-chevron-down ml-auto text-xs"></i>
-                    </button>
+                <!-- Notifications Link -->
+                <a href="{{ route('notifications.index') }}" 
+                @click.prevent="navigate('{{ route('notifications.index') }}')"
+                class="text-gray-300 hover:bg-gray-700 hover:text-white group flex items-center px-3 py-3 rounded-md sidebar-transition relative">
+                    <i class="fas fa-bell text-lg w-6 text-center"></i>
+                    <span class="ml-3 truncate sidebar-text">Notifications</span>
                     
-                    <!-- Orders Submenu -->
-                    <div x-show="ordersMenuOpen" 
-                         x-collapse
-                         class="ml-6 mt-1 space-y-1 nested-menu"
-                         :class="{ 'open': ordersMenuOpen }"
-                         style="display: none;">
-                        <a href="#" 
-                           @click.prevent="navigate('#')"
-                           class="block px-3 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white rounded sidebar-transition">
-                            Food Orders
-                        </a>
-                        <a href="#" 
-                           @click.prevent="navigate('#')"
-                           class="block px-3 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white rounded sidebar-transition">
-                            Laundry Orders
-                        </a>
-                    </div>
-                </div>
+                    <!-- Notification Badge - Only shows when there are unread notifications -->
+                    <span id="sidebar-notification-badge" 
+                        class="ml-auto inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-500 text-white hidden">
+                        0
+                    </span>
+                </a>
+         
+                    
+ 
 
                 <!-- Role Application (for regular users) -->
                 @if(auth()->user()->hasRole('USER') && !auth()->user()->isOwner() && !auth()->user()->isFoodProvider() && !auth()->user()->isLaundryProvider())

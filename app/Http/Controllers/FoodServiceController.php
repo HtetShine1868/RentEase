@@ -5,13 +5,16 @@ namespace App\Http\Controllers;
 use App\Models\FoodOrder;
 use App\Models\ServiceProvider;
 use App\Models\ServiceRating;
+use App\Traits\Notifiable; // ADD THIS
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
-class FoodRatingController extends Controller
+class FoodServiceController extends Controller
 {
+    use Notifiable; // ADD THIS
+
     /**
      * Show the rating form for a delivered order
      */
@@ -115,6 +118,31 @@ class FoodRatingController extends Controller
 
             DB::commit();
 
+            // ============ ADD NOTIFICATIONS ============
+                        
+            \App\Models\Notification::create([
+                'user_id' => Auth::id(),
+                'type' => 'ORDER',
+                'title' => 'Review Submitted',
+                'message' => "Your review for order #{$order->order_reference} has been submitted. Thank you for your feedback!",
+                'related_entity_type' => 'food_order',
+                'related_entity_id' => $order->id,
+                'is_read' => false,
+                'created_at' => now()
+            ]);
+
+            // Notify the food provider about new review
+            \App\Models\Notification::create([
+                'user_id' => $order->serviceProvider->user_id,
+                'type' => 'ORDER',
+                'title' => 'New Review Received',
+                'message' => "You received a new " . round($overallRating, 1) . "-star review from " . Auth::user()->name,
+                'related_entity_type' => 'food_order',
+                'related_entity_id' => $order->id,
+                'is_read' => false,
+                'created_at' => now()
+            ]);
+
             return redirect()->route('food.orders')
                 ->with('success', 'Thank you for your rating! Your feedback helps us improve.');
 
@@ -169,6 +197,17 @@ class FoodRatingController extends Controller
 
             DB::commit();
 
+            // ============ ADD NOTIFICATIONS ============
+            
+            $this->createNotification(
+                Auth::id(),
+                'ORDER',
+                'Review Updated',
+                "Your review for order #{$order->order_reference} has been updated.",
+                'food_order',
+                $order->id
+            );
+
             return redirect()->route('food.orders')
                 ->with('success', 'Your review has been updated successfully.');
 
@@ -211,6 +250,17 @@ class FoodRatingController extends Controller
             $order->serviceProvider->updateRatingStats();
 
             DB::commit();
+
+            // ============ ADD NOTIFICATIONS ============
+            
+            $this->createNotification(
+                Auth::id(),
+                'ORDER',
+                'Review Deleted',
+                "Your review for order #{$order->order_reference} has been deleted.",
+                'food_order',
+                $order->id
+            );
 
             return redirect()->route('food.orders')
                 ->with('success', 'Your review has been deleted.');
@@ -287,9 +337,21 @@ class FoodRatingController extends Controller
      */
     public function markHelpful(ServiceRating $rating)
     {
-        // You can create a helpful_votes table to track this
-        // For now, just increment a counter
         $rating->increment('helpful_count');
+
+        // ============ ADD NOTIFICATIONS ============
+        
+        // Notify the review owner that someone found their review helpful
+        if ($rating->user_id !== Auth::id()) {
+            $this->createNotification(
+                $rating->user_id,
+                'SYSTEM',
+                'Review Helpful',
+                "Someone found your review helpful!",
+                'food_rating',
+                $rating->id
+            );
+        }
 
         return response()->json([
             'success' => true,

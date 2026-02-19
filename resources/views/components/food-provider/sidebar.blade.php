@@ -54,23 +54,7 @@
                 <i class="fas fa-star mr-3 text-gray-400 group-hover:text-gray-500 {{ request()->routeIs('food-provider.reviews.*') ? 'text-indigo-500' : '' }}"></i>
                 Reviews
             </a>
-            
-            <!-- Notifications -->
-            <a href="{{ route('food-provider.notifications.index') }}" 
-               class="{{ request()->routeIs('food-provider.notifications.*') ? 'bg-indigo-50 text-indigo-700' : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900' }} group flex items-center px-2 py-2 text-sm font-medium rounded-md">
-                <i class="fas fa-bell mr-3 text-gray-400 group-hover:text-gray-500 {{ request()->routeIs('food-provider.notifications.*') ? 'text-indigo-500' : '' }}"></i>
-                Notifications
-                <span class="ml-auto inline-block py-0.5 px-2 text-xs rounded-full bg-blue-100 text-blue-800" id="unread-notifications-count">
-                    0
-                </span>
-            </a>
-            
-            <!-- Settings -->
-            <a href="{{ route('food-provider.settings.index') }}" 
-               class="{{ request()->routeIs('food-provider.settings.*') ? 'bg-indigo-50 text-indigo-700' : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900' }} group flex items-center px-2 py-2 text-sm font-medium rounded-md">
-                <i class="fas fa-cog mr-3 text-gray-400 group-hover:text-gray-500 {{ request()->routeIs('food-provider.settings.*') ? 'text-indigo-500' : '' }}"></i>
-                Settings
-            </a>
+
         </div>
         
         <div class="mt-auto px-3 py-4">

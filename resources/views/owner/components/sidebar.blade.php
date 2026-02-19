@@ -102,19 +102,8 @@
                         </span>
                     </a>
                 </li>
-                
-                <li>
-                    <a href="{{ route('owner.notifications') }}" 
-                       class="flex items-center p-3 rounded-xl hover:bg-gray-800 transition-all duration-200 group hover:shadow-md hover:-translate-y-0.5">
-                        <div class="w-9 h-9 rounded-lg bg-gradient-to-r from-indigo-500/20 to-violet-600/20 flex items-center justify-center mr-3 group-hover:from-indigo-500/30 group-hover:to-violet-600/30 transition-all">
-                            <i class="fas fa-bell text-indigo-400 group-hover:text-indigo-300"></i>
-                        </div>
-                        <span class="font-medium">Notifications</span>
-                        <span class="ml-auto bg-yellow-500 text-white text-xs px-2 py-1 rounded-lg font-medium shadow-sm">
-                            {{ $unreadNotifications ?? '5' }}
-                        </span>
-                    </a>
-                </li>
+            
+
             </ul>
         </div>
         

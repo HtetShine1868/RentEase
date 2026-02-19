@@ -17,8 +17,12 @@ use App\Http\Controllers\FoodServiceController;
 use App\Http\Controllers\FoodRatingController;
 use App\Http\Controllers\FoodProvider\MenuItemController;
 use App\Http\Controllers\FoodProvider\ReviewController;
+use App\Http\Controllers\Auth\ForgotPasswordController;
+use App\Http\Controllers\Auth\PasswordResetLinkController;
+use App\Http\Controllers\Auth\ResetPasswordController;
 use App\Http\Controllers\VerificationController;
 use Illuminate\Support\Facades\Route;
+
 
 Route::get('/', function () {
     return view('welcome');
@@ -31,17 +35,34 @@ Route::middleware('guest')->group(function () {
     
     Route::get('login', [AuthenticatedSessionController::class, 'create'])->name('login');
     Route::post('login', [AuthenticatedSessionController::class, 'store'])->name('login.store');
+    // For showing the forgot password form
+Route::get('/forgot-password', [PasswordResetLinkController::class, 'create'])
+    ->middleware('guest')
+    ->name('password.request');
+
+// For handling the reset link submission
+Route::post('/forgot-password', [PasswordResetLinkController::class, 'store'])
+    ->middleware('guest')
+    ->name('password.email');
+
+// For showing the reset password form (when user clicks email link)
+Route::get('/reset-password/{token}', [ResetPasswordController::class, 'create'])
+    ->middleware('guest')
+    ->name('password.reset');
+
+// For handling the new password submission
+Route::post('/reset-password', [ResetPasswordController::class, 'store'])
+    ->middleware('guest')
+    ->name('password.update');
 });
 
 // ============ AUTHENTICATED ROUTES ============
 Route::middleware('auth')->group(function () {
-    // Custom verification routes
     Route::prefix('verify')->name('verification.')->group(function () {
-        Route::get('/', [VerificationController::class, 'show'])->name('show');
-        Route::post('/', [VerificationController::class, 'verify'])->name('verify');
-        Route::post('/resend', [VerificationController::class, 'resend'])->name('resend');
+        Route::get('/', [App\Http\Controllers\VerificationController::class, 'show'])->name('show');
+        Route::post('/', [App\Http\Controllers\VerificationController::class, 'verify'])->name('verify');
+        Route::post('/resend', [App\Http\Controllers\VerificationController::class, 'resend'])->name('resend');
     });
-    
     // Logout
     Route::post('logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
     
@@ -111,6 +132,32 @@ Route::middleware('auth')->group(function () {
                 return view('payments.history');
             })->name('history');
         });
+           // Main notifications page
+    Route::get('/notifications', [App\Http\Controllers\NotificationController::class, 'index'])
+        ->name('notifications.index');
+    
+    // AJAX routes for notifications
+    Route::get('/notifications/unread-count', [App\Http\Controllers\NotificationController::class, 'getUnreadCount'])
+        ->name('notifications.unread-count');
+    
+    Route::get('/notifications/recent', [App\Http\Controllers\NotificationController::class, 'getRecent'])
+        ->name('notifications.recent');
+    
+    // Mark single notification as read
+    Route::post('/notifications/{id}/read', [App\Http\Controllers\NotificationController::class, 'markAsRead'])
+        ->name('notifications.mark-read');
+    
+    // Mark all notifications as read
+    Route::post('/notifications/mark-all-read', [App\Http\Controllers\NotificationController::class, 'markAllAsRead'])
+        ->name('notifications.mark-all-read');
+    
+    // Delete single notification
+    Route::delete('/notifications/{id}', [App\Http\Controllers\NotificationController::class, 'destroy'])
+        ->name('notifications.destroy');
+    
+    // Clear all notifications
+    Route::delete('/notifications/clear-all', [App\Http\Controllers\NotificationController::class, 'clearAll'])
+        ->name('notifications.clear-all');
 
         // Profile Routes
         Route::prefix('profile')->name('profile.')->group(function () {
@@ -135,8 +182,7 @@ Route::middleware('auth')->group(function () {
             Route::get('/show/{id}', [RoleApplicationController::class, 'show'])->name('show');
             Route::delete('/{id}', [RoleApplicationController::class, 'destroy'])->name('destroy');
         });
-    
-        // ============ UPDATED RENTAL ROUTES ============
+
         // My Rental Dashboard - Main Entry Point
         Route::get('/rental', [RentalController::class, 'index'])->name('rental.index');
         
@@ -193,7 +239,7 @@ Route::middleware('auth')->group(function () {
             Route::get('/{payment}/success', [PaymentController::class, 'success'])->name('success');
             Route::get('/{payment}/cancel', [PaymentController::class, 'cancel'])->name('cancel');
         });
-    }); // End of 'verified.custom' middleware group
+    }); 
 }); 
 
 // ============ ROLE-SPECIFIC ROUTES ============
@@ -394,4 +440,4 @@ Route::fallback(function () {
         return redirect()->route('dashboard');
     }
     return redirect()->route('login');
-});
+})->methods(['get']);
