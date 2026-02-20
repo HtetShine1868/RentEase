@@ -13,17 +13,17 @@
 
 @section('content')
 <div class="p-6">
-    <!-- Stats Cards -->
+    <!-- Stats Cards - Updated with green/teal colors -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <!-- Active Bookings -->
-        <div class="bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl shadow-lg text-white p-6">
+        <div class="bg-gradient-to-r from-[#174455] to-[#286b7f] rounded-xl shadow-lg text-white p-6">
             <div class="flex items-center justify-between">
                 <div>
                     <p class="text-sm opacity-90">Active Bookings</p>
                     <p class="text-3xl font-bold mt-2">{{ $stats['active_bookings'] ?? 0 }}</p>
                 </div>
-                <div class="h-12 w-12 rounded-full bg-blue-400 bg-opacity-20 flex items-center justify-center">
-                    <i class="fas fa-home text-xl"></i>
+                <div class="h-12 w-12 rounded-full bg-[#ffdb9f] bg-opacity-20 flex items-center justify-center">
+                    <i class="fas fa-home text-xl" style="color: #ffdb9f;"></i>
                 </div>
             </div>
             <a href="{{ route('bookings.my-bookings') }}" class="text-sm opacity-90 hover:opacity-100 inline-flex items-center mt-4">
@@ -32,18 +32,17 @@
         </div>
 
         <!-- Pending Orders -->
-        <div class="bg-gradient-to-r from-green-500 to-green-600 rounded-xl shadow-lg text-white p-6">
+        <div class="bg-gradient-to-r from-[#1f556b] to-[#2d7a94] rounded-xl shadow-lg text-white p-6">
             <div class="flex items-center justify-between">
                 <div>
                     <p class="text-sm opacity-90">Pending Orders</p>
                     <p class="text-3xl font-bold mt-2">{{ $stats['pending_orders'] ?? 0 }}</p>
                 </div>
-                <div class="h-12 w-12 rounded-full bg-green-400 bg-opacity-20 flex items-center justify-center">
-                    <i class="fas fa-shopping-bag text-xl"></i>
+                <div class="h-12 w-12 rounded-full bg-[#ffdb9f] bg-opacity-20 flex items-center justify-center">
+                    <i class="fas fa-shopping-bag text-xl" style="color: #ffdb9f;"></i>
                 </div>
             </div>
-            <!-- Use existing routes or create a new one -->
-           @if(isset($stats['pending_orders']) && $stats['pending_orders'] > 0)
+            @if(isset($stats['pending_orders']) && $stats['pending_orders'] > 0)
                 <a href="{{ route('food.orders') ?? route('food.index') }}" class="text-sm opacity-90 hover:opacity-100 inline-flex items-center mt-4">
                     View all <i class="fas fa-arrow-right ml-1"></i>
                 </a>
@@ -55,14 +54,14 @@
         </div>
 
         <!-- Total Spent -->
-        <div class="bg-gradient-to-r from-purple-500 to-purple-600 rounded-xl shadow-lg text-white p-6">
+        <div class="bg-gradient-to-r from-[#286b7f] to-[#3a8da6] rounded-xl shadow-lg text-white p-6">
             <div class="flex items-center justify-between">
                 <div>
                     <p class="text-sm opacity-90">Total Spent</p>
                     <p class="text-3xl font-bold mt-2">৳ {{ number_format($stats['total_spent'] ?? 0) }}</p>
                 </div>
-                <div class="h-12 w-12 rounded-full bg-purple-400 bg-opacity-20 flex items-center justify-center">
-                    <i class="fas fa-wallet text-xl"></i>
+                <div class="h-12 w-12 rounded-full bg-[#ffdb9f] bg-opacity-20 flex items-center justify-center">
+                    <i class="fas fa-wallet text-xl" style="color: #ffdb9f;"></i>
                 </div>
             </div>
             <a href="{{ route('payments.index') }}" class="text-sm opacity-90 hover:opacity-100 inline-flex items-center mt-4">
@@ -71,34 +70,35 @@
         </div>
 
         <!-- Rating -->
-        <div class="bg-gradient-to-r from-yellow-500 to-yellow-600 rounded-xl shadow-lg text-white p-6">
+        <div class="bg-gradient-to-r from-[#ffdb9f] to-[#f8c570] rounded-xl shadow-lg text-white p-6">
             <div class="flex items-center justify-between">
                 <div>
-                    <p class="text-sm opacity-90">Your Rating</p>
+                    <p class="text-sm opacity-90 text-[#174455]">Your Rating</p>
                     <div class="flex items-center mt-2">
-                        <span class="text-3xl font-bold">{{ number_format($stats['avg_rating'] ?? 0, 1) }}</span>
+                        <span class="text-3xl font-bold text-[#174455]">{{ number_format($stats['avg_rating'] ?? 0, 1) }}</span>
                         <div class="ml-2">
                             <div class="flex">
                                 @for($i = 1; $i <= 5; $i++)
-                                    <i class="fas fa-star text-sm {{ $i <= ($stats['avg_rating'] ?? 0) ? 'text-yellow-300' : 'text-gray-300' }}"></i>
+                                    <i class="fas fa-star text-sm {{ $i <= ($stats['avg_rating'] ?? 0) ? 'text-[#174455]' : 'text-gray-300' }}"></i>
                                 @endfor
                             </div>
-                            <p class="text-xs opacity-90">Based on {{ $stats['total_reviews'] ?? 0 }} reviews</p>
+                            <p class="text-xs opacity-90 text-[#174455]">Based on {{ $stats['total_reviews'] ?? 0 }} reviews</p>
                         </div>
                     </div>
                 </div>
-                <div class="h-12 w-12 rounded-full bg-yellow-400 bg-opacity-20 flex items-center justify-center">
-                    <i class="fas fa-star text-xl"></i>
+                <div class="h-12 w-12 rounded-full bg-[#174455] bg-opacity-20 flex items-center justify-center">
+                    <i class="fas fa-star text-xl" style="color: #174455;"></i>
                 </div>
             </div>
         </div>
     </div>
-    <!-- Welcome Banner -->
-    <div class="bg-gradient-to-r from-indigo-500 to-purple-600 rounded-xl shadow-lg text-white p-8 mb-8">
+
+    <!-- Welcome Banner - Updated with green/teal gradient -->
+    <div class="bg-gradient-to-r from-[#174455] to-[#286b7f] rounded-xl shadow-lg text-white p-8 mb-8">
         <div class="flex flex-col md:flex-row items-center justify-between">
             <div class="md:w-2/3">
                 <h2 class="text-2xl font-bold mb-2">Welcome to RMS!</h2>
-                <p class="text-indigo-100 mb-4">
+                <p class="text-[#ffdb9f] mb-4">
                     @if(Auth::user()->hasRole('OWNER'))
                         You're logged in as a property owner. Manage your properties and bookings from here.
                     @elseif(Auth::user()->hasRole('LAUNDRY'))
@@ -113,32 +113,32 @@
                 <div class="flex flex-wrap gap-3">
                     @if(!Auth::user()->phone || !Auth::user()->gender)
                         <a href="{{ route('profile.edit') }}" 
-                           class="inline-flex items-center px-4 py-2 bg-white text-indigo-600 rounded-lg hover:bg-gray-100">
+                           class="inline-flex items-center px-4 py-2 bg-[#ffdb9f] text-[#174455] rounded-lg hover:bg-[#f8c570] transition">
                             <i class="fas fa-user-edit mr-2"></i> Complete Profile
                         </a>
                     @endif
                     
                     @if(empty($userAddresses))
                         <a href="{{ route('profile.address.edit') }}" 
-                           class="inline-flex items-center px-4 py-2 bg-white text-indigo-600 rounded-lg hover:bg-gray-100">
+                           class="inline-flex items-center px-4 py-2 bg-[#ffdb9f] text-[#174455] rounded-lg hover:bg-[#f8c570] transition">
                             <i class="fas fa-map-marker-alt mr-2"></i> Add Address
                         </a>
                     @endif
 
                     @if(auth()->user()->hasRole('USER') && !auth()->user()->hasRole('OWNER') && !auth()->user()->hasRole('FOOD') && !auth()->user()->hasRole('LAUNDRY'))
                         <a href="{{ route('role.apply.index') }}" 
-                           class="inline-flex items-center px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600">
+                           class="inline-flex items-center px-4 py-2 bg-[#ffdb9f] text-[#174455] rounded-lg hover:bg-[#f8c570] transition">
                             <i class="fas fa-user-plus mr-2"></i> Apply for Provider Role
                         </a>
                     @endif
                 </div>
             </div>
             <div class="mt-6 md:mt-0">
-                <div class="h-40 w-40 rounded-full bg-white bg-opacity-10 flex items-center justify-center border-4 border-white border-opacity-20">
+                <div class="h-40 w-40 rounded-full bg-[#ffdb9f] bg-opacity-10 flex items-center justify-center border-4 border-[#ffdb9f] border-opacity-20">
                     @if(Auth::user()->avatar_url)
                         <img src="{{ Auth::user()->avatar_url }}" alt="Avatar" class="h-36 w-36 rounded-full object-cover">
                     @else
-                        <i class="fas fa-user text-6xl text-white opacity-80"></i>
+                        <i class="fas fa-user text-6xl text-[#ffdb9f] opacity-80"></i>
                     @endif
                 </div>
             </div>
@@ -151,57 +151,57 @@
     @elseif(Auth::user()->hasRole('LAUNDRY') || Auth::user()->hasRole('FOOD'))
         @include('dashboard.parts.provider-dashboard')
     @else
-        <!-- Quick Actions for Regular Users -->
+        <!-- Quick Actions for Regular Users - Updated colors -->
         <div class="mb-8">
-            <h3 class="text-xl font-semibold text-gray-900 mb-4">Quick Actions</h3>
+            <h3 class="text-xl font-semibold text-[#174455] mb-4">Quick Actions</h3>
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <!-- Find Properties -->
-                <div class="bg-white border border-gray-200 rounded-xl p-6 hover:shadow-md transition-shadow">
+                <div class="bg-white border border-[#286b7f] border-opacity-20 rounded-xl p-6 hover:shadow-md transition-shadow">
                     <div class="flex items-center mb-4">
-                        <div class="h-12 w-12 rounded-lg bg-blue-100 flex items-center justify-center">
-                            <i class="fas fa-search text-blue-600 text-xl"></i>
+                        <div class="h-12 w-12 rounded-lg bg-[#174455] bg-opacity-10 flex items-center justify-center">
+                            <i class="fas fa-search text-[#174455] text-xl"></i>
                         </div>
                         <div class="ml-4">
-                            <h4 class="text-lg font-medium text-gray-900">Find Properties</h4>
+                            <h4 class="text-lg font-medium text-[#174455]">Find Properties</h4>
                             <p class="text-sm text-gray-500">Browse hostels & apartments</p>
                         </div>
                     </div>
                     <a href="{{ route('properties.search') }}" 
-                       class="inline-flex items-center text-blue-600 hover:text-blue-700 font-medium">
+                       class="inline-flex items-center text-[#174455] hover:text-[#286b7f] font-medium">
                         Start Searching <i class="fas fa-arrow-right ml-2"></i>
                     </a>
                 </div>
 
                 <!-- Order Food -->
-                <div class="bg-white border border-gray-200 rounded-xl p-6 hover:shadow-md transition-shadow">
+                <div class="bg-white border border-[#286b7f] border-opacity-20 rounded-xl p-6 hover:shadow-md transition-shadow">
                     <div class="flex items-center mb-4">
-                        <div class="h-12 w-12 rounded-lg bg-green-100 flex items-center justify-center">
-                            <i class="fas fa-utensils text-green-600 text-xl"></i>
+                        <div class="h-12 w-12 rounded-lg bg-[#1f556b] bg-opacity-10 flex items-center justify-center">
+                            <i class="fas fa-utensils text-[#1f556b] text-xl"></i>
                         </div>
                         <div class="ml-4">
-                            <h4 class="text-lg font-medium text-gray-900">Order Food</h4>
+                            <h4 class="text-lg font-medium text-[#174455]">Order Food</h4>
                             <p class="text-sm text-gray-500">Subscribe or order meals</p>
                         </div>
                     </div>
                     <a href="{{ route('food.index') }}" 
-                       class="inline-flex items-center text-green-600 hover:text-green-700 font-medium">
+                       class="inline-flex items-center text-[#1f556b] hover:text-[#286b7f] font-medium">
                         View Restaurants <i class="fas fa-arrow-right ml-2"></i>
                     </a>
                 </div>
 
                 <!-- Laundry Service -->
-                <div class="bg-white border border-gray-200 rounded-xl p-6 hover:shadow-md transition-shadow">
+                <div class="bg-white border border-[#286b7f] border-opacity-20 rounded-xl p-6 hover:shadow-md transition-shadow">
                     <div class="flex items-center mb-4">
-                        <div class="h-12 w-12 rounded-lg bg-purple-100 flex items-center justify-center">
-                            <i class="fas fa-tshirt text-purple-600 text-xl"></i>
+                        <div class="h-12 w-12 rounded-lg bg-[#286b7f] bg-opacity-10 flex items-center justify-center">
+                            <i class="fas fa-tshirt text-[#286b7f] text-xl"></i>
                         </div>
                         <div class="ml-4">
-                            <h4 class="text-lg font-medium text-gray-900">Laundry Service</h4>
+                            <h4 class="text-lg font-medium text-[#174455]">Laundry Service</h4>
                             <p class="text-sm text-gray-500">Schedule pickup & delivery</p>
                         </div>
                     </div>
                     <a href="{{ route('laundry.index') }}" 
-                       class="inline-flex items-center text-purple-600 hover:text-purple-700 font-medium">
+                       class="inline-flex items-center text-[#286b7f] hover:text-[#174455] font-medium">
                         Find Services <i class="fas fa-arrow-right ml-2"></i>
                     </a>
                 </div>
@@ -214,12 +214,12 @@
         <!-- Recent Activity -->
         <div>
             <div class="flex items-center justify-between mb-4">
-                <h3 class="text-xl font-semibold text-gray-900">Recent Activity</h3>
-                <a href="#" class="text-sm text-indigo-600 hover:text-indigo-500">
+                <h3 class="text-xl font-semibold text-[#174455]">Recent Activity</h3>
+                <a href="#" class="text-sm text-[#286b7f] hover:text-[#174455]">
                     View all
                 </a>
             </div>
-            <div class="bg-white border border-gray-200 rounded-xl overflow-hidden">
+            <div class="bg-white border border-[#286b7f] border-opacity-20 rounded-xl overflow-hidden">
                 <div class="divide-y divide-gray-100">
                     @forelse($recentActivities ?? [] as $activity)
                         <div class="p-4 hover:bg-gray-50">
@@ -227,11 +227,11 @@
                                 <div class="flex-shrink-0">
                                     @php
                                         $iconConfig = [
-                            'BOOKING' => ['icon' => 'fa-home', 'color' => 'text-blue-500', 'bg' => 'bg-blue-50'],
-                            'ORDER' => ['icon' => 'fa-shopping-bag', 'color' => 'text-green-500', 'bg' => 'bg-green-50'],
-                            'PAYMENT' => ['icon' => 'fa-wallet', 'color' => 'text-purple-500', 'bg' => 'bg-purple-50'],
-                            'FOOD' => ['icon' => 'fa-utensils', 'color' => 'text-green-500', 'bg' => 'bg-green-50'],
-                            'LAUNDRY' => ['icon' => 'fa-tshirt', 'color' => 'text-purple-500', 'bg' => 'bg-purple-50'],
+                            'BOOKING' => ['icon' => 'fa-home', 'color' => 'text-[#174455]', 'bg' => 'bg-[#174455] bg-opacity-10'],
+                            'ORDER' => ['icon' => 'fa-shopping-bag', 'color' => 'text-[#1f556b]', 'bg' => 'bg-[#1f556b] bg-opacity-10'],
+                            'PAYMENT' => ['icon' => 'fa-wallet', 'color' => 'text-[#286b7f]', 'bg' => 'bg-[#286b7f] bg-opacity-10'],
+                            'FOOD' => ['icon' => 'fa-utensils', 'color' => 'text-[#1f556b]', 'bg' => 'bg-[#1f556b] bg-opacity-10'],
+                            'LAUNDRY' => ['icon' => 'fa-tshirt', 'color' => 'text-[#286b7f]', 'bg' => 'bg-[#286b7f] bg-opacity-10'],
                             'default' => ['icon' => 'fa-bell', 'color' => 'text-gray-500', 'bg' => 'bg-gray-50']
                         ];
                         $config = $iconConfig[$activity->type] ?? $iconConfig['default'];
@@ -248,7 +248,7 @@
                                     <p class="text-sm text-gray-500 mt-1">{{ $activity->message }}</p>
                                     @if($activity->related_entity_type && $activity->related_entity_id)
                                         <div class="mt-2">
-                                            <a href="#" class="text-xs text-indigo-600 hover:text-indigo-500">
+                                            <a href="#" class="text-xs text-[#286b7f] hover:text-[#174455]">
                                                 View Details
                                             </a>
                                         </div>
@@ -269,7 +269,7 @@
         <!-- Upcoming Bookings/Orders -->
         <div>
             <div class="flex items-center justify-between mb-4">
-                <h3 class="text-xl font-semibold text-gray-900">
+                <h3 class="text-xl font-semibold text-[#174455]">
                     @if(Auth::user()->hasRole('USER'))
                         Upcoming Bookings
                     @elseif(Auth::user()->hasRole('OWNER'))
@@ -279,12 +279,12 @@
                     @endif
                 </h3>
                 @if(Auth::user()->hasRole('USER'))
-                    <a href="{{ route('bookings.my-bookings') }}" class="text-sm text-indigo-600 hover:text-indigo-500">
+                    <a href="{{ route('bookings.my-bookings') }}" class="text-sm text-[#286b7f] hover:text-[#174455]">
                         View all
                     </a>
                 @endif
             </div>
-            <div class="bg-white border border-gray-200 rounded-xl overflow-hidden">
+            <div class="bg-white border border-[#286b7f] border-opacity-20 rounded-xl overflow-hidden">
                 @if(Auth::user()->hasRole('USER'))
                      @forelse($upcomingBookings ?? [] as $booking)
                         <div class="p-4 hover:bg-gray-50 border-b border-gray-100 last:border-b-0">
@@ -320,11 +320,11 @@
                                 </div>
                             </div>
                             <div class="flex space-x-2 mt-3">
-                                <a href="{{ route('bookings.show', $booking) }}" class="flex-1 text-center px-3 py-2 text-xs font-medium bg-indigo-50 text-indigo-600 rounded hover:bg-indigo-100">
+                                <a href="{{ route('bookings.show', $booking) }}" class="flex-1 text-center px-3 py-2 text-xs font-medium bg-[#174455] bg-opacity-10 text-[#174455] rounded hover:bg-opacity-20">
                                     <i class="fas fa-eye mr-1"></i> View
                                 </a>
                                 @if($booking->status == 'CONFIRMED')
-                                    <a href="{{ route('bookings.reschedule', $booking) }}" class="flex-1 text-center px-3 py-2 text-xs font-medium bg-gray-50 text-gray-600 rounded hover:bg-gray-100">
+                                    <a href="{{ route('bookings.reschedule', $booking) }}" class="flex-1 text-center px-3 py-2 text-xs font-medium bg-[#ffdb9f] text-[#174455] rounded hover:bg-[#f8c570]">
                                         <i class="fas fa-calendar mr-1"></i> Reschedule
                                     </a>
                                     <form action="{{ route('bookings.cancel', $booking) }}" method="POST" class="flex-1" onsubmit="return confirm('Are you sure you want to cancel this booking?')">
@@ -341,7 +341,7 @@
                         <div class="p-8 text-center">
                             <i class="fas fa-calendar text-gray-300 text-4xl mb-3"></i>
                             <p class="text-gray-500">No upcoming bookings</p>
-                            <a href="{{ route('properties.search') }}" class="mt-3 inline-flex items-center text-sm text-indigo-600 hover:text-indigo-500">
+                            <a href="{{ route('properties.search') }}" class="mt-3 inline-flex items-center text-sm text-[#174455] hover:text-[#286b7f]">
                                 <i class="fas fa-search mr-1"></i> Find Properties
                             </a>
                         </div>
@@ -371,7 +371,7 @@
         </div>
     </div>
 
-    <!-- Profile Completion -->
+    <!-- Profile Completion - Updated colors -->
     @php
         $totalFields = 3;
         $completedFields = 0;
@@ -382,30 +382,30 @@
     @endphp
     
     @if($percentage < 100)
-        <div class="mt-8 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100 rounded-xl p-6">
+        <div class="mt-8 bg-gradient-to-r from-[#174455] to-[#286b7f] bg-opacity-5 border border-[#286b7f] border-opacity-20 rounded-xl p-6">
             <div class="flex items-center justify-between">
                 <div>
-                    <h3 class="text-lg font-semibold text-gray-900 mb-2">Complete Your Profile</h3>
+                    <h3 class="text-lg font-semibold text-[#174455] mb-2">Complete Your Profile</h3>
                     <p class="text-gray-600">Complete your profile to get personalized recommendations</p>
                     
                     <div class="mt-4 space-y-3">
                         @if(!Auth::user()->phone)
                             <div class="flex items-center">
-                                <i class="fas fa-phone text-gray-400 mr-3"></i>
+                                <i class="fas fa-phone text-[#286b7f] mr-3"></i>
                                 <span class="text-gray-700">Add phone number</span>
                             </div>
                         @endif
                         
                         @if(!Auth::user()->gender)
                             <div class="flex items-center">
-                                <i class="fas fa-venus-mars text-gray-400 mr-3"></i>
+                                <i class="fas fa-venus-mars text-[#286b7f] mr-3"></i>
                                 <span class="text-gray-700">Specify gender</span>
                             </div>
                         @endif
                         
                         @if(empty($userAddresses))
                             <div class="flex items-center">
-                                <i class="fas fa-map-marker-alt text-gray-400 mr-3"></i>
+                                <i class="fas fa-map-marker-alt text-[#286b7f] mr-3"></i>
                                 <span class="text-gray-700">Add delivery address</span>
                             </div>
                         @endif
@@ -422,14 +422,14 @@
                             <path d="M18 2.0845
                                     a 15.9155 15.9155 0 0 1 0 31.831
                                     a 15.9155 15.9155 0 0 1 0 -31.831"
-                                  fill="none" stroke="#4F46E5" stroke-width="3" stroke-dasharray="{{ $percentage }}, 100"/>
+                                  fill="none" stroke="#174455" stroke-width="3" stroke-dasharray="{{ $percentage }}, 100"/>
                         </svg>
                         <div class="absolute inset-0 flex items-center justify-center">
-                            <span class="text-2xl font-bold text-gray-900">{{ round($percentage) }}%</span>
+                            <span class="text-2xl font-bold text-[#174455]">{{ round($percentage) }}%</span>
                         </div>
                     </div>
                     <a href="{{ route('profile.edit') }}" 
-                       class="mt-4 inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">
+                       class="mt-4 inline-flex items-center px-4 py-2 bg-[#174455] text-white rounded-lg hover:bg-[#286b7f] transition">
                         <i class="fas fa-user-edit mr-2"></i> Complete Now
                     </a>
                 </div>

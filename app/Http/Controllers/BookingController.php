@@ -217,6 +217,22 @@ class BookingController extends Controller
             $booking->room()->update(['status' => 'AVAILABLE']);
         }
         
+                $this->sendBookingNotification(
+            Auth::id(),
+            $booking->booking_reference,
+            'cancelled',
+            $booking->id
+        );
+
+        $this->createNotification(
+            $booking->property->owner_id,
+            'BOOKING',
+            'Booking Cancelled',
+            "Booking #{$booking->booking_reference} has been cancelled by the user.",
+            'booking',
+            $booking->id
+        );
+        
         return back()->with('success', 'Booking cancelled successfully.');
     }
 }

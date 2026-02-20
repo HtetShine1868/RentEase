@@ -6,7 +6,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RoleApplicationController;
 use App\Http\Controllers\Owner\PropertyController;
-use App\Http\Controllers\Owner\ComplaintController; // ADD THIS IMPORT
+use App\Http\Controllers\Owner\ComplaintController;
 use App\Http\Controllers\RoomController;
 use App\Http\Controllers\BookingController;
 use App\Http\Controllers\PaymentController;
@@ -22,7 +22,6 @@ use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\Auth\ResetPasswordController;
 use App\Http\Controllers\VerificationController;
 use Illuminate\Support\Facades\Route;
-
 
 Route::get('/', function () {
     return view('welcome');
@@ -410,29 +409,120 @@ Route::middleware(['auth', 'role:FOOD'])->group(function () {
     });
 });
 
-// LAUNDRY PROVIDER ROUTES
-Route::middleware(['auth', 'role:LAUNDRY'])->group(function () {
-    Route::prefix('laundry-provider')->name('laundry-provider.')->group(function () {
-        // Dashboard
-        Route::get('/dashboard', function () {
-            return view('dashboard.laundry', ['title' => 'Laundry Provider Dashboard']);
-        })->name('dashboard');
-        
-        // Add more laundry provider routes as needed
+// Laundry Provider Routes
+Route::middleware(['auth', 'role:LAUNDRY'])->prefix('laundry-provider')->name('laundry-provider.')->group(function () {
+    
+    // Dashboard
+    Route::get('/dashboard', [App\Http\Controllers\LaundryProvider\DashboardController::class, 'index'])
+        ->name('dashboard');
+    
+    // Orders
+    Route::prefix('orders')->name('orders.')->group(function () {
+        Route::get('/', [App\Http\Controllers\LaundryProvider\OrderController::class, 'index'])
+            ->name('index');
+        Route::get('/rush', [App\Http\Controllers\LaundryProvider\OrderController::class, 'rushOrders'])
+            ->name('rush');
+        Route::get('/{id}', [App\Http\Controllers\LaundryProvider\OrderController::class, 'show'])
+            ->name('show');
+        Route::post('/{id}/status', [App\Http\Controllers\LaundryProvider\OrderController::class, 'updateStatus'])
+            ->name('update-status');
+        Route::post('/bulk-update', [App\Http\Controllers\LaundryProvider\OrderController::class, 'bulkUpdate'])
+            ->name('bulk-update');
+        Route::post('/{id}/return-date', [App\Http\Controllers\LaundryProvider\OrderController::class, 'updateReturnDate'])
+            ->name('update-return-date');
+        Route::get('/export', [App\Http\Controllers\LaundryProvider\OrderController::class, 'export'])
+            ->name('export');
+        Route::get('/{id}/print', [App\Http\Controllers\LaundryProvider\OrderController::class, 'printInvoice'])
+            ->name('print');
     });
+    
+    // Reviews
+    Route::prefix('reviews')->name('reviews.')->group(function () {
+        Route::get('/', [App\Http\Controllers\LaundryProvider\ReviewController::class, 'index'])
+            ->name('index');
+        Route::get('/{id}', [App\Http\Controllers\LaundryProvider\ReviewController::class, 'show'])
+            ->name('show');
+        Route::post('/{id}/reply', [App\Http\Controllers\LaundryProvider\ReviewController::class, 'reply'])
+            ->name('reply');
+        Route::get('/export', [App\Http\Controllers\LaundryProvider\ReviewController::class, 'export'])
+            ->name('export');
+    });
+    
+    // Notifications
+    Route::get('/notifications', function () {
+        return view('laundry-provider.notifications');
+    })->name('notifications');
+    
+    // Profile
+    Route::get('/profile', function () {
+        return view('laundry-provider.profile');
+    })->name('profile');
+    
+    // Settings
+    Route::get('/settings', function () {
+        return view('laundry-provider.settings');
+    })->name('settings');
 });
 
-// SUPERADMIN ROUTES
-Route::middleware(['auth', 'role:SUPERADMIN'])->group(function () {
-    Route::prefix('admin')->name('admin.')->group(function () {
-        // Dashboard
-        Route::get('/dashboard', function () {
-            return view('dashboard.admin', ['title' => 'SuperAdmin Dashboard']);
-        })->name('dashboard');
-        
-        // Add admin routes here
+        // SUPERADMIN ROUTES
+        Route::middleware(['auth', 'role:SUPERADMIN'])->prefix('admin')->name('admin.')->group(function () {
+            // Dashboard
+            Route::get('/dashboard', [App\Http\Controllers\Admin\DashboardController::class, 'index'])
+                ->name('dashboard');
+            
+            // Role Applications (with tabs)
+            Route::prefix('role-applications')->name('role-applications.')->group(function () {
+                Route::get('/', [App\Http\Controllers\Admin\RoleApplicationController::class, 'index'])
+                    ->name('index');
+                Route::get('/export', [App\Http\Controllers\Admin\RoleApplicationController::class, 'export'])
+                    ->name('export');
+                Route::get('/statistics', [App\Http\Controllers\Admin\RoleApplicationController::class, 'statistics'])
+                    ->name('statistics');
+                Route::get('/{id}', [App\Http\Controllers\Admin\RoleApplicationController::class, 'show'])
+                    ->name('show');
+                Route::get('/{id}/review', [App\Http\Controllers\Admin\RoleApplicationController::class, 'review'])
+                    ->name('review');
+                Route::post('/{id}/approve', [App\Http\Controllers\Admin\RoleApplicationController::class, 'approve'])
+                    ->name('approve');
+                Route::post('/{id}/reject', [App\Http\Controllers\Admin\RoleApplicationController::class, 'reject'])
+                    ->name('reject');
+                Route::get('/{id}/download-document', [App\Http\Controllers\Admin\RoleApplicationController::class, 'downloadDocument'])
+                    ->name('download-document');
+                Route::post('/bulk-approve', [App\Http\Controllers\Admin\RoleApplicationController::class, 'bulkApprove'])
+                    ->name('bulk-approve');
+            });
+            
+            // Commissions (Admin Only)
+            Route::prefix('commissions')->name('commissions.')->group(function () {
+                Route::get('/', [App\Http\Controllers\Admin\CommissionController::class, 'index'])
+                    ->name('index');
+                Route::post('/update', [App\Http\Controllers\Admin\CommissionController::class, 'update'])
+                    ->name('update');
+                Route::get('/rate/{type}', [App\Http\Controllers\Admin\CommissionController::class, 'getRate'])
+                    ->name('rate');
+                Route::post('/calculate', [App\Http\Controllers\Admin\CommissionController::class, 'calculate'])
+                    ->name('calculate');
+                Route::post('/reset', [App\Http\Controllers\Admin\CommissionController::class, 'reset'])
+                    ->name('reset');
+            });
+            // User Management
+        Route::prefix('users')->name('users.')->group(function () {
+            Route::get('/', [App\Http\Controllers\Admin\UserController::class, 'index'])
+                ->name('index');
+                Route::get('/export', [App\Http\Controllers\Admin\UserController::class, 'export'])
+                    ->name('export');
+                Route::get('/{id}', [App\Http\Controllers\Admin\UserController::class, 'show'])
+                    ->name('show');
+                Route::post('/{id}/status', [App\Http\Controllers\Admin\UserController::class, 'updateStatus'])
+                    ->name('update-status');
+                Route::post('/{id}/assign-role', [App\Http\Controllers\Admin\UserController::class, 'assignRole'])
+                    ->name('assign-role');
+                Route::post('/{id}/remove-role', [App\Http\Controllers\Admin\UserController::class, 'removeRole'])
+                    ->name('remove-role');
+                Route::delete('/{id}', [App\Http\Controllers\Admin\UserController::class, 'destroy'])
+                    ->name('destroy');
     });
-});
+        });
 
 // ============ FALLBACK FOR MISSING ROUTES ============
 Route::fallback(function () {

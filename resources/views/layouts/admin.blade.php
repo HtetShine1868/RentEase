@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <title>@yield('title', config('app.name', 'RMS'))</title>
+    <title>@yield('title', 'Admin Dashboard') - {{ config('app.name', 'RMS') }}</title>
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.bunny.net">
@@ -44,26 +44,28 @@
             }
         }
         
-        /* Sidebar styling - with green/teal accents */
+        /* Sidebar styling - ALWAYS ICON-ONLY */
         .sidebar {
             position: fixed;
             top: 0;
             left: 0;
             height: 100vh;
-            width: 5rem;
-            background: linear-gradient(180deg, #0f1f28 0%, #174455 100%);
+            width: 5rem; /* Icon-only width */
+            background-color: #111827; /* gray-900 */
             color: white;
-            border-right: 1px solid #286b7f;
+            border-right: 1px solid #374151;
             z-index: 40;
             overflow-y: auto;
             overflow-x: hidden;
             transform: translateX(-5rem);
         }
         
+        /* Sidebar when open */
         .sidebar-open {
             transform: translateX(0);
         }
         
+        /* Sidebar hover effect - expands on hover */
         .sidebar:hover {
             width: 16rem !important;
         }
@@ -85,6 +87,7 @@
             display: none;
         }
         
+        /* Hide text by default in icon-only mode */
         .sidebar-text,
         .user-name,
         .user-email,
@@ -97,6 +100,7 @@
             transition: all 0.25s ease;
         }
         
+        /* Show only icons by default */
         .logo-icon {
             display: flex;
         }
@@ -105,6 +109,7 @@
             display: none;
         }
         
+        /* Main content adjustment */
         .main-content {
             margin-left: 0;
             transition: margin-left 0.25s cubic-bezier(0.4, 0, 0.2, 1);
@@ -114,6 +119,7 @@
             margin-left: 5rem;
         }
         
+        /* Mobile overlay */
         .sidebar-overlay {
             position: fixed;
             top: 0;
@@ -132,6 +138,7 @@
             visibility: visible;
         }
         
+        /* For mobile, sidebar is full width */
         @media (max-width: 1023px) {
             .sidebar {
                 width: 16rem;
@@ -168,10 +175,12 @@
             }
         }
         
+        /* Smooth link hover */
         a {
             transition: all 0.2s ease;
         }
         
+        /* Loading animation */
         .loading-spinner {
             animation: spin 0.8s linear infinite;
         }
@@ -181,6 +190,7 @@
             to { transform: rotate(360deg); }
         }
         
+        /* Nested menu styles */
         .nested-menu {
             max-height: 0;
             overflow: hidden;
@@ -190,34 +200,24 @@
         .nested-menu.open {
             max-height: 500px;
         }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
         
-        /* Green/teal accent colors */
-        .bg-primary {
-            background-color: #174455;
+        ::-webkit-scrollbar-track {
+            background: #1f2937;
         }
-        .bg-primary-light {
-            background-color: #286b7f;
+        
+        ::-webkit-scrollbar-thumb {
+            background: #4b5563;
+            border-radius: 4px;
         }
-        .bg-accent {
-            background-color: #ffdb9f;
-        }
-        .text-primary {
-            color: #174455;
-        }
-        .text-primary-light {
-            color: #286b7f;
-        }
-        .text-accent {
-            color: #ffdb9f;
-        }
-        .border-primary {
-            border-color: #286b7f;
-        }
-        .hover\:bg-primary:hover {
-            background-color: #1f556b;
-        }
-        .hover\:text-primary:hover {
-            color: #174455;
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: #6b7280;
         }
     </style>
 </head>
@@ -226,15 +226,18 @@
         sidebarOpen: false,
         isPageLoading: false,
         currentPage: 'dashboard',
-        ordersMenuOpen: false,
+        roleMenuOpen: false,
         
         init() {
+            // On desktop, sidebar is always visible (icon-only)
             if (window.innerWidth >= 1024) {
                 this.sidebarOpen = true;
             }
             
+            // Set current page based on route
             this.setCurrentPage();
             
+            // Listen for page changes
             window.addEventListener('popstate', () => {
                 this.setCurrentPage();
             });
@@ -242,27 +245,24 @@
         
         setCurrentPage() {
             const path = window.location.pathname;
-            if (path.includes('dashboard')) this.currentPage = 'dashboard';
-            else if (path.includes('profile')) this.currentPage = 'profile';
-            else if (path.includes('owner')) this.currentPage = 'owner';
-            else if (path.includes('food')) this.currentPage = 'food';
-            else if (path.includes('laundry')) this.currentPage = 'laundry';
-            else if (path.includes('rental') && !path.includes('properties')) this.currentPage = 'rental';
-            else if (path.includes('properties/search')) this.currentPage = 'properties';
-            else if (path.includes('role.apply')) this.currentPage = 'role';
+            if (path.includes('admin/dashboard')) this.currentPage = 'dashboard';
+            else if (path.includes('admin/role-applications')) this.currentPage = 'role-applications';
+            else if (path.includes('admin/commissions')) this.currentPage = 'commissions';
             else this.currentPage = 'dashboard';
         },
         
         navigate(url) {
             this.isPageLoading = true;
             
+            // Add page transition class to content
             const content = document.querySelector('.page-content');
             if (content) {
                 content.classList.remove('page-enter');
-                void content.offsetWidth;
+                void content.offsetWidth; // Trigger reflow
                 content.classList.add('page-enter');
             }
             
+            // Navigate after a short delay for smooth transition
             setTimeout(() => {
                 window.location.href = url;
             }, 150);
@@ -286,66 +286,64 @@
              class="fixed inset-0 bg-white bg-opacity-80 z-50 flex items-center justify-center"
              x-cloak>
             <div class="flex flex-col items-center">
-                <div class="loading-spinner rounded-full h-12 w-12 border-t-2 border-b-2 border-[#174455] mb-3"></div>
+                <div class="loading-spinner rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500 mb-3"></div>
                 <p class="text-gray-600">Loading...</p>
             </div>
         </div>
 
-        <!-- Sidebar -->
+        <!-- Sidebar - ALWAYS ICON-ONLY ON DESKTOP -->
         <aside :class="{ 'sidebar-open': sidebarOpen }"
                class="sidebar sidebar-transition"
                x-cloak>
             
             <!-- Sidebar Header -->
-            <div class="flex items-center justify-between h-16 px-4 border-b border-[#286b7f]">
+            <div class="flex items-center justify-between h-16 px-4 border-b border-gray-800">
                 <!-- Icon-only logo -->
                 <div class="logo-icon">
-                    <div class="h-8 w-8 rounded-lg bg-[#ffdb9f] flex items-center justify-center">
-                        <i class="fas fa-home text-[#174455]"></i>
+                    <div class="h-8 w-8 rounded-lg bg-indigo-600 flex items-center justify-center">
+                        <i class="fas fa-crown text-white"></i>
                     </div>
                 </div>
                 
                 <!-- Full logo (shown on hover/expand) -->
                 <div class="logo-full items-center">
-                    <div class="h-8 w-8 rounded-lg bg-[#ffdb9f] flex items-center justify-center">
-                        <i class="fas fa-home text-[#174455]"></i>
+                    <div class="h-8 w-8 rounded-lg bg-indigo-600 flex items-center justify-center">
+                        <i class="fas fa-crown text-white"></i>
                     </div>
                     <div class="ml-3">
-                        <h1 class="text-lg font-bold logo-text">RMS System</h1>
-                        <p class="text-xs text-[#ffdb9f]">Dashboard</p>
+                        <h1 class="text-lg font-bold logo-text">Admin Panel</h1>
+                        <p class="text-xs text-gray-400">Management</p>
                     </div>
                 </div>
                 
                 <!-- Close button for mobile -->
                 <button @click="sidebarOpen = false" 
-                        class="lg:hidden text-[#ffdb9f] hover:text-white">
+                        class="lg:hidden text-gray-400 hover:text-white">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
 
-            <!-- User Profile -->
-            <div class="px-4 py-6 border-b border-[#286b7f]">
+            <!-- Admin Profile -->
+            <div class="px-4 py-6 border-b border-gray-800">
                 <div class="flex items-center">
                     <div class="flex-shrink-0">
                         @if(Auth::user()->avatar_url)
                             <img src="{{ Storage::url(Auth::user()->avatar_url) }}" 
                                  alt="{{ Auth::user()->name }}"
-                                 class="h-10 w-10 rounded-full border-2 border-[#ffdb9f] object-cover">
+                                 class="h-10 w-10 rounded-full border-2 border-indigo-500 object-cover">
                         @else
-                            <div class="h-10 w-10 rounded-full bg-[#286b7f] border-2 border-[#ffdb9f] flex items-center justify-center">
-                                <i class="fas fa-user text-[#ffdb9f]"></i>
+                            <div class="h-10 w-10 rounded-full bg-gray-700 border-2 border-indigo-500 flex items-center justify-center">
+                                <span class="text-white font-medium">{{ substr(Auth::user()->name, 0, 2) }}</span>
                             </div>
                         @endif
                     </div>
                     <div class="ml-3 overflow-hidden">
-                        <p class="text-sm font-medium truncate user-name text-white">{{ Auth::user()->name }}</p>
-                        <p class="text-xs text-[#ffdb9f] truncate user-email">{{ Auth::user()->email }}</p>
+                        <p class="text-sm font-medium truncate user-name">{{ Auth::user()->name }}</p>
+                        <p class="text-xs text-gray-400 truncate user-email">{{ Auth::user()->email }}</p>
                         <div class="mt-1">
-                            @foreach(Auth::user()->roles as $role)
-                                <span class="inline-block px-2 py-0.5 rounded text-xs font-medium bg-[#ffdb9f] text-[#174455] truncate user-role">
-                                    {{ ucfirst(strtolower($role->name)) }}
-                                </span>
-                            @endforeach
+                            <span class="inline-block px-2 py-0.5 rounded text-xs font-medium bg-indigo-500 text-white truncate user-role">
+                                SUPERADMIN
+                            </span>
                         </div>
                     </div>
                 </div>
@@ -354,121 +352,89 @@
             <!-- Navigation -->
             <nav class="flex-1 px-3 py-4 space-y-1">
                 <!-- Dashboard -->
-                <a href="{{ route('dashboard') }}" 
-                   @click.prevent="navigate('{{ route('dashboard') }}')"
-                   :class="currentPage === 'dashboard' ? 'bg-[#286b7f] text-white' : 'text-gray-300 hover:bg-[#1f556b] hover:text-white'"
+                <a href="{{ route('admin.dashboard') }}" 
+                   @click.prevent="navigate('{{ route('admin.dashboard') }}')"
+                   :class="currentPage === 'dashboard' ? 'bg-gray-800 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white'"
                    class="group flex items-center px-3 py-3 rounded-md sidebar-transition">
                     <i class="fas fa-tachometer-alt text-lg w-6 text-center"></i>
                     <span class="ml-3 truncate sidebar-text">Dashboard</span>
                 </a>
 
-                <!-- Profile -->
-                <a href="{{ route('profile.show') }}" 
-                   @click.prevent="navigate('{{ route('profile.show') }}')"
-                   :class="currentPage === 'profile' ? 'bg-[#286b7f] text-white' : 'text-gray-300 hover:bg-[#1f556b] hover:text-white'"
-                   class="group flex items-center px-3 py-3 rounded-md sidebar-transition">
-                    <i class="fas fa-user text-lg w-6 text-center"></i>
-                    <span class="ml-3 truncate sidebar-text">Profile</span>
-                </a>
-
-                <!-- Properties (for Owners) -->
-                @if(auth()->user()->isOwner())
-                    <a href="{{ route('owner.properties.index') }}" 
-                       @click.prevent="navigate('{{ route('owner.properties.index') }}')"
-                       :class="currentPage === 'owner' ? 'bg-[#286b7f] text-white' : 'text-gray-300 hover:bg-[#1f556b] hover:text-white'"
-                       class="group flex items-center px-3 py-3 rounded-md sidebar-transition">
-                        <i class="fas fa-home text-lg w-6 text-center"></i>
-                        <span class="ml-3 truncate sidebar-text">Properties</span>
-                    </a>
-                @endif
-
-                <!-- Food Orders (for Food Providers) -->
-                @if(auth()->user()->isFoodProvider())
-                    <a href="{{ route('food.orders') }}" 
-                       @click.prevent="navigate('{{ route('food.orders') }}')"
-                       :class="currentPage === 'food' ? 'bg-[#286b7f] text-white' : 'text-gray-300 hover:bg-[#1f556b] hover:text-white'"
-                       class="group flex items-center px-3 py-3 rounded-md sidebar-transition">
-                        <i class="fas fa-utensils text-lg w-6 text-center"></i>
-                        <span class="ml-3 truncate sidebar-text">Food Orders</span>
-                    </a>
-                @endif
-
-                <!-- Laundry Orders (for Laundry Providers) -->
-                @if(auth()->user()->isLaundryProvider())
-                    <a href="{{ route('laundry.orders') }}" 
-                       @click.prevent="navigate('{{ route('laundry.orders') }}')"
-                       :class="currentPage === 'laundry' ? 'bg-[#286b7f] text-white' : 'text-gray-300 hover:bg-[#1f556b] hover:text-white'"
-                       class="group flex items-center px-3 py-3 rounded-md sidebar-transition">
-                        <i class="fas fa-tshirt text-lg w-6 text-center"></i>
-                        <span class="ml-3 truncate sidebar-text">Laundry Orders</span>
-                    </a>
-                @endif
-
-                <!-- Find Properties -->
-                <a href="{{ route('properties.search') }}" 
-                   @click.prevent="navigate('{{ route('properties.search') }}')"
-                   :class="currentPage === 'properties' ? 'bg-[#286b7f] text-white' : 'text-gray-300 hover:bg-[#1f556b] hover:text-white'"
-                   class="group flex items-center px-3 py-3 rounded-md sidebar-transition">
-                    <i class="fas fa-search text-lg w-6 text-center"></i>
-                    <span class="ml-3 truncate sidebar-text">Find Properties</span>
-                </a>
-                <!-- My Hostels -->
-                <a href="{{ route('rental.index') }}" 
-                   @click.prevent="navigate('{{ route('rental.index') }}')"
-                   :class="currentPage === 'rental' ? 'bg-[#286b7f] text-white' : 'text-gray-300 hover:bg-[#1f556b] hover:text-white'"
-                   class="group flex items-center px-3 py-3 rounded-md sidebar-transition">
-                    <i class="fas fa-calendar-alt text-lg w-6 text-center"></i>
-                    <span class="ml-3 truncate sidebar-text">My Bookings</span>
-                </a>
-
-                <!-- Food Services -->
-                <a href="{{ route('food.index') }}" 
-                   @click.prevent="navigate('{{ route('food.index') }}')"
-                   class="text-gray-300 hover:bg-[#1f556b] hover:text-white group flex items-center px-3 py-3 rounded-md sidebar-transition">
-                    <i class="fas fa-utensils text-lg w-6 text-center"></i>
-                    <span class="ml-3 truncate sidebar-text">Food Services</span>
-                </a>
-
-                <!-- Laundry Services -->
-                <a href="{{ route('laundry.index') }}" 
-                   @click.prevent="navigate('{{ route('laundry.index') }}')"
-                   class="text-gray-300 hover:bg-[#1f556b] hover:text-white group flex items-center px-3 py-3 rounded-md sidebar-transition">
-                    <i class="fas fa-tshirt text-lg w-6 text-center"></i>
-                    <span class="ml-3 truncate sidebar-text">Laundry Services</span>
-                </a>
-
-                <!-- Notifications Link -->
-                <a href="{{ route('notifications.index') }}" 
-                @click.prevent="navigate('{{ route('notifications.index') }}')"
-                class="text-gray-300 hover:bg-[#1f556b] hover:text-white group flex items-center px-3 py-3 rounded-md sidebar-transition relative">
-                    <i class="fas fa-bell text-lg w-6 text-center"></i>
-                    <span class="ml-3 truncate sidebar-text">Notifications</span>
+                <!-- Role Applications with Tabs -->
+                <div x-data="{ open: false }" class="relative">
+                    <button @click="open = !open" 
+                            :class="currentPage === 'role-applications' ? 'bg-gray-800 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white'"
+                            class="w-full text-left group flex items-center justify-between px-3 py-3 rounded-md sidebar-transition">
+                        <div class="flex items-center">
+                            <i class="fas fa-file-alt text-lg w-6 text-center"></i>
+                            <span class="ml-3 truncate sidebar-text">Role Applications</span>
+                        </div>
+                        <i class="fas fa-chevron-down text-xs transition-transform" :class="{ 'rotate-180': open }"></i>
+                    </button>
                     
-                    <!-- Notification Badge -->
-                    <span id="sidebar-notification-badge" 
-                        class="ml-auto inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-[#ffdb9f] text-[#174455] hidden">
-                        0
-                    </span>
+                    <div x-show="open" 
+                         x-collapse
+                         class="ml-9 mt-1 space-y-1">
+                        <a href="{{ route('admin.role-applications.index', ['tab' => 'owner']) }}" 
+                           @click.prevent="navigate('{{ route('admin.role-applications.index', ['tab' => 'owner']) }}')"
+                           class="block px-3 py-2 text-sm text-gray-400 hover:text-white hover:bg-gray-700 rounded-md">
+                            <i class="fas fa-building mr-2 w-4"></i>
+                            <span class="sidebar-text">Property Owners</span>
+                            @php $ownerCount = \App\Models\RoleApplication::where('role_type', 'OWNER')->where('status', 'PENDING')->count(); @endphp
+                            @if($ownerCount > 0)
+                                <span class="ml-2 px-1.5 py-0.5 text-xs bg-red-500 text-white rounded-full">{{ $ownerCount }}</span>
+                            @endif
+                        </a>
+                        <a href="{{ route('admin.role-applications.index', ['tab' => 'food']) }}" 
+                           @click.prevent="navigate('{{ route('admin.role-applications.index', ['tab' => 'food']) }}')"
+                           class="block px-3 py-2 text-sm text-gray-400 hover:text-white hover:bg-gray-700 rounded-md">
+                            <i class="fas fa-utensils mr-2 w-4"></i>
+                            <span class="sidebar-text">Food Providers</span>
+                            @php $foodCount = \App\Models\RoleApplication::where('role_type', 'FOOD')->where('status', 'PENDING')->count(); @endphp
+                            @if($foodCount > 0)
+                                <span class="ml-2 px-1.5 py-0.5 text-xs bg-red-500 text-white rounded-full">{{ $foodCount }}</span>
+                            @endif
+                        </a>
+                        <a href="{{ route('admin.role-applications.index', ['tab' => 'laundry']) }}" 
+                           @click.prevent="navigate('{{ route('admin.role-applications.index', ['tab' => 'laundry']) }}')"
+                           class="block px-3 py-2 text-sm text-gray-400 hover:text-white hover:bg-gray-700 rounded-md">
+                            <i class="fas fa-tshirt mr-2 w-4"></i>
+                            <span class="sidebar-text">Laundry Providers</span>
+                            @php $laundryCount = \App\Models\RoleApplication::where('role_type', 'LAUNDRY')->where('status', 'PENDING')->count(); @endphp
+                            @if($laundryCount > 0)
+                                <span class="ml-2 px-1.5 py-0.5 text-xs bg-red-500 text-white rounded-full">{{ $laundryCount }}</span>
+                            @endif
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Commissions (Admin Only) -->
+                <a href="{{ route('admin.commissions.index') }}" 
+                   @click.prevent="navigate('{{ route('admin.commissions.index') }}')"
+                   :class="currentPage === 'commissions' ? 'bg-gray-800 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white'"
+                   class="group flex items-center px-3 py-3 rounded-md sidebar-transition">
+                    <i class="fas fa-percentage text-lg w-6 text-center"></i>
+                    <span class="ml-3 truncate sidebar-text">Commissions</span>
                 </a>
 
-                <!-- Role Application (for regular users) -->
-                @if(auth()->user()->hasRole('USER') && !auth()->user()->isOwner() && !auth()->user()->isFoodProvider() && !auth()->user()->isLaundryProvider())
-                    <a href="{{ route('role.apply.index') }}" 
-                       @click.prevent="navigate('{{ route('role.apply.index') }}')"
-                       :class="currentPage === 'role' ? 'bg-[#286b7f] text-white' : 'text-gray-300 hover:bg-[#1f556b] hover:text-white'"
-                       class="group flex items-center px-3 py-3 rounded-md sidebar-transition">
-                        <i class="fas fa-user-plus text-lg w-6 text-center"></i>
-                        <span class="ml-3 truncate sidebar-text">Apply for Role</span>
-                    </a>
-                @endif
+                <!-- Users -->
+                <a href="{{ route('admin.users.index') }}" 
+                @click.prevent="navigate('{{ route('admin.users.index') }}')"
+                :class="currentPage === 'users' ? 'bg-gray-800 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white'"
+                class="group flex items-center px-3 py-3 rounded-md sidebar-transition">
+                    <i class="fas fa-users text-lg w-6 text-center"></i>
+                    <span class="ml-3 truncate sidebar-text">Users</span>
+                </a>
+
+
             </nav>
 
             <!-- Sidebar Footer -->
-            <div class="border-t border-[#286b7f] mt-auto">
+            <div class="border-t border-gray-800 mt-auto">
                 <form method="POST" action="{{ route('logout') }}" id="logout-form">
                     @csrf
                     <button type="submit" 
-                            class="w-full text-left text-gray-300 hover:bg-[#1f556b] hover:text-white group flex items-center px-4 py-3 sidebar-transition">
+                            class="w-full text-left text-gray-300 hover:bg-gray-700 hover:text-white group flex items-center px-4 py-3 sidebar-transition">
                         <i class="fas fa-sign-out-alt text-lg w-6 text-center"></i>
                         <span class="ml-3 truncate sidebar-text">Logout</span>
                     </button>
@@ -486,13 +452,13 @@
                     <div class="flex items-center">
                         <!-- Mobile menu button -->
                         <button @click="toggleSidebar()" 
-                                class="lg:hidden text-gray-500 hover:text-[#174455] focus:outline-none">
+                                class="lg:hidden text-gray-500 hover:text-gray-700 focus:outline-none">
                             <i class="fas fa-bars text-xl"></i>
                         </button>
                         
                         <!-- Desktop menu button -->
                         <button @click="toggleSidebar()" 
-                                class="hidden lg:flex items-center text-gray-500 hover:text-[#174455] focus:outline-none">
+                                class="hidden lg:flex items-center text-gray-500 hover:text-gray-700 focus:outline-none">
                             <i class="fas fa-bars text-xl"></i>
                         </button>
                         
@@ -501,31 +467,19 @@
                             <ol class="flex items-center space-x-2">
                                 <li>
                                     <div>
-                                        <a href="{{ route('dashboard') }}" 
-                                           @click.prevent="navigate('{{ route('dashboard') }}')"
-                                           class="text-gray-400 hover:text-[#174455]">
+                                        <a href="{{ route('admin.dashboard') }}" 
+                                           @click.prevent="navigate('{{ route('admin.dashboard') }}')"
+                                           class="text-gray-400 hover:text-gray-500">
                                             <i class="fas fa-home"></i>
                                         </a>
                                     </div>
                                 </li>
-                                @if(isset($breadcrumbs))
-                                    @foreach($breadcrumbs as $crumb)
-                                        <li>
-                                            <div class="flex items-center">
-                                                <i class="fas fa-chevron-right text-gray-400 mx-2"></i>
-                                                @if($loop->last)
-                                                    <span class="text-sm font-medium text-gray-500">{{ $crumb['title'] }}</span>
-                                                @else
-                                                    <a href="{{ $crumb['url'] }}" 
-                                                       @click.prevent="navigate('{{ $crumb['url'] }}')"
-                                                       class="text-sm font-medium text-gray-500 hover:text-[#174455]">
-                                                        {{ $crumb['title'] }}
-                                                    </a>
-                                                @endif
-                                            </div>
-                                        </li>
-                                    @endforeach
-                                @endif
+                                <li>
+                                    <div class="flex items-center">
+                                        <i class="fas fa-chevron-right text-gray-400 mx-2"></i>
+                                        <span class="text-sm font-medium text-gray-500">@yield('title', 'Dashboard')</span>
+                                    </div>
+                                </li>
                             </ol>
                         </nav>
                     </div>
@@ -539,8 +493,19 @@
                             </div>
                             <input type="text" 
                                    placeholder="Search..." 
-                                   class="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-[#174455] focus:border-[#174455] w-64">
+                                   class="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 w-64">
                         </div>
+
+                        <!-- Notifications -->
+                        <button class="relative text-gray-400 hover:text-gray-500 focus:outline-none">
+                            <i class="fas fa-bell text-xl"></i>
+                            @php $unreadCount = \App\Models\Notification::where('user_id', Auth::id())->where('is_read', false)->count(); @endphp
+                            @if($unreadCount > 0)
+                                <span class="absolute -top-1 -right-1 h-4 w-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
+                                    {{ $unreadCount > 9 ? '9+' : $unreadCount }}
+                                </span>
+                            @endif
+                        </button>
 
                         <!-- User Menu -->
                         <div class="relative" x-data="{ userMenuOpen: false }">
@@ -549,16 +514,18 @@
                                 @if(Auth::user()->avatar_url)
                                     <img src="{{ Storage::url(Auth::user()->avatar_url) }}" 
                                          alt="{{ Auth::user()->name }}"
-                                         class="h-8 w-8 rounded-full border-2 border-[#174455]">
+                                         class="h-8 w-8 rounded-full">
                                 @else
-                                    <div class="h-8 w-8 rounded-full bg-[#174455] flex items-center justify-center">
-                                        <i class="fas fa-user text-white"></i>
+                                    <div class="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center">
+                                        <span class="text-indigo-800 font-medium text-sm">
+                                            {{ substr(Auth::user()->name, 0, 2) }}
+                                        </span>
                                     </div>
                                 @endif
                                 <span class="hidden md:block text-sm font-medium text-gray-700 truncate max-w-[120px]">
                                     {{ Auth::user()->name }}
                                 </span>
-                                <i class="fas fa-chevron-down text-gray-400"></i>
+                                <i class="fas fa-chevron-down text-gray-400 text-xs"></i>
                             </button>
                             
                             <!-- User Dropdown -->
@@ -578,13 +545,13 @@
                                        class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                                         <i class="fas fa-user mr-2"></i> Profile
                                     </a>
-                                    <a href="{{ route('rental.index') }}" 
-                                       @click.prevent="navigate('{{ route('rental.index') }}')"
+                                    <a href="{{ route('admin.dashboard') }}" 
+                                       @click.prevent="navigate('{{ route('admin.dashboard') }}')"
                                        class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                        <i class="fas fa-calendar-alt mr-2"></i> My Bookings
+                                        <i class="fas fa-tachometer-alt mr-2"></i> Dashboard
                                     </a>
                                     <div class="border-t border-gray-100"></div>
-                                    <form method="POST" action="{{ route('logout') }}" id="logout-form-top">
+                                    <form method="POST" action="{{ route('logout') }}">
                                         @csrf
                                         <button type="submit" 
                                                 class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
@@ -603,19 +570,19 @@
                 <div class="p-6">
                     <!-- Page Header -->
                     <div class="mb-6">
-                        <h1 class="text-2xl font-bold text-[#174455]">@yield('title', 'Dashboard')</h1>
-                        <p class="mt-2 text-gray-600">@yield('subtitle', 'Welcome to your dashboard')</p>
+                        <h1 class="text-2xl font-bold text-gray-900">@yield('header', 'Dashboard')</h1>
+                        <p class="mt-2 text-gray-600">@yield('subtitle', 'Welcome to the admin dashboard')</p>
                     </div>
 
                     <!-- Flash Messages -->
                     @if(session('success'))
-                        <div class="mb-6 bg-green-50 border-l-4 border-[#174455] p-4 rounded">
+                        <div class="mb-6 bg-green-50 border-l-4 border-green-400 p-4 rounded">
                             <div class="flex">
                                 <div class="flex-shrink-0">
-                                    <i class="fas fa-check-circle text-[#174455]"></i>
+                                    <i class="fas fa-check-circle text-green-400"></i>
                                 </div>
                                 <div class="ml-3">
-                                    <p class="text-sm text-[#174455]">{{ session('success') }}</p>
+                                    <p class="text-sm text-green-700">{{ session('success') }}</p>
                                 </div>
                             </div>
                         </div>
@@ -635,9 +602,7 @@
                     @endif
 
                     <!-- Page Content -->
-                    <div class="bg-white rounded-lg shadow-sm border border-gray-200">
-                        @yield('content')
-                    </div>
+                    @yield('content')
                 </div>
             </main>
 
@@ -645,7 +610,7 @@
             <footer class="bg-white border-t border-gray-200 py-4 px-6">
                 <div class="flex flex-col md:flex-row justify-between items-center">
                     <div class="text-sm text-gray-600">
-                        &copy; {{ date('Y') }} RMS System. All rights reserved.
+                        &copy; {{ date('Y') }} Admin Panel. All rights reserved.
                     </div>
                     <div class="mt-2 md:mt-0">
                         <span class="text-sm text-gray-600">Version 1.0.0</span>
@@ -702,60 +667,6 @@
                     }
                 });
             });
-            
-            // Initialize collapse for nested menus
-            Alpine.directive('collapse', (el) => {
-                let duration = 300;
-                
-                el._x_isShown = () => !el.classList.contains('hidden');
-                
-                el._x_toggle = () => {
-                    if (el._x_isShown()) {
-                        el._x_hide();
-                    } else {
-                        el._x_show();
-                    }
-                };
-                
-                el._x_show = () => {
-                    if (el._x_isShown()) return;
-                    
-                    el.style.display = '';
-                    el.style.overflow = 'hidden';
-                    el.style.height = 0;
-                    
-                    requestAnimationFrame(() => {
-                        el.style.height = el.scrollHeight + 'px';
-                    });
-                    
-                    setTimeout(() => {
-                        el.style.height = 'auto';
-                        el.style.overflow = '';
-                    }, duration);
-                };
-                
-                el._x_hide = () => {
-                    if (!el._x_isShown()) return;
-                    
-                    el.style.overflow = 'hidden';
-                    el.style.height = el.scrollHeight + 'px';
-                    
-                    requestAnimationFrame(() => {
-                        el.style.height = 0;
-                    });
-                    
-                    setTimeout(() => {
-                        el.style.display = 'none';
-                        el.style.overflow = '';
-                        el.style.height = '';
-                    }, duration);
-                };
-                
-                // Set initial state
-                if (!el._x_isShown()) {
-                    el.style.display = 'none';
-                }
-            });
         });
         
         // Remove loading state when page is fully loaded
@@ -768,5 +679,7 @@
             }
         });
     </script>
+
+    @stack('scripts')
 </body>
 </html>
