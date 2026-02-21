@@ -28,7 +28,7 @@ class PaymentController extends Controller
                 ->with('info', 'This booking is already paid.');
         }
         
-        return view('payments.create', compact('booking'));
+        return view('rental.payment', compact('booking'));
     }
     
     /**
@@ -148,7 +148,7 @@ class PaymentController extends Controller
         
         $booking = $payment->payable;
         
-        return view('payments.success', compact('payment', 'booking'));
+        return view('rental.payment-success', compact('payment', 'booking'));
     }
     
     /**

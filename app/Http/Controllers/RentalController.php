@@ -36,27 +36,7 @@ class RentalController extends Controller
         // =====================================================
         // EXCLUDE PROPERTIES ALREADY RENTED BY CURRENT USER
         // =====================================================
-        if ($user) {
-            // Get IDs of properties that the user has active/confirmed bookings for
-            $rentedPropertyIds = Booking::where('user_id', $user->id)
-                ->whereIn('status', ['CONFIRMED', 'CHECKED_IN']) // Only exclude active rentals
-                ->where('check_out', '>=', now()) // Still ongoing
-                ->pluck('property_id')
-                ->toArray();
-            
-            // Also exclude properties where user has pending bookings (optional)
-            $pendingPropertyIds = Booking::where('user_id', $user->id)
-                ->where('status', 'PENDING')
-                ->pluck('property_id')
-                ->toArray();
-            
-            $excludeIds = array_merge($rentedPropertyIds, $pendingPropertyIds);
-            
-            if (!empty($excludeIds)) {
-                $query->whereNotIn('id', $excludeIds);
-            }
-        }
-        
+
         // Search by keyword
         if ($request->filled('search')) {
             $search = $request->search;
@@ -227,6 +207,33 @@ class RentalController extends Controller
         
         return view('rental.property-details', compact('property', 'relatedProperties', 'averageRating'));
     }
+    /**
+ * Show individual room details
+ */
+public function showRoom(Property $property, Room $room)
+{
+    // Verify the room belongs to the property
+    if ($room->property_id !== $property->id) {
+        abort(404);
+    }
+
+    // Check if property is active or user is owner/admin
+    if ($property->status !== 'ACTIVE' && !Auth::user()->hasRole('OWNER') && !Auth::user()->hasRole('SUPERADMIN')) {
+        abort(404, 'Property not found');
+    }
+
+    // Check if room is available (or show anyway with status indicator)
+    $property->load(['images', 'amenities', 'owner']);
+    
+    // Get other available rooms in same property
+    $otherRooms = $property->rooms()
+        ->where('id', '!=', $room->id)
+        ->where('status', 'AVAILABLE')
+        ->limit(3)
+        ->get();
+
+    return view('rental.room-details', compact('property', 'room', 'otherRooms'));
+}
     
     /**
      * Show apartment rental form
@@ -250,29 +257,65 @@ class RentalController extends Controller
     /**
      * Show room booking form
      */
-    public function bookRoom(Property $property, Room $room)
-    {
-        if ($property->type !== 'HOSTEL' || $room->property_id !== $property->id) {
-            abort(404);
+public function bookRoom(Property $property, Room $room)
+{
+    // Log the attempt
+    \Log::info('bookRoom method called', [
+        'property_id' => $property->id,
+        'room_id' => $room->id,
+        'url' => request()->fullUrl()
+    ]);
+    
+    try {
+        // Check property type
+        if ($property->type !== 'HOSTEL') {
+            \Log::error('Property is not a HOSTEL', ['type' => $property->type]);
+            abort(404, 'Property is not a hostel');
+        }
+        
+        // Check if room belongs to property
+        if ($room->property_id !== $property->id) {
+            \Log::error('Room does not belong to property', [
+                'room_property_id' => $room->property_id,
+                'property_id' => $property->id
+            ]);
+            abort(404, 'Room does not belong to this property');
         }
         
         // Check if room is available
         if ($room->status !== 'AVAILABLE') {
+            \Log::error('Room is not available', ['status' => $room->status]);
             abort(404, 'This room is not available');
         }
         
+        // Load relationships
+        \Log::info('Loading property relationships');
         $property->load(['images', 'amenities', 'owner']);
         
-        // Get other available rooms in same property
+        // Get other available rooms
+        \Log::info('Getting other available rooms');
         $otherRooms = $property->rooms()
             ->where('id', '!=', $room->id)
             ->where('status', 'AVAILABLE')
             ->limit(3)
             ->get();
         
+        \Log::info('Rendering view', ['other_rooms_count' => $otherRooms->count()]);
+        
         return view('rental.room-booking', compact('property', 'room', 'otherRooms'));
+        
+    } catch (\Exception $e) {
+        \Log::error('Exception in bookRoom method', [
+            'message' => $e->getMessage(),
+            'file' => $e->getFile(),
+            'line' => $e->getLine(),
+            'trace' => $e->getTraceAsString()
+        ]);
+        
+        // Return a proper error response
+        return response()->view('errors.500', ['error' => $e->getMessage()], 500);
     }
-    
+}
     /**
      * Check property availability
      */

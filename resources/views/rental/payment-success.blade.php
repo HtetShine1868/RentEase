@@ -43,12 +43,12 @@
                 
                 <!-- Actions -->
                 <div class="space-y-3">
-                    <a href="{{ route('properties.show', $booking) }}" 
-                       class="w-full inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">
-                        View Booking Details
+                    <a href="{{ route('bookings.show', $booking) }}" 
+                        class="w-full inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">
+                            View Booking Details
                     </a>
                     <a href="{{ route('properties.search') }}" 
-                       class="w-full inline-flex justify-center items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                    class="w-full inline-flex justify-center items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
                         Browse More Properties
                     </a>
                 </div>

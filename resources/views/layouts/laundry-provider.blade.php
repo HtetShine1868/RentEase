@@ -54,24 +54,7 @@
                                 Reviews
                             </a>
                             
-                            <a href="{{ route('laundry-provider.notifications') }}" 
-                               class="{{ request()->routeIs('laundry-provider.notifications') ? 'text-white border-b-2 border-white' : 'text-indigo-200 hover:text-white' }} inline-flex items-center px-1 pt-1 text-sm font-medium relative">
-                                <i class="fas fa-bell mr-2"></i>
-                                Notifications
-                                @php
-                                    // Use DB facade to query your custom notifications table
-                                    use Illuminate\Support\Facades\DB;
-                                    $unreadCount = DB::table('notifications')
-                                        ->where('user_id', Auth::id())
-                                        ->where('is_read', false)
-                                        ->count();
-                                @endphp
-                                @if($unreadCount > 0)
-                                    <span class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                                        {{ $unreadCount > 9 ? '9+' : $unreadCount }}
-                                    </span>
-                                @endif
-                            </a>
+
                         </div>
                     </div>
 
@@ -101,15 +84,12 @@
                                  class="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50">
                                 
                                 <div class="py-1">
-                                    <a href="{{ route('laundry-provider.profile') }}" 
+                                    <a href="{{ route('laundry-provider.profile.index') }}" 
                                        class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                                         <i class="fas fa-user mr-2"></i> Profile
                                     </a>
                                     
-                                    <a href="{{ route('laundry-provider.settings') }}" 
-                                       class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                        <i class="fas fa-cog mr-2"></i> Settings
-                                    </a>
+
                                     
                                     <form method="POST" action="{{ route('logout') }}">
                                         @csrf

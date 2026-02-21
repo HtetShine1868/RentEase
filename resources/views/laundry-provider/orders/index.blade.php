@@ -1,713 +1,584 @@
-@extends('layouts.laundry-provider')
+@extends('laundry-provider.layouts.provider')
 
 @section('title', 'Order Management')
-
-@section('header', 'Orders')
+@section('subtitle', 'Manage all laundry orders')
 
 @section('content')
-<div class="space-y-6">
-    <!-- Header -->
-    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-        <div>
-            <h2 class="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl">
-                Order Management
-            </h2>
-            <p class="mt-1 text-sm text-gray-500">
-                Manage laundry pickup and delivery orders
-            </p>
-        </div>
-        <div class="mt-4 sm:mt-0 flex space-x-3">
-            <a href="{{ route('laundry-provider.orders.export') }}?{{ http_build_query(request()->except('page')) }}"
-               class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
-                <i class="fas fa-download mr-2"></i>
-                Export Orders
-            </a>
-        </div>
-    </div>
-
-    <!-- Stats Cards Overview -->
-    <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-        <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-            <div class="p-6">
-                <div class="flex items-center">
-                    <div class="flex-shrink-0 bg-blue-100 rounded-md p-3">
-                        <i class="fas fa-box text-blue-600"></i>
-                    </div>
-                    <div class="ml-5 w-0 flex-1">
-                        <dl>
-                            <dt class="text-sm font-medium text-gray-500 truncate">Total Orders</dt>
-                            <dd class="text-2xl font-semibold text-gray-900">{{ $stats['total'] }}</dd>
-                        </dl>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-            <div class="p-6">
-                <div class="flex items-center">
-                    <div class="flex-shrink-0 bg-yellow-100 rounded-md p-3">
-                        <i class="fas fa-clock text-yellow-600"></i>
-                    </div>
-                    <div class="ml-5 w-0 flex-1">
-                        <dl>
-                            <dt class="text-sm font-medium text-gray-500 truncate">Pending Pickup</dt>
-                            <dd class="text-2xl font-semibold text-gray-900">{{ $stats['pending'] + $stats['pickup_scheduled'] }}</dd>
-                        </dl>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-            <div class="p-6">
-                <div class="flex items-center">
-                    <div class="flex-shrink-0 bg-purple-100 rounded-md p-3">
-                        <i class="fas fa-bolt text-purple-600"></i>
-                    </div>
-                    <div class="ml-5 w-0 flex-1">
-                        <dl>
-                            <dt class="text-sm font-medium text-gray-500 truncate">Rush Orders</dt>
-                            <dd class="text-2xl font-semibold text-gray-900">{{ $stats['rush'] }}</dd>
-                        </dl>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-            <div class="p-6">
-                <div class="flex items-center">
-                    <div class="flex-shrink-0 bg-green-100 rounded-md p-3">
-                        <i class="fas fa-check-circle text-green-600"></i>
-                    </div>
-                    <div class="ml-5 w-0 flex-1">
-                        <dl>
-                            <dt class="text-sm font-medium text-gray-500 truncate">Ready for Return</dt>
-                            <dd class="text-2xl font-semibold text-gray-900">{{ $stats['ready'] + $stats['out_for_delivery'] }}</dd>
-                        </dl>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Tab Navigation -->
-    <div class="border-b border-gray-200">
-        <nav class="-mb-px flex space-x-8" aria-label="Tabs">
-            <button onclick="switchTab('pickup')" 
-                    id="pickup-tab"
-                    class="tab-button border-indigo-500 text-indigo-600 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm"
-                    aria-current="page">
-                <i class="fas fa-box-open mr-2"></i>
-                Take Clothes (Pickup)
-                <span class="ml-2 bg-indigo-100 text-indigo-600 py-0.5 px-2 rounded-full text-xs">
-                    {{ $stats['pending'] + $stats['pickup_scheduled'] + $stats['picked_up'] }}
-                </span>
-            </button>
-            <button onclick="switchTab('delivery')" 
-                    id="delivery-tab"
-                    class="tab-button border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
-                <i class="fas fa-truck mr-2"></i>
-                Send Clothes (Delivery)
-                <span class="ml-2 bg-gray-100 text-gray-600 py-0.5 px-2 rounded-full text-xs">
-                    {{ $stats['in_progress'] + $stats['ready'] + $stats['out_for_delivery'] }}
-                </span>
-            </button>
-        </nav>
-    </div>
-
-    <!-- Pickup Tab Content -->
-    <div id="pickup-content" class="tab-content">
-        <!-- Pickup Filters -->
-        <div class="bg-white shadow-sm sm:rounded-lg mb-6">
-            <div class="px-4 py-5 sm:p-6">
-                <div class="flex items-center justify-between mb-4">
-                    <h3 class="text-lg font-medium text-gray-900">
-                        <i class="fas fa-filter mr-2 text-indigo-500"></i>
-                        Filter Pickup Orders
-                    </h3>
-                    <button onclick="resetPickupFilters()" class="text-sm text-indigo-600 hover:text-indigo-800">
-                        <i class="fas fa-undo mr-1"></i> Reset
-                    </button>
-                </div>
-                <div class="grid grid-cols-1 gap-4 sm:grid-cols-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700">Search</label>
-                        <input type="text" id="pickup-search" placeholder="Order # or customer..." 
-                               class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700">Status</label>
-                        <select id="pickup-status" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                            <option value="">All Statuses</option>
-                            <option value="PENDING">Pending</option>
-                            <option value="PICKUP_SCHEDULED">Pickup Scheduled</option>
-                            <option value="PICKED_UP">Picked Up</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700">Service Mode</label>
-                        <select id="pickup-mode" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                            <option value="">All</option>
-                            <option value="NORMAL">Normal</option>
-                            <option value="RUSH">Rush</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700">Pickup Date</label>
-                        <input type="date" id="pickup-date" 
-                               class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Pickup Orders Table -->
-        <div class="bg-white shadow-sm sm:rounded-lg overflow-hidden">
-            <div class="px-4 py-5 sm:px-6 bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-gray-200">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <h3 class="text-lg font-medium text-gray-900">
-                            <i class="fas fa-box-open text-blue-500 mr-2"></i>
-                            Orders Ready for Pickup
-                        </h3>
-                        <p class="text-sm text-gray-500 mt-1">Orders that need to be picked up from customers</p>
-                    </div>
-                    <div class="flex space-x-2">
-                        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                            <i class="fas fa-clock mr-1"></i> Pending: {{ $stats['pending'] }}
-                        </span>
-                        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                            <i class="fas fa-calendar mr-1"></i> Scheduled: {{ $stats['pickup_scheduled'] }}
-                        </span>
-                        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
-                            <i class="fas fa-check mr-1"></i> Picked: {{ $stats['picked_up'] }}
-                        </span>
-                    </div>
-                </div>
-            </div>
-            
-            @php
-                $pickupOrders = $orders->filter(function($order) {
-                    return in_array($order->status, ['PENDING', 'PICKUP_SCHEDULED', 'PICKED_UP']);
-                });
-            @endphp
-
-            @if($pickupOrders->isEmpty())
-                <div class="text-center py-12">
-                    <div class="mx-auto h-24 w-24 text-gray-400">
-                        <i class="fas fa-box-open text-4xl"></i>
-                    </div>
-                    <h3 class="mt-4 text-lg font-medium text-gray-900">No pickup orders</h3>
-                    <p class="mt-1 text-sm text-gray-500">All orders have been picked up or there are no pending pickups.</p>
-                </div>
-            @else
-                <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
-                            <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Order Details</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Service</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Pickup Status</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Pickup Time</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Items</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody class="bg-white divide-y divide-gray-200" id="pickup-table-body">
-                            @foreach($pickupOrders as $order)
-                                @php
-                                    $isRush = $order->service_mode === 'RUSH';
-                                    $pickupTime = \Carbon\Carbon::parse($order->pickup_time);
-                                    $isOverdue = $pickupTime->isPast() && $order->status == 'PENDING';
-                                @endphp
-                                <tr class="hover:bg-gray-50 {{ $isRush ? 'bg-purple-50' : '' }} pickup-row"
-                                    data-status="{{ $order->status }}"
-                                    data-mode="{{ $order->service_mode }}"
-                                    data-date="{{ $pickupTime->format('Y-m-d') }}"
-                                    data-search="{{ strtolower($order->order_reference . ' ' . ($order->user->name ?? '')) }}">
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <div class="text-sm font-medium text-gray-900">
-                                            {{ $order->order_reference }}
-                                        </div>
-                                        <div class="text-sm text-gray-500">
-                                            {{ $order->created_at->format('d M, h:i A') }}
-                                        </div>
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <div class="text-sm font-medium text-gray-900">
-                                            {{ $order->user->name ?? 'N/A' }}
-                                        </div>
-                                        <div class="text-sm text-gray-500">
-                                            {{ $order->user->phone ?? 'No phone' }}
-                                        </div>
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {{ $isRush ? 'bg-purple-100 text-purple-800' : 'bg-gray-100 text-gray-800' }}">
-                                            <i class="fas {{ $isRush ? 'fa-bolt' : 'fa-clock' }} mr-1"></i>
-                                            {{ $order->service_mode }}
-                                        </span>
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        @php
-                                            $statusColors = [
-                                                'PENDING' => 'bg-yellow-100 text-yellow-800',
-                                                'PICKUP_SCHEDULED' => 'bg-blue-100 text-blue-800',
-                                                'PICKED_UP' => 'bg-indigo-100 text-indigo-800',
-                                            ];
-                                        @endphp
-                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {{ $statusColors[$order->status] }}">
-                                            {{ str_replace('_', ' ', $order->status) }}
-                                        </span>
-                                        @if($isOverdue)
-                                            <span class="ml-2 text-xs text-red-600">
-                                                <i class="fas fa-exclamation-circle"></i> Overdue
-                                            </span>
-                                        @endif
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <div class="text-sm {{ $isOverdue ? 'text-red-600 font-medium' : 'text-gray-900' }}">
-                                            {{ $pickupTime->format('d M, h:i A') }}
-                                        </div>
-                                        @if($isOverdue)
-                                            <div class="text-xs text-red-500">
-                                                {{ $pickupTime->diffForHumans() }}
-                                            </div>
-                                        @endif
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                        {{ $order->items->sum('quantity') }} items
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                        <div class="flex space-x-3">
-                                            <a href="{{ route('laundry-provider.orders.show', $order->id) }}" 
-                                               class="text-indigo-600 hover:text-indigo-900" title="View Details">
-                                                <i class="fas fa-eye"></i>
-                                            </a>
-                                            @if($order->status == 'PENDING')
-                                                <button onclick="schedulePickup({{ $order->id }})"
-                                                        class="text-blue-600 hover:text-blue-900" title="Schedule Pickup">
-                                                    <i class="fas fa-calendar-check"></i>
-                                                </button>
-                                            @endif
-                                            @if($order->status == 'PICKUP_SCHEDULED')
-                                                <button onclick="markPickedUp({{ $order->id }})"
-                                                        class="text-green-600 hover:text-green-900" title="Mark as Picked Up">
-                                                    <i class="fas fa-check-circle"></i>
-                                                </button>
-                                            @endif
-                                        </div>
-                                    </td>
-                                </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                </div>
+<div class="space-y-6" x-data="orderManager()">
+    {{-- Tab Navigation --}}
+    <div class="bg-white rounded-lg shadow-sm p-1 flex space-x-1">
+        <button @click="switchTab('normal')" 
+                :class="activeTab === 'normal' ? 'bg-[#174455] text-white' : 'text-gray-600 hover:bg-gray-100'"
+                class="tab-btn flex-1 py-3 px-4 rounded-lg text-center font-medium transition-colors">
+            <i class="fas fa-box mr-2"></i> NORMAL ORDERS
+        </button>
+        <button @click="switchTab('rush')" 
+                :class="activeTab === 'rush' ? 'bg-[#174455] text-white' : 'text-gray-600 hover:bg-gray-100'"
+                class="tab-btn flex-1 py-3 px-4 rounded-lg text-center font-medium transition-colors">
+            <i class="fas fa-bolt mr-2"></i> RUSH ORDERS
+            @if(isset($rushCount) && $rushCount > 0)
+                <span class="ml-2 bg-[#ffdb9f] text-[#174455] text-xs px-2 py-1 rounded-full">{{ $rushCount }}</span>
             @endif
+        </button>
+        <button @click="switchTab('all')" 
+                :class="activeTab === 'all' ? 'bg-[#174455] text-white' : 'text-gray-600 hover:bg-gray-100'"
+                class="tab-btn flex-1 py-3 px-4 rounded-lg text-center font-medium transition-colors">
+            <i class="fas fa-list mr-2"></i> ALL ORDERS
+        </button>
+    </div>
+
+    {{-- Date Filter --}}
+    <div class="bg-white rounded-lg shadow-sm p-4">
+        <div class="flex flex-wrap items-center gap-4">
+            <div class="flex-1 min-w-[200px]">
+                <label class="block text-sm font-medium text-gray-700 mb-1">📅 Filter by Date</label>
+                <input type="date" x-model="selectedDate" @change="filterOrders()" 
+                       value="{{ request('date', date('Y-m-d')) }}"
+                       class="w-full rounded-lg border-gray-300 shadow-sm focus:border-[#174455] focus:ring-[#174455]">
+            </div>
+            <div class="flex-1 min-w-[200px]">
+                <label class="block text-sm font-medium text-gray-700 mb-1">🔍 Search</label>
+                <input type="text" x-model="searchTerm" @input="filterOrders()" placeholder="Order #, Customer..." 
+                       class="w-full rounded-lg border-gray-300 shadow-sm focus:border-[#174455] focus:ring-[#174455]">
+            </div>
+            <div class="flex items-end">
+                <button @click="resetFilters()" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors">
+                    <i class="fas fa-undo mr-2"></i>Reset
+                </button>
+            </div>
+        </div>
+        <div class="mt-2 text-sm text-gray-500">
+            📊 Showing orders for <span class="font-medium text-[#174455]">{{ \Carbon\Carbon::parse(request('date', now()))->format('F j, Y') }}</span>
         </div>
     </div>
 
-    <!-- Delivery Tab Content (Initially Hidden) -->
-    <div id="delivery-content" class="tab-content hidden">
-        <!-- Delivery Filters -->
-        <div class="bg-white shadow-sm sm:rounded-lg mb-6">
-            <div class="px-4 py-5 sm:p-6">
-                <div class="flex items-center justify-between mb-4">
-                    <h3 class="text-lg font-medium text-gray-900">
-                        <i class="fas fa-filter mr-2 text-indigo-500"></i>
-                        Filter Delivery Orders
-                    </h3>
-                    <button onclick="resetDeliveryFilters()" class="text-sm text-indigo-600 hover:text-indigo-800">
-                        <i class="fas fa-undo mr-1"></i> Reset
-                    </button>
-                </div>
-                <div class="grid grid-cols-1 gap-4 sm:grid-cols-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700">Search</label>
-                        <input type="text" id="delivery-search" placeholder="Order # or customer..." 
-                               class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700">Status</label>
-                        <select id="delivery-status" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                            <option value="">All Statuses</option>
-                            <option value="IN_PROGRESS">In Progress</option>
-                            <option value="READY">Ready</option>
-                            <option value="OUT_FOR_DELIVERY">Out for Delivery</option>
-                            <option value="DELIVERED">Delivered</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700">Service Mode</label>
-                        <select id="delivery-mode" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                            <option value="">All</option>
-                            <option value="NORMAL">Normal</option>
-                            <option value="RUSH">Rush</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700">Return Date</label>
-                        <input type="date" id="delivery-return-date" 
-                               class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                    </div>
-                </div>
-            </div>
-        </div>
+    {{-- Loading Indicator --}}
+    <div x-show="loading" x-cloak class="text-center py-4">
+        <div class="loading-spinner rounded-full h-8 w-8 border-t-2 border-b-2 border-[#174455] mx-auto"></div>
+        <p class="mt-2 text-gray-600">Loading orders...</p>
+    </div>
 
-        <!-- Delivery Orders Table -->
-        <div class="bg-white shadow-sm sm:rounded-lg overflow-hidden">
-            <div class="px-4 py-5 sm:px-6 bg-gradient-to-r from-green-50 to-emerald-50 border-b border-gray-200">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <h3 class="text-lg font-medium text-gray-900">
-                            <i class="fas fa-truck text-green-500 mr-2"></i>
-                            Orders Ready for Delivery
-                        </h3>
-                        <p class="text-sm text-gray-500 mt-1">Orders that need to be returned to customers</p>
-                    </div>
-                    <div class="flex space-x-2">
-                        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                            <i class="fas fa-spinner mr-1"></i> In Progress: {{ $stats['in_progress'] }}
-                        </span>
-                        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                            <i class="fas fa-check-circle mr-1"></i> Ready: {{ $stats['ready'] }}
-                        </span>
-                        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
-                            <i class="fas fa-truck mr-1"></i> Out: {{ $stats['out_for_delivery'] }}
-                        </span>
-                    </div>
-                </div>
-            </div>
-            
-            @php
-                $deliveryOrders = $orders->filter(function($order) {
-                    return in_array($order->status, ['IN_PROGRESS', 'READY', 'OUT_FOR_DELIVERY', 'DELIVERED']);
-                });
-            @endphp
+    {{-- Normal Tab Content --}}
+    <div x-show="activeTab === 'normal'" x-cloak id="normal-tab-content">
+        @include('laundry-provider.orders.partials.normal-tab', ['orders' => $normalOrders])
+    </div>
 
-            @if($deliveryOrders->isEmpty())
-                <div class="text-center py-12">
-                    <div class="mx-auto h-24 w-24 text-gray-400">
-                        <i class="fas fa-truck text-4xl"></i>
-                    </div>
-                    <h3 class="mt-4 text-lg font-medium text-gray-900">No delivery orders</h3>
-                    <p class="mt-1 text-sm text-gray-500">No orders are ready for delivery at the moment.</p>
-                </div>
-            @else
-                <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
-                            <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Order Details</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Service</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Progress</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Expected Return</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Items</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody class="bg-white divide-y divide-gray-200" id="delivery-table-body">
-                            @foreach($deliveryOrders as $order)
-                                @php
-                                    $isRush = $order->service_mode === 'RUSH';
-                                    $returnDate = \Carbon\Carbon::parse($order->expected_return_date);
-                                    $isOverdue = $returnDate->isPast() && !in_array($order->status, ['DELIVERED', 'CANCELLED']);
-                                    $daysLeft = now()->diffInDays($returnDate, false);
-                                    
-                                    $progressStatuses = ['IN_PROGRESS', 'READY', 'OUT_FOR_DELIVERY', 'DELIVERED'];
-                                    $currentIndex = array_search($order->status, $progressStatuses);
-                                    $progress = $currentIndex !== false ? round(($currentIndex + 1) / count($progressStatuses) * 100) : 0;
-                                @endphp
-                                <tr class="hover:bg-gray-50 {{ $isRush ? 'bg-purple-50' : '' }} delivery-row"
-                                    data-status="{{ $order->status }}"
-                                    data-mode="{{ $order->service_mode }}"
-                                    data-return="{{ $returnDate->format('Y-m-d') }}"
-                                    data-search="{{ strtolower($order->order_reference . ' ' . ($order->user->name ?? '')) }}">
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <div class="text-sm font-medium text-gray-900">
-                                            {{ $order->order_reference }}
-                                        </div>
-                                        <div class="text-sm text-gray-500">
-                                            {{ $order->created_at->format('d M, h:i A') }}
-                                        </div>
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <div class="text-sm font-medium text-gray-900">
-                                            {{ $order->user->name ?? 'N/A' }}
-                                        </div>
-                                        <div class="text-sm text-gray-500">
-                                            {{ $order->user->phone ?? 'No phone' }}
-                                        </div>
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {{ $isRush ? 'bg-purple-100 text-purple-800' : 'bg-gray-100 text-gray-800' }}">
-                                            <i class="fas {{ $isRush ? 'fa-bolt' : 'fa-clock' }} mr-1"></i>
-                                            {{ $order->service_mode }}
-                                        </span>
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <div class="flex items-center">
-                                            <div class="w-24 bg-gray-200 rounded-full h-2 mr-2">
-                                                <div class="bg-indigo-600 h-2 rounded-full" style="width: {{ $progress }}%"></div>
-                                            </div>
-                                            <span class="text-xs text-gray-600">{{ $progress }}%</span>
-                                        </div>
-                                        <span class="text-xs mt-1 inline-block px-2 py-1 rounded-full 
-                                            @if($order->status == 'IN_PROGRESS') bg-purple-100 text-purple-800
-                                            @elseif($order->status == 'READY') bg-green-100 text-green-800
-                                            @elseif($order->status == 'OUT_FOR_DELIVERY') bg-orange-100 text-orange-800
-                                            @elseif($order->status == 'DELIVERED') bg-green-100 text-green-800
-                                            @endif">
-                                            {{ str_replace('_', ' ', $order->status) }}
-                                        </span>
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <div class="text-sm {{ $isOverdue ? 'text-red-600 font-medium' : ($daysLeft <= 2 ? 'text-orange-600' : 'text-gray-900') }}">
-                                            {{ $returnDate->format('d M Y') }}
-                                        </div>
-                                        @if($isOverdue)
-                                            <div class="text-xs text-red-500">
-                                                <i class="fas fa-exclamation-circle"></i> Overdue
-                                            </div>
-                                        @elseif($daysLeft <= 2 && $daysLeft > 0)
-                                            <div class="text-xs text-orange-500">
-                                                {{ $daysLeft }} days left
-                                            </div>
-                                        @endif
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                        {{ $order->items->sum('quantity') }} items
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                        <div class="flex space-x-3">
-                                            <a href="{{ route('laundry-provider.orders.show', $order->id) }}" 
-                                               class="text-indigo-600 hover:text-indigo-900" title="View Details">
-                                                <i class="fas fa-eye"></i>
-                                            </a>
-                                            @if($order->status == 'READY')
-                                                <button onclick="startDelivery({{ $order->id }})"
-                                                        class="text-orange-600 hover:text-orange-900" title="Start Delivery">
-                                                    <i class="fas fa-truck"></i>
-                                                </button>
-                                            @endif
-                                            @if($order->status == 'OUT_FOR_DELIVERY')
-                                                <button onclick="markDelivered({{ $order->id }})"
-                                                        class="text-green-600 hover:text-green-900" title="Mark as Delivered">
-                                                    <i class="fas fa-check-circle"></i>
-                                                </button>
-                                            @endif
-                                        </div>
-                                    </td>
-                                </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                </div>
-            @endif
-        </div>
+    {{-- Rush Tab Content --}}
+    <div x-show="activeTab === 'rush'" x-cloak id="rush-tab-content">
+        @include('laundry-provider.orders.partials.rush-tab', ['orders' => $rushOrders])
+    </div>
+
+    {{-- All Orders Tab Content --}}
+    <div x-show="activeTab === 'all'" x-cloak id="all-tab-content">
+        @include('laundry-provider.orders.partials.all-orders-tab', ['orders' => $allOrders])
     </div>
 </div>
 
+{{-- Order Details Modal --}}
+@include('laundry-provider.orders.partials.order-details-modal')
+@endsection
+
 @push('scripts')
 <script>
-// Tab switching functionality
-function switchTab(tab) {
-    // Update tab buttons
-    document.getElementById('pickup-tab').classList.remove('border-indigo-500', 'text-indigo-600');
-    document.getElementById('pickup-tab').classList.add('border-transparent', 'text-gray-500');
-    document.getElementById('delivery-tab').classList.remove('border-indigo-500', 'text-indigo-600');
-    document.getElementById('delivery-tab').classList.add('border-transparent', 'text-gray-500');
-    
-    // Hide both contents
-    document.getElementById('pickup-content').classList.add('hidden');
-    document.getElementById('delivery-content').classList.add('hidden');
-    
-    // Show selected tab
-    if (tab === 'pickup') {
-        document.getElementById('pickup-tab').classList.remove('border-transparent', 'text-gray-500');
-        document.getElementById('pickup-tab').classList.add('border-indigo-500', 'text-indigo-600');
-        document.getElementById('pickup-content').classList.remove('hidden');
-    } else {
-        document.getElementById('delivery-tab').classList.remove('border-transparent', 'text-gray-500');
-        document.getElementById('delivery-tab').classList.add('border-indigo-500', 'text-indigo-600');
-        document.getElementById('delivery-content').classList.remove('hidden');
+function orderManager() {
+    return {
+        activeTab: 'normal',
+        selectedDate: '{{ request('date', date('Y-m-d')) }}',
+        searchTerm: '',
+        loading: false,
+        
+        init() {
+            // Initialize event listeners for order actions
+            this.initOrderActionListeners();
+        },
+        
+        switchTab(tab) {
+            this.activeTab = tab;
+            this.filterOrders();
+        },
+        
+        filterOrders() {
+            this.loading = true;
+            
+            // Build URL with parameters
+            const url = new URL('/laundry-provider/orders/filter', window.location.origin);
+            url.searchParams.append('date', this.selectedDate);
+            url.searchParams.append('tab', this.activeTab);
+            if (this.searchTerm) {
+                url.searchParams.append('search', this.searchTerm);
+            }
+            
+            fetch(url, {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Update the active tab content
+                if (this.activeTab === 'normal') {
+                    document.getElementById('normal-tab-content').innerHTML = data.normal;
+                } else if (this.activeTab === 'rush') {
+                    document.getElementById('rush-tab-content').innerHTML = data.rush;
+                } else {
+                    document.getElementById('all-tab-content').innerHTML = data.all;
+                }
+                
+                // Re-initialize event listeners for the new content
+                this.initOrderActionListeners();
+                this.loading = false;
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                this.loading = false;
+                alert('Failed to load orders. Please try again.');
+            });
+        },
+        
+        resetFilters() {
+            this.selectedDate = '{{ date('Y-m-d') }}';
+            this.searchTerm = '';
+            this.filterOrders();
+        },
+        
+        initOrderActionListeners() {
+            // Remove existing listeners to prevent duplicates
+            document.querySelectorAll('.accept-order-btn').forEach(btn => {
+                btn.removeEventListener('click', this.handleAcceptOrder);
+                btn.addEventListener('click', this.handleAcceptOrder);
+            });
+            
+            document.querySelectorAll('.mark-picked-up-btn').forEach(btn => {
+                btn.removeEventListener('click', this.handleMarkPickedUp);
+                btn.addEventListener('click', this.handleMarkPickedUp);
+            });
+            
+            document.querySelectorAll('.start-processing-btn').forEach(btn => {
+                btn.removeEventListener('click', this.handleStartProcessing);
+                btn.addEventListener('click', this.handleStartProcessing);
+            });
+            
+            document.querySelectorAll('.mark-ready-btn').forEach(btn => {
+                btn.removeEventListener('click', this.handleMarkReady);
+                btn.addEventListener('click', this.handleMarkReady);
+            });
+            
+            document.querySelectorAll('.out-for-delivery-btn').forEach(btn => {
+                btn.removeEventListener('click', this.handleOutForDelivery);
+                btn.addEventListener('click', this.handleOutForDelivery);
+            });
+            
+            document.querySelectorAll('.delivered-btn').forEach(btn => {
+                btn.removeEventListener('click', this.handleDelivered);
+                btn.addEventListener('click', this.handleDelivered);
+            });
+            
+            document.querySelectorAll('.cancel-order-btn').forEach(btn => {
+                btn.removeEventListener('click', this.handleCancelOrder);
+                btn.addEventListener('click', this.handleCancelOrder);
+            });
+            
+            document.querySelectorAll('.view-details-btn').forEach(btn => {
+                btn.removeEventListener('click', this.handleViewDetails);
+                btn.addEventListener('click', this.handleViewDetails);
+            });
+            
+            document.querySelectorAll('.call-customer-btn').forEach(btn => {
+                btn.removeEventListener('click', this.handleCallCustomer);
+                btn.addEventListener('click', this.handleCallCustomer);
+            });
+        },
+        
+        handleAcceptOrder(e) {
+            e.preventDefault();
+            const btn = e.currentTarget;
+            const orderId = btn.dataset.id;
+            
+            if (!orderId) {
+                alert('Order ID not found');
+                return;
+            }
+            
+            if (confirm('Accept this order?')) {
+                // Disable button and show loading
+                btn.disabled = true;
+                const originalText = btn.innerHTML;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Accepting...';
+                
+                fetch(`/laundry-provider/orders/${orderId}/accept`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Order accepted successfully');
+                        location.reload();
+                    } else {
+                        alert(data.message || 'Failed to accept order');
+                        btn.disabled = false;
+                        btn.innerHTML = originalText;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error accepting order');
+                    btn.disabled = false;
+                    btn.innerHTML = originalText;
+                });
+            }
+        },
+        
+        handleMarkPickedUp(e) {
+            e.preventDefault();
+            const btn = e.currentTarget;
+            const orderId = btn.dataset.id;
+            
+            if (!orderId) {
+                alert('Order ID not found');
+                return;
+            }
+            
+            if (confirm('Mark this order as picked up?')) {
+                // Disable button and show loading
+                btn.disabled = true;
+                const originalText = btn.innerHTML;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Updating...';
+                
+                fetch(`/laundry-provider/orders/${orderId}/picked-up`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Order marked as picked up');
+                        location.reload();
+                    } else {
+                        alert(data.message || 'Failed to update order');
+                        btn.disabled = false;
+                        btn.innerHTML = originalText;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error updating order');
+                    btn.disabled = false;
+                    btn.innerHTML = originalText;
+                });
+            }
+        },
+        
+        handleStartProcessing(e) {
+            e.preventDefault();
+            const btn = e.currentTarget;
+            const orderId = btn.dataset.id;
+            
+            if (!orderId) {
+                alert('Order ID not found');
+                return;
+            }
+            
+            // Disable button and show loading
+            btn.disabled = true;
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Starting...';
+            
+            fetch(`/laundry-provider/orders/${orderId}/start-processing`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Processing started');
+                    location.reload();
+                } else {
+                    alert(data.message || 'Failed to update order');
+                    btn.disabled = false;
+                    btn.innerHTML = originalText;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error updating order');
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            });
+        },
+        
+        handleMarkReady(e) {
+            e.preventDefault();
+            const btn = e.currentTarget;
+            const orderId = btn.dataset.id;
+            
+            if (!orderId) {
+                alert('Order ID not found');
+                return;
+            }
+            
+            if (confirm('Mark this order as ready for delivery?')) {
+                // Disable button and show loading
+                btn.disabled = true;
+                const originalText = btn.innerHTML;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Updating...';
+                
+                fetch(`/laundry-provider/orders/${orderId}/mark-ready`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Order marked as ready');
+                        location.reload();
+                    } else {
+                        alert(data.message || 'Failed to update order');
+                        btn.disabled = false;
+                        btn.innerHTML = originalText;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error updating order');
+                    btn.disabled = false;
+                    btn.innerHTML = originalText;
+                });
+            }
+        },
+        
+        handleOutForDelivery(e) {
+            e.preventDefault();
+            const btn = e.currentTarget;
+            const orderId = btn.dataset.id;
+            
+            if (!orderId) {
+                alert('Order ID not found');
+                return;
+            }
+            
+            if (confirm('Mark this order as out for delivery?')) {
+                // Disable button and show loading
+                btn.disabled = true;
+                const originalText = btn.innerHTML;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Updating...';
+                
+                fetch(`/laundry-provider/orders/${orderId}/out-for-delivery`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Order marked as out for delivery');
+                        location.reload();
+                    } else {
+                        alert(data.message || 'Failed to update order');
+                        btn.disabled = false;
+                        btn.innerHTML = originalText;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error updating order');
+                    btn.disabled = false;
+                    btn.innerHTML = originalText;
+                });
+            }
+        },
+        
+        handleDelivered(e) {
+            e.preventDefault();
+            const btn = e.currentTarget;
+            const orderId = btn.dataset.id;
+            
+            if (!orderId) {
+                alert('Order ID not found');
+                return;
+            }
+            
+            if (confirm('Mark this order as delivered?')) {
+                // Disable button and show loading
+                btn.disabled = true;
+                const originalText = btn.innerHTML;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Updating...';
+                
+                fetch(`/laundry-provider/orders/${orderId}/deliver`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Order marked as delivered');
+                        location.reload();
+                    } else {
+                        alert(data.message || 'Failed to update order');
+                        btn.disabled = false;
+                        btn.innerHTML = originalText;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error updating order');
+                    btn.disabled = false;
+                    btn.innerHTML = originalText;
+                });
+            }
+        },
+        
+        handleCancelOrder(e) {
+            e.preventDefault();
+            const btn = e.currentTarget;
+            const orderId = btn.dataset.id;
+            
+            if (!orderId) {
+                alert('Order ID not found');
+                return;
+            }
+            
+            const reason = prompt('Please provide a reason for cancellation:');
+            if (!reason) return;
+            
+            // Disable button and show loading
+            btn.disabled = true;
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Cancelling...';
+            
+            fetch(`/laundry-provider/orders/${orderId}/cancel`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify({ reason: reason })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Order cancelled successfully');
+                    location.reload();
+                } else {
+                    alert(data.message || 'Failed to cancel order');
+                    btn.disabled = false;
+                    btn.innerHTML = originalText;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error cancelling order');
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            });
+        },
+        
+        handleViewDetails(e) {
+            e.preventDefault();
+            const btn = e.currentTarget;
+            const orderId = btn.dataset.id;
+            
+            if (orderId) {
+                openOrderModal(orderId);
+            }
+        },
+        
+        handleCallCustomer(e) {
+            e.preventDefault();
+            const btn = e.currentTarget;
+            const phone = btn.dataset.phone;
+            
+            if (phone) {
+                window.location.href = `tel:${phone}`;
+            } else {
+                alert('No phone number available');
+            }
+        }
     }
 }
 
-// Pickup Filters
-document.getElementById('pickup-search').addEventListener('input', filterPickup);
-document.getElementById('pickup-status').addEventListener('change', filterPickup);
-document.getElementById('pickup-mode').addEventListener('change', filterPickup);
-document.getElementById('pickup-date').addEventListener('change', filterPickup);
-
-function filterPickup() {
-    const search = document.getElementById('pickup-search').value.toLowerCase();
-    const status = document.getElementById('pickup-status').value;
-    const mode = document.getElementById('pickup-mode').value;
-    const date = document.getElementById('pickup-date').value;
+// Modal functions
+function openOrderModal(orderId) {
+    const modal = document.getElementById('orderDetailsModal');
+    if (!modal) return;
     
-    const rows = document.querySelectorAll('.pickup-row');
+    modal.classList.remove('hidden');
     
-    rows.forEach(row => {
-        let show = true;
-        
-        if (search && !row.dataset.search.includes(search)) {
-            show = false;
+    const modalContent = document.getElementById('modalContent');
+    modalContent.innerHTML = `
+        <div class="text-center py-8">
+            <div class="loading-spinner rounded-full h-12 w-12 border-t-2 border-b-2 border-[#174455] mx-auto mb-3"></div>
+            <p class="text-gray-600">Loading order details...</p>
+        </div>
+    `;
+    
+    fetch(`/laundry-provider/orders/${orderId}`, {
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'application/json'
         }
-        
-        if (status && row.dataset.status !== status) {
-            show = false;
-        }
-        
-        if (mode && row.dataset.mode !== mode) {
-            show = false;
-        }
-        
-        if (date && row.dataset.date !== date) {
-            show = false;
-        }
-        
-        row.style.display = show ? '' : 'none';
+    })
+    .then(response => response.text())
+    .then(html => {
+        modalContent.innerHTML = html;
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        modalContent.innerHTML = `
+            <div class="text-center py-8 text-red-600">
+                <i class="fas fa-exclamation-circle text-4xl mb-2"></i>
+                <p>Failed to load order details</p>
+                <button onclick="closeOrderModal()" class="mt-3 px-4 py-2 bg-gray-100 rounded-lg">Close</button>
+            </div>
+        `;
     });
 }
 
-// Delivery Filters
-document.getElementById('delivery-search').addEventListener('input', filterDelivery);
-document.getElementById('delivery-status').addEventListener('change', filterDelivery);
-document.getElementById('delivery-mode').addEventListener('change', filterDelivery);
-document.getElementById('delivery-return-date').addEventListener('change', filterDelivery);
-
-function filterDelivery() {
-    const search = document.getElementById('delivery-search').value.toLowerCase();
-    const status = document.getElementById('delivery-status').value;
-    const mode = document.getElementById('delivery-mode').value;
-    const returnDate = document.getElementById('delivery-return-date').value;
-    
-    const rows = document.querySelectorAll('.delivery-row');
-    
-    rows.forEach(row => {
-        let show = true;
-        
-        if (search && !row.dataset.search.includes(search)) {
-            show = false;
-        }
-        
-        if (status && row.dataset.status !== status) {
-            show = false;
-        }
-        
-        if (mode && row.dataset.mode !== mode) {
-            show = false;
-        }
-        
-        if (returnDate && row.dataset.return !== returnDate) {
-            show = false;
-        }
-        
-        row.style.display = show ? '' : 'none';
-    });
-}
-
-function resetPickupFilters() {
-    document.getElementById('pickup-search').value = '';
-    document.getElementById('pickup-status').value = '';
-    document.getElementById('pickup-mode').value = '';
-    document.getElementById('pickup-date').value = '';
-    filterPickup();
-}
-
-function resetDeliveryFilters() {
-    document.getElementById('delivery-search').value = '';
-    document.getElementById('delivery-status').value = '';
-    document.getElementById('delivery-mode').value = '';
-    document.getElementById('delivery-return-date').value = '';
-    filterDelivery();
-}
-
-// Action functions
-function schedulePickup(orderId) {
-    const date = prompt('Enter pickup date and time (YYYY-MM-DD HH:MM):');
-    if (date) {
-        fetch(`/laundry-provider/orders/${orderId}/status`, {
-            method: 'POST',
-            headers: {
-                'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ status: 'PICKUP_SCHEDULED' })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                alert('Pickup scheduled successfully!');
-                window.location.reload();
-            }
-        });
+function closeOrderModal() {
+    const modal = document.getElementById('orderDetailsModal');
+    if (modal) {
+        modal.classList.add('hidden');
     }
 }
 
-function markPickedUp(orderId) {
-    if (confirm('Mark this order as picked up?')) {
-        fetch(`/laundry-provider/orders/${orderId}/status`, {
-            method: 'POST',
-            headers: {
-                'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ status: 'PICKED_UP' })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                alert('Order marked as picked up!');
-                window.location.reload();
-            }
-        });
+// Close modal when clicking outside
+window.onclick = function(event) {
+    const modal = document.getElementById('orderDetailsModal');
+    if (event.target == modal) {
+        closeOrderModal();
     }
 }
 
-function startDelivery(orderId) {
-    if (confirm('Start delivery for this order?')) {
-        fetch(`/laundry-provider/orders/${orderId}/status`, {
-            method: 'POST',
-            headers: {
-                'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ status: 'OUT_FOR_DELIVERY' })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                alert('Delivery started!');
-                window.location.reload();
-            }
-        });
+// Close modal with Escape key
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeOrderModal();
     }
-}
-
-function markDelivered(orderId) {
-    if (confirm('Mark this order as delivered?')) {
-        fetch(`/laundry-provider/orders/${orderId}/status`, {
-            method: 'POST',
-            headers: {
-                'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ status: 'DELIVERED' })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                alert('Order marked as delivered!');
-                window.location.reload();
-            }
-        });
-    }
-}
+});
 </script>
 @endpush
-@endsection

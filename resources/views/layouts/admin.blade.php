@@ -540,11 +540,7 @@
                                  class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-50"
                                  style="display: none;">
                                 <div class="py-1">
-                                    <a href="{{ route('profile.show') }}" 
-                                       @click.prevent="navigate('{{ route('profile.show') }}')"
-                                       class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                        <i class="fas fa-user mr-2"></i> Profile
-                                    </a>
+                             
                                     <a href="{{ route('admin.dashboard') }}" 
                                        @click.prevent="navigate('{{ route('admin.dashboard') }}')"
                                        class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">

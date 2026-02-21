@@ -167,7 +167,7 @@
                                     </div>
                                     <div class="space-y-2">
                                         @foreach($rooms as $room)
-                                            <a href="{{ route('rental.room.book', [$property, $room]) }}" 
+                                            <a href="{{ route('properties.rooms.book', [$property, $room]) }}" 
                                                class="block w-full text-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">
                                                 Book Room {{ $room->room_number }}
                                             </a>
@@ -350,7 +350,7 @@
                 <h3 class="text-xl font-medium text-gray-900 mb-6">Similar Properties</h3>
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                     @foreach($relatedProperties as $related)
-                        <a href="{{ route('rental.property.details', $related) }}" 
+                        <a href="{{ route('properties.show', $related) }}" 
                            class="group bg-white rounded-lg shadow overflow-hidden hover:shadow-md transition-shadow">
                             <div class="h-40 bg-gray-100">
                                 @if($related->primaryImage)

@@ -4,215 +4,201 @@ namespace App\Http\Controllers\LaundryProvider;
 
 use App\Http\Controllers\Controller;
 use App\Models\ServiceRating;
-use App\Models\LaundryOrder;
 use App\Models\ServiceProvider;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
-use Carbon\Carbon;
 
 class ReviewController extends Controller
 {
-    protected $serviceProvider;
-
-    public function __construct()
-    {
-        $this->middleware(function ($request, $next) {
-            $this->serviceProvider = ServiceProvider::where('user_id', Auth::id())
-                ->where('service_type', 'LAUNDRY')
-                ->first();
-                
-            if (!$this->serviceProvider) {
-                abort(403, 'No laundry service provider found for this user.');
-            }
-            
-            return $next($request);
-        });
-    }
-
+    protected $provider;
+    
     /**
-     * Display all reviews
+     * Get the authenticated laundry provider
+     */
+    private function getProvider()
+    {
+        if (!$this->provider) {
+            $this->provider = ServiceProvider::where('user_id', Auth::id())
+                ->where('service_type', 'LAUNDRY')
+                ->firstOrFail();
+        }
+        return $this->provider;
+    }
+    
+    /**
+     * Display a listing of reviews
      */
     public function index(Request $request)
     {
+        $provider = $this->getProvider();
+        
         $query = ServiceRating::with('user')
-            ->where('service_provider_id', $this->serviceProvider->id)
+            ->where('service_provider_id', $provider->id)
             ->where('order_type', 'LAUNDRY');
-
-        // Apply filters
-        if ($request->filled('rating')) {
-            $query->where('overall_rating', $request->rating);
+        
+        // Filter by rating
+        if ($request->has('rating') && $request->rating != 'all') {
+            $query->where('overall_rating', '>=', $request->rating)
+                  ->where('overall_rating', '<', $request->rating + 1);
         }
-
-        if ($request->filled('date_range')) {
+        
+        // Filter by date
+        if ($request->has('date_range') && $request->date_range != 'all') {
+            $now = now();
             switch ($request->date_range) {
                 case 'today':
-                    $query->whereDate('created_at', Carbon::today());
+                    $query->whereDate('created_at', $now->today());
                     break;
-                case 'this_week':
-                    $query->whereBetween('created_at', [Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek()]);
+                case 'week':
+                    $query->whereBetween('created_at', [$now->startOfWeek(), $now->endOfWeek()]);
                     break;
-                case 'this_month':
-                    $query->whereMonth('created_at', Carbon::now()->month);
+                case 'month':
+                    $query->whereMonth('created_at', $now->month)
+                          ->whereYear('created_at', $now->year);
                     break;
             }
         }
-
-        if ($request->filled('search')) {
+        
+        // Search
+        if ($request->has('search')) {
             $search = $request->search;
-            $query->whereHas('user', function($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('email', 'like', "%{$search}%");
-            })->orWhere('comment', 'like', "%{$search}%");
+            $query->where(function($q) use ($search) {
+                $q->whereHas('user', function($userQuery) use ($search) {
+                    $userQuery->where('name', 'like', "%{$search}%");
+                })->orWhere('comment', 'like', "%{$search}%");
+            });
         }
-
-        $reviews = $query->orderBy('created_at', 'desc')->paginate(15)->withQueryString();
-
-        // Calculate statistics
+        
+        // Sort
+        $sortField = $request->get('sort', 'created_at');
+        $sortDirection = $request->get('direction', 'desc');
+        $query->orderBy($sortField, $sortDirection);
+        
+        $reviews = $query->paginate(15)->withQueryString();
+        
+        // Get statistics
         $stats = [
-            'total' => ServiceRating::where('service_provider_id', $this->serviceProvider->id)
-                ->where('order_type', 'LAUNDRY')->count(),
-            'average' => round(ServiceRating::where('service_provider_id', $this->serviceProvider->id)
-                ->where('order_type', 'LAUNDRY')->avg('overall_rating') ?? 0, 1),
-            'quality_avg' => round(ServiceRating::where('service_provider_id', $this->serviceProvider->id)
-                ->where('order_type', 'LAUNDRY')->avg('quality_rating') ?? 0, 1),
-            'delivery_avg' => round(ServiceRating::where('service_provider_id', $this->serviceProvider->id)
-                ->where('order_type', 'LAUNDRY')->avg('delivery_rating') ?? 0, 1),
-            'value_avg' => round(ServiceRating::where('service_provider_id', $this->serviceProvider->id)
-                ->where('order_type', 'LAUNDRY')->avg('value_rating') ?? 0, 1),
-            'five_star' => ServiceRating::where('service_provider_id', $this->serviceProvider->id)
-                ->where('order_type', 'LAUNDRY')->where('overall_rating', 5)->count(),
-            'four_star' => ServiceRating::where('service_provider_id', $this->serviceProvider->id)
-                ->where('order_type', 'LAUNDRY')->where('overall_rating', 4)->count(),
-            'three_star' => ServiceRating::where('service_provider_id', $this->serviceProvider->id)
-                ->where('order_type', 'LAUNDRY')->where('overall_rating', 3)->count(),
-            'two_star' => ServiceRating::where('service_provider_id', $this->serviceProvider->id)
-                ->where('order_type', 'LAUNDRY')->where('overall_rating', 2)->count(),
-            'one_star' => ServiceRating::where('service_provider_id', $this->serviceProvider->id)
-                ->where('order_type', 'LAUNDRY')->where('overall_rating', 1)->count(),
+            'average_rating' => ServiceRating::where('service_provider_id', $provider->id)
+                ->where('order_type', 'LAUNDRY')
+                ->avg('overall_rating') ?? 0,
+                
+            'total_reviews' => ServiceRating::where('service_provider_id', $provider->id)
+                ->where('order_type', 'LAUNDRY')
+                ->count(),
+                
+            'average_quality' => ServiceRating::where('service_provider_id', $provider->id)
+                ->where('order_type', 'LAUNDRY')
+                ->avg('quality_rating') ?? 0,
+                
+            'average_delivery' => ServiceRating::where('service_provider_id', $provider->id)
+                ->where('order_type', 'LAUNDRY')
+                ->avg('delivery_rating') ?? 0,
+                
+            'average_value' => ServiceRating::where('service_provider_id', $provider->id)
+                ->where('order_type', 'LAUNDRY')
+                ->avg('value_rating') ?? 0
         ];
-
-        // Get rating distribution
+        
+        // Rating distribution
         $distribution = [];
-        for ($i = 5; $i >= 1; $i--) {
-            $count = $stats[$i == 5 ? 'five_star' : ($i == 4 ? 'four_star' : ($i == 3 ? 'three_star' : ($i == 2 ? 'two_star' : 'one_star')))];
-            $distribution[] = [
-                'rating' => $i,
-                'count' => $count,
-                'percentage' => $stats['total'] > 0 ? round(($count / $stats['total']) * 100, 1) : 0
-            ];
+        for ($i = 1; $i <= 5; $i++) {
+            $distribution[$i] = ServiceRating::where('service_provider_id', $provider->id)
+                ->where('order_type', 'LAUNDRY')
+                ->whereBetween('overall_rating', [$i, $i + 0.9])
+                ->count();
         }
-
+        
         return view('laundry-provider.reviews.index', compact('reviews', 'stats', 'distribution'));
     }
-
+    
     /**
-     * Show single review
+     * Display the specified review
      */
     public function show($id)
     {
-        $review = ServiceRating::with(['user', 'serviceProvider'])
-            ->where('service_provider_id', $this->serviceProvider->id)
+        $provider = $this->getProvider();
+        
+        $review = ServiceRating::with(['user'])
+            ->where('service_provider_id', $provider->id)
             ->where('order_type', 'LAUNDRY')
             ->findOrFail($id);
-
-        $order = LaundryOrder::with('items.laundryItem')
-            ->where('id', $review->order_id)
-            ->first();
-
-        return view('laundry-provider.reviews.show', compact('review', 'order'));
+        
+        return view('laundry-provider.reviews.show', compact('review'));
     }
-
-    /**
-     * Reply to review
-     */
-    public function reply(Request $request, $id)
-    {
-        $request->validate([
-            'reply' => 'required|string|max:1000'
-        ]);
-
-        $review = ServiceRating::where('service_provider_id', $this->serviceProvider->id)
-            ->where('order_type', 'LAUNDRY')
-            ->findOrFail($id);
-
-        $review->provider_reply = $request->reply;
-        $review->replied_at = Carbon::now();
-        $review->save();
-
-        // Notify user about reply
-        $this->createNotification(
-            $review->user_id,
-            'SYSTEM',
-            'Response to Your Review',
-            "Laundry provider replied to your review: " . substr($request->reply, 0, 50) . "...",
-            'laundry_review',
-            $review->id
-        );
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Reply sent successfully'
-        ]);
-    }
-
+    
     /**
      * Export reviews to CSV
      */
-    public function export(Request $request)
+    public function exportReviews(Request $request)
     {
+        $provider = $this->getProvider();
+        
         $query = ServiceRating::with('user')
-            ->where('service_provider_id', $this->serviceProvider->id)
+            ->where('service_provider_id', $provider->id)
             ->where('order_type', 'LAUNDRY');
-
-        if ($request->filled('rating')) {
-            $query->where('overall_rating', $request->rating);
-        }
-
-        if ($request->filled('date_range')) {
+        
+        // Apply filters
+        if ($request->has('date_range') && $request->date_range != 'all') {
+            $now = now();
             switch ($request->date_range) {
                 case 'today':
-                    $query->whereDate('created_at', Carbon::today());
+                    $query->whereDate('created_at', $now->today());
                     break;
-                case 'this_week':
-                    $query->whereBetween('created_at', [Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek()]);
+                case 'week':
+                    $query->whereBetween('created_at', [$now->startOfWeek(), $now->endOfWeek()]);
                     break;
-                case 'this_month':
-                    $query->whereMonth('created_at', Carbon::now()->month);
+                case 'month':
+                    $query->whereMonth('created_at', $now->month)
+                          ->whereYear('created_at', $now->year);
                     break;
             }
         }
-
-        $reviews = $query->get();
-
-        $filename = 'laundry-reviews-' . Carbon::now()->format('Y-m-d-His') . '.csv';
+        
+        if ($request->has('min_rating') && $request->min_rating > 0) {
+            $query->where('overall_rating', '>=', $request->min_rating);
+        }
+        
+        $reviews = $query->orderBy('created_at', 'desc')->get();
+        
+        $filename = "reviews-export-" . now()->format('Y-m-d') . ".csv";
         $headers = [
             'Content-Type' => 'text/csv',
             'Content-Disposition' => "attachment; filename=\"$filename\"",
         ];
-
-        $columns = ['Date', 'Customer', 'Overall', 'Quality', 'Delivery', 'Value', 'Comment', 'Your Reply'];
-
-        $callback = function() use ($reviews, $columns) {
+        
+        $callback = function() use ($reviews) {
             $file = fopen('php://output', 'w');
-            fputcsv($file, $columns);
-
+            
+            // Add UTF-8 BOM
+            fprintf($file, chr(0xEF).chr(0xBB).chr(0xBF));
+            
+            // Headers
+            fputcsv($file, [
+                'Date',
+                'Customer Name',
+                'Overall Rating',
+                'Quality Rating',
+                'Delivery Rating',
+                'Value Rating',
+                'Comment'
+            ]);
+            
+            // Data rows
             foreach ($reviews as $review) {
                 fputcsv($file, [
                     $review->created_at->format('Y-m-d H:i'),
-                    $review->user->name ?? 'N/A',
-                    $review->overall_rating,
+                    $review->user->name,
+                    number_format($review->overall_rating, 1),
                     $review->quality_rating,
                     $review->delivery_rating,
                     $review->value_rating,
-                    $review->comment ?? '',
-                    $review->provider_reply ?? ''
+                    $review->comment
                 ]);
             }
-
+            
             fclose($file);
         };
-
+        
         return response()->stream($callback, 200, $headers);
     }
 }

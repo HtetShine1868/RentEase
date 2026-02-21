@@ -24,11 +24,11 @@
                 </div>
             </div>
             <div class="text-right">
-                <div class="text-4xl font-bold">{{ $stats['total_orders'] }}</div>
+
                 <div class="text-sm opacity-90">Total Orders</div>
                 <div class="mt-2 flex items-center justify-end">
                     <i class="fas fa-star text-yellow-300 mr-1"></i>
-                    <span>{{ $stats['average_rating'] }} ({{ $stats['total_reviews'] }} reviews)</span>
+
                 </div>
             </div>
         </div>
@@ -171,17 +171,6 @@
         </div>
     </div>
 
-    <!-- Charts Section -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div class="bg-white rounded-lg shadow-lg p-6">
-            <h3 class="text-lg font-semibold mb-4">Orders Last 7 Days</h3>
-            <canvas id="ordersChart" height="200"></canvas>
-        </div>
-        <div class="bg-white rounded-lg shadow-lg p-6">
-            <h3 class="text-lg font-semibold mb-4">Revenue Last 7 Days</h3>
-            <canvas id="revenueChart" height="200"></canvas>
-        </div>
-    </div>
 
     <!-- Rush Orders Alert -->
     @if($rushOrders->count() > 0)

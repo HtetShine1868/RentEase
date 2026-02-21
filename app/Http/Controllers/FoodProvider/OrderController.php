@@ -433,4 +433,5 @@ class OrderController extends Controller
             ->where('service_type', 'FOOD')
             ->value('rate') ?? 8.00;
     }
+    
 }

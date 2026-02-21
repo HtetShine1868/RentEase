@@ -8,7 +8,7 @@
     <nav class="flex" aria-label="Breadcrumb">
         <ol class="inline-flex items-center space-x-1 md:space-x-3">
             <li>
-                <a href="{{ route('rental.search') }}" class="inline-flex items-center text-sm font-medium text-gray-700 hover:text-indigo-600">
+                <a href="{{ route('properties.search') }}" class="inline-flex items-center text-sm font-medium text-gray-700 hover:text-indigo-600">
                     <i class="fas fa-search mr-2"></i>
                     Search Rental
                 </a>
@@ -16,7 +16,7 @@
             <li>
                 <div class="flex items-center">
                     <i class="fas fa-chevron-right text-gray-400"></i>
-                    <a href="{{ route('rental.property.details', $property) }}" 
+                    <a href="{{ route('properties.show', $property) }}" 
                        class="ml-1 text-sm font-medium text-gray-700 hover:text-indigo-600">
                         {{ $property->name }}
                     </a>
@@ -167,7 +167,7 @@
                 </div>
 
                 <!-- CTA Button -->
-                <a href="{{ route('rental.room.rent', [$property, $room]) }}" 
+                <a href="{{ route('properties.rooms.book', [$property, $room]) }}" 
                    class="w-full inline-flex justify-center items-center px-4 py-3 border border-transparent text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 mb-4">
                     <i class="fas fa-calendar-check mr-2"></i>
                     Rent This Room
@@ -209,9 +209,9 @@
                     <h3 class="text-lg font-medium text-gray-900 mb-4">Other Room Types</h3>
                     <div class="space-y-3">
                         @foreach($property->rooms->where('id', '!=', $room->id)->take(3) as $otherRoom)
-                            <a href="{{ route('rental.room.details', [$property, $otherRoom]) }}" 
-                               class="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:border-indigo-300 hover:bg-indigo-50 transition-colors">
-                                <div>
+                        <a href="{{ url('/properties/' . $property->id . '/rooms/' . $otherRoom->id) }}" 
+                        class="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:border-indigo-300 hover:bg-indigo-50 transition-colors">
+                                                        <div>
                                     <div class="font-medium text-gray-900">{{ $otherRoom->room_type_name }}</div>
                                     <div class="text-sm text-gray-600">Room {{ $otherRoom->room_number }}</div>
                                 </div>

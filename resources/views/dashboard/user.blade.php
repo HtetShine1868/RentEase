@@ -119,7 +119,7 @@
                     @endif
                     
                     @if(empty($userAddresses))
-                        <a href="{{ route('profile.address.edit') }}" 
+                        <a href="{{ route('profile.address') }}" 
                            class="inline-flex items-center px-4 py-2 bg-[#ffdb9f] text-[#174455] rounded-lg hover:bg-[#f8c570] transition">
                             <i class="fas fa-map-marker-alt mr-2"></i> Add Address
                         </a>

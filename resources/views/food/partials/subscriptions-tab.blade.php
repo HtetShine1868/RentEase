@@ -1,178 +1,125 @@
+<!-- Subscriptions Tab Content -->
 <div>
-    <!-- Header -->
-    <div class="mb-6">
-        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <h3 class="text-lg font-semibold text-gray-900">Your Subscriptions</h3>
-            <button @click="showSubscriptionModal = true"
-                    class="w-full sm:w-auto bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors flex items-center justify-center">
-                <i class="fas fa-plus mr-2"></i>New Subscription
-            </button>
-        </div>
-    </div>
-
     <!-- Subscriptions Grid -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <!-- Initial subscriptions from server -->
-        @if(count($subscriptions) > 0)
-            @foreach($subscriptions as $subscription)
-            <div class="border border-gray-200 rounded-lg p-6 hover:shadow-lg transition-shadow">
-                <div class="flex justify-between items-start">
-                    <div>
-                        <div class="flex items-center gap-2">
-                            <h4 class="font-bold text-lg text-gray-900">{{ $subscription['business_name'] }}</h4>
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
-                                {{ $subscription['status'] === 'ACTIVE' ? 'bg-green-100 text-green-800' : 
-                                   ($subscription['status'] === 'PAUSED' ? 'bg-yellow-100 text-yellow-800' : 
-                                   ($subscription['status'] === 'CANCELLED' ? 'bg-red-100 text-red-800' : 
-                                   ($subscription['status'] === 'COMPLETED' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800'))) }}">
-                                {{ $subscription['status'] }}
-                            </span>
-                        </div>
-                        
-                        <div class="mt-4 space-y-2">
-                            <div class="flex items-center text-gray-600">
-                                <i class="fas fa-utensils w-5 text-gray-400"></i>
-                                <span class="ml-2">{{ $subscription['meal_type'] }}</span>
-                            </div>
-                            <div class="flex items-center text-gray-600">
-                                <i class="far fa-clock w-5 text-gray-400"></i>
-                                <span class="ml-2">{{ $subscription['delivery_time'] }}</span>
-                            </div>
-                            <div class="flex items-center text-gray-600">
-                                <i class="fas fa-calendar-alt w-5 text-gray-400"></i>
-                                <span class="ml-2">{{ $subscription['delivery_days_text'] }}</span>
-                            </div>
-                            <div class="flex items-center text-gray-600">
-                                <i class="fas fa-calendar-week w-5 text-gray-400"></i>
-                                <span class="ml-2">{{ $subscription['start_date_formatted'] }} - {{ $subscription['end_date_formatted'] }}</span>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="text-right">
-                        <div class="text-2xl font-bold text-indigo-600">৳{{ $subscription['daily_price'] }}</div>
-                        <div class="text-sm text-gray-500">per day</div>
-                        <div class="mt-2 text-sm text-gray-600">Total: ৳{{ $subscription['total_price'] }}</div>
-                        @if($subscription['discount_amount'] > 0)
-                        <div class="text-sm text-green-600">Discount: ৳{{ $subscription['discount_amount'] }}</div>
-                        @endif
-                    </div>
-                </div>
-                
-                <div class="mt-6 pt-6 border-t border-gray-100">
-                    <div class="flex flex-wrap gap-2 justify-end">
-                        <button class="px-3 py-1 text-indigo-600 hover:text-indigo-900 text-sm font-medium border border-indigo-200 rounded-md hover:bg-indigo-50">
-                            <i class="fas fa-eye mr-1"></i>Details
-                        </button>
-                        
-                        @if($subscription['status'] === 'ACTIVE')
-                        <button @click="pauseSubscription({{ $subscription['id'] }})"
-                                class="px-3 py-1 text-yellow-600 hover:text-yellow-900 text-sm font-medium border border-yellow-200 rounded-md hover:bg-yellow-50">
-                            <i class="fas fa-pause mr-1"></i>Pause
-                        </button>
-                        @endif
-                        
-                        @if($subscription['status'] === 'PAUSED')
-                        <button @click="resumeSubscription({{ $subscription['id'] }})"
-                                class="px-3 py-1 text-green-600 hover:text-green-900 text-sm font-medium border border-green-200 rounded-md hover:bg-green-50">
-                            <i class="fas fa-play mr-1"></i>Resume
-                        </button>
-                        @endif
-                        
-                        @if(in_array($subscription['status'], ['ACTIVE', 'PAUSED']))
-                        <button @click="cancelSubscription({{ $subscription['id'] }})"
-                                class="px-3 py-1 text-red-600 hover:text-red-900 text-sm font-medium border border-red-200 rounded-md hover:bg-red-50">
-                            <i class="fas fa-times mr-1"></i>Cancel
-                        </button>
-                        @endif
-                    </div>
-                </div>
-            </div>
-            @endforeach
-        @endif
-
-        <!-- Dynamic subscriptions from AJAX -->
+    <div x-show="!isLoading" class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <template x-for="subscription in subscriptions" :key="subscription.id">
-            <div class="border border-gray-200 rounded-lg p-6 hover:shadow-lg transition-shadow">
-                <div class="flex justify-between items-start">
-                    <div>
-                        <div class="flex items-center gap-2">
-                            <h4 class="font-bold text-lg text-gray-900" x-text="subscription.business_name"></h4>
-                            <span :class="getSubscriptionStatusBadgeClass(subscription.status)" 
-                                  class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium">
-                                <span x-text="subscription.status"></span>
-                            </span>
+            <div class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition">
+                <!-- Subscription Header -->
+                <div class="bg-gradient-to-r from-indigo-600 to-purple-600 px-6 py-4">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <h3 class="text-lg font-semibold text-white mb-1" 
+                                x-text="subscription.business_name"></h3>
+                            <span class="px-2 py-1 bg-white bg-opacity-20 rounded-full text-xs text-white"
+                                  :class="subscription.status_badge[0]"
+                                  x-text="subscription.status_badge[2]"></span>
                         </div>
-                        
-                        <div class="mt-4 space-y-2">
-                            <div class="flex items-center text-gray-600">
-                                <i class="fas fa-utensils w-5 text-gray-400"></i>
-                                <span class="ml-2" x-text="subscription.meal_type"></span>
-                            </div>
-                            <div class="flex items-center text-gray-600">
-                                <i class="far fa-clock w-5 text-gray-400"></i>
-                                <span class="ml-2" x-text="subscription.delivery_time"></span>
-                            </div>
-                            <div class="flex items-center text-gray-600">
-                                <i class="fas fa-calendar-alt w-5 text-gray-400"></i>
-                                <span class="ml-2" x-text="subscription.delivery_days_text"></span>
-                            </div>
-                            <div class="flex items-center text-gray-600">
-                                <i class="fas fa-calendar-week w-5 text-gray-400"></i>
-                                <span class="ml-2" x-text="subscription.start_date_formatted + ' - ' + subscription.end_date_formatted"></span>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="text-right">
-                        <div class="text-2xl font-bold text-indigo-600" x-text="`৳${subscription.daily_price}`"></div>
-                        <div class="text-sm text-gray-500">per day</div>
-                        <div class="mt-2 text-sm text-gray-600" x-text="`Total: ৳${subscription.total_price}`"></div>
-                        <div x-show="subscription.discount_amount > 0" 
-                             class="text-sm text-green-600" 
-                             x-text="`Discount: ৳${subscription.discount_amount}`"></div>
+                        <span class="text-white font-bold" x-text="'৳' + subscription.total_price"></span>
                     </div>
                 </div>
-                
-                <div class="mt-6 pt-6 border-t border-gray-100">
-                    <div class="flex flex-wrap gap-2 justify-end">
-                        <button class="px-3 py-1 text-indigo-600 hover:text-indigo-900 text-sm font-medium border border-indigo-200 rounded-md hover:bg-indigo-50">
-                            <i class="fas fa-eye mr-1"></i>Details
-                        </button>
-                        
-                        <button x-show="subscription.status === 'ACTIVE'"
-                                @click="pauseSubscription(subscription.id)"
-                                class="px-3 py-1 text-yellow-600 hover:text-yellow-900 text-sm font-medium border border-yellow-200 rounded-md hover:bg-yellow-50">
-                            <i class="fas fa-pause mr-1"></i>Pause
-                        </button>
-                        
-                        <button x-show="subscription.status === 'PAUSED'"
-                                @click="resumeSubscription(subscription.id)"
-                                class="px-3 py-1 text-green-600 hover:text-green-900 text-sm font-medium border border-green-200 rounded-md hover:bg-green-50">
-                            <i class="fas fa-play mr-1"></i>Resume
-                        </button>
-                        
-                        <button x-show="subscription.status === 'ACTIVE' || subscription.status === 'PAUSED'"
-                                @click="cancelSubscription(subscription.id)"
-                                class="px-3 py-1 text-red-600 hover:text-red-900 text-sm font-medium border border-red-200 rounded-md hover:bg-red-50">
-                            <i class="fas fa-times mr-1"></i>Cancel
-                        </button>
+
+                <!-- Subscription Body -->
+                <div class="p-6">
+                    <!-- Meal Details -->
+                    <div class="mb-4">
+                        <h4 class="text-sm font-medium text-gray-500 mb-2">Meal Plan</h4>
+                        <p class="text-gray-900 font-medium" x-text="subscription.meal_type"></p>
+                        <p class="text-sm text-gray-600" x-text="subscription.delivery_time + ' daily'"></p>
+                    </div>
+
+                    <!-- Delivery Days -->
+                    <div class="mb-4">
+                        <h4 class="text-sm font-medium text-gray-500 mb-2">Delivery Days</h4>
+                        <div class="flex flex-wrap gap-1">
+                            <template x-for="day in ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']" :key="day">
+                                <span class="w-8 h-8 rounded-full flex items-center justify-center text-xs"
+                                      :class="subscription.delivery_days.includes(day) ? 
+                                             'bg-indigo-100 text-indigo-700 font-medium' : 
+                                             'bg-gray-100 text-gray-400'"
+                                      x-text="day"></span>
+                            </template>
+                        </div>
+                    </div>
+
+                    <!-- Date Range -->
+                    <div class="mb-4">
+                        <h4 class="text-sm font-medium text-gray-500 mb-2">Subscription Period</h4>
+                        <p class="text-sm text-gray-900">
+                            <span x-text="subscription.start_date_formatted"></span> - 
+                            <span x-text="subscription.end_date_formatted"></span>
+                        </p>
+                        <p x-show="subscription.days_remaining > 0" 
+                           class="text-xs text-green-600 mt-1"
+                           x-text="subscription.days_remaining + ' days remaining'"></p>
+                    </div>
+
+                    <!-- Price Breakdown -->
+                    <div class="bg-gray-50 rounded-lg p-4 mb-4">
+                        <div class="space-y-1 text-sm">
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Daily Price:</span>
+                                <span class="text-gray-900" x-text="'৳' + subscription.daily_price"></span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Discount:</span>
+                                <span class="text-green-600" x-text="'-৳' + subscription.discount_amount"></span>
+                            </div>
+                            <div class="flex justify-between font-medium pt-1 border-t border-gray-200">
+                                <span class="text-gray-900">Total:</span>
+                                <span class="text-indigo-600" x-text="'৳' + subscription.total_price"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="flex space-x-3">
+                        <template x-if="subscription.status === 'ACTIVE'">
+                            <button @click="pauseSubscription(subscription.id)"
+                                    class="flex-1 px-4 py-2 border border-yellow-300 text-yellow-700 rounded-lg text-sm hover:bg-yellow-50">
+                                Pause
+                            </button>
+                        </template>
+                        <template x-if="subscription.status === 'PAUSED'">
+                            <button @click="resumeSubscription(subscription.id)"
+                                    class="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700">
+                                Resume
+                            </button>
+                        </template>
+                        <template x-if="subscription.status === 'ACTIVE' || subscription.status === 'PAUSED'">
+                            <button @click="cancelSubscription(subscription.id)"
+                                    class="flex-1 px-4 py-2 border border-red-300 text-red-700 rounded-lg text-sm hover:bg-red-50">
+                                Cancel
+                            </button>
+                        </template>
+                        <template x-if="subscription.status === 'COMPLETED'">
+                            <button @click="renewSubscription(subscription.id)"
+                                    class="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm hover:bg-indigo-700">
+                                Renew
+                            </button>
+                        </template>
                     </div>
                 </div>
             </div>
         </template>
     </div>
 
-    <!-- Empty State -->
-    <div x-show="subscriptions.length === 0 && {{ count($subscriptions) }} === 0" x-cloak class="text-center py-12">
-        <div class="text-gray-300 text-6xl mb-4">
-            <i class="fas fa-calendar-alt"></i>
-        </div>
-        <h3 class="text-lg font-medium text-gray-900">No active subscriptions</h3>
-        <p class="mt-2 text-gray-500">Subscribe to your favorite meals for regular delivery and save money!</p>
-        <button @click="showSubscriptionModal = true" 
-                class="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">
-            Create Subscription
+    <!-- Loading State -->
+    <div x-show="isLoading" class="text-center py-12">
+        <div class="loading-spinner"></div>
+        <p class="mt-4 text-gray-600">Loading subscriptions...</p>
+    </div>
+
+    <!-- No Subscriptions -->
+    <div x-show="!isLoading && subscriptions.length === 0" class="text-center py-12">
+        <svg class="h-16 w-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                  d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+        </svg>
+        <h3 class="text-lg font-medium text-gray-900 mb-2">No active subscriptions</h3>
+        <p class="text-gray-600 mb-4">Subscribe to your favorite restaurants and save money</p>
+        <button @click="activeTab = 'restaurants'" 
+                class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">
+            Browse Restaurants
         </button>
     </div>
 </div>

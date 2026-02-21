@@ -1,1099 +1,415 @@
-@extends('owner.layout.owner-layout')
+@extends('dashboard')
 
-@section('title', 'Owner Dashboard - RentEase')
-@section('page-title', 'Dashboard Overview')
-@section('page-subtitle', 'Manage your properties, bookings, and earnings')
+@section('title', 'Owner Dashboard')
+@section('subtitle', 'Welcome back, ' . Auth::user()->name . '!')
+
+@section('breadcrumbs')
+    @php
+        $breadcrumbs = [
+            ['title' => 'Dashboard', 'url' => route('dashboard')],
+            ['title' => 'Owner Dashboard', 'url' => route('owner.dashboard')]
+        ];
+    @endphp
+@endsection
 
 @section('content')
-<div class="space-y-8">
-    <!-- Welcome Section -->
-    <div class="welcome-section">
-        <div class="welcome-content">
-            <div class="welcome-icon">
-                <i class="fas fa-chart-line"></i>
-            </div>
-            <div class="welcome-text">
-                <h1>Welcome back, Owner!</h1>
-                <p>Track your properties, manage bookings, and monitor earnings in real-time.</p>
-                <div class="welcome-stats">
-                    <div class="stat-item">
-                        <span class="stat-number">12</span>
-                        <span class="stat-label">Properties</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-number">48</span>
-                        <span class="stat-label">Bookings</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-number">$24.5K</span>
-                        <span class="stat-label">Revenue</span>
+<div class="p-6">
+    <!-- Stats Cards - Using real data from controller -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <!-- Total Properties -->
+        <div class="bg-gradient-to-r from-[#174455] to-[#286b7f] rounded-xl shadow-lg text-white p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm opacity-90">Total Properties</p>
+                    <p class="text-3xl font-bold mt-2">{{ $totalProperties ?? 0 }}</p>
+                    <div class="flex space-x-2 mt-1 text-xs">
+                        <span class="bg-green-400 bg-opacity-20 px-2 py-0.5 rounded">Active: {{ $activeProperties ?? 0 }}</span>
+                        <span class="bg-yellow-400 bg-opacity-20 px-2 py-0.5 rounded">Pending: {{ $pendingProperties ?? 0 }}</span>
                     </div>
                 </div>
+                <div class="h-12 w-12 rounded-full bg-[#ffdb9f] bg-opacity-20 flex items-center justify-center">
+                    <i class="fas fa-building text-xl" style="color: #ffdb9f;"></i>
+                </div>
             </div>
+            <a href="{{ route('owner.properties.index') }}" class="text-sm opacity-90 hover:opacity-100 inline-flex items-center mt-4">
+                Manage Properties <i class="fas fa-arrow-right ml-1"></i>
+            </a>
         </div>
-        <div class="welcome-actions">
-            <button class="btn-primary">
-                <i class="fas fa-plus"></i>
-                Add New Property
-            </button>
-            <button class="btn-secondary">
-                <i class="fas fa-chart-bar"></i>
-                View Reports
-            </button>
+
+        <!-- Active Bookings -->
+        <div class="bg-gradient-to-r from-[#1f556b] to-[#2d7a94] rounded-xl shadow-lg text-white p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm opacity-90">Active Bookings</p>
+                    <p class="text-3xl font-bold mt-2">{{ $activeBookings ?? 0 }}</p>
+                    <div class="flex space-x-2 mt-1 text-xs">
+                        <span class="bg-blue-400 bg-opacity-20 px-2 py-0.5 rounded">Today: {{ $todayBookings ?? 0 }}</span>
+                        <span class="bg-purple-400 bg-opacity-20 px-2 py-0.5 rounded">Month: {{ $monthBookings ?? 0 }}</span>
+                    </div>
+                </div>
+                <div class="h-12 w-12 rounded-full bg-[#ffdb9f] bg-opacity-20 flex items-center justify-center">
+                    <i class="fas fa-calendar-check text-xl" style="color: #ffdb9f;"></i>
+                </div>
+            </div>
+            <a href="{{ route('owner.bookings.index') }}" class="text-sm opacity-90 hover:opacity-100 inline-flex items-center mt-4">
+                View All Bookings <i class="fas fa-arrow-right ml-1"></i>
+            </a>
         </div>
+
+        <!-- Occupancy Rate -->
+        <div class="bg-gradient-to-r from-[#286b7f] to-[#3a8da6] rounded-xl shadow-lg text-white p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm opacity-90">Occupancy Rate</p>
+                    <p class="text-3xl font-bold mt-2">{{ $occupancyRate ?? 0 }}%</p>
+                    <div class="flex space-x-2 mt-1 text-xs">
+                        <span class="bg-green-400 bg-opacity-20 px-2 py-0.5 rounded">Booking Success: {{ $bookingSuccessRate ?? 0 }}%</span>
+                    </div>
+                </div>
+                <div class="h-12 w-12 rounded-full bg-[#ffdb9f] bg-opacity-20 flex items-center justify-center">
+                    <i class="fas fa-door-open text-xl" style="color: #ffdb9f;"></i>
+                </div>
+            </div>
+            <!-- FIXED: Changed to properties.index since rooms are managed within properties -->
+            <a href="{{ route('owner.properties.index') }}" class="text-sm opacity-90 hover:opacity-100 inline-flex items-center mt-4">
+                Manage Rooms <i class="fas fa-arrow-right ml-1"></i>
+            </a>
+        </div>
+
     </div>
 
-    <!-- Stats Grid -->
-    <div class="stats-grid">
-        <!-- Property Stats -->
-        <div class="stat-card stat-card-blue">
-            <div class="stat-header">
-                <div class="stat-icon">
-                    <i class="fas fa-building"></i>
-                </div>
-                <div>
-                    <h3 class="stat-title">Property Overview</h3>
-                    <p class="stat-subtitle">Total properties & occupancy</p>
-                </div>
-            </div>
-            <div class="stat-content">
-                <div class="stat-main">
-                    <span class="stat-number">12</span>
-                    <span class="stat-unit">Properties</span>
-                </div>
-                <div class="stat-details">
-                    <div class="stat-detail">
-                        <span class="detail-label">Hostels</span>
-                        <span class="detail-value">8</span>
-                    </div>
-                    <div class="stat-detail">
-                        <span class="detail-label">Apartments</span>
-                        <span class="detail-value">4</span>
-                    </div>
-                    <div class="stat-detail">
-                        <span class="detail-label">Occupancy</span>
-                        <span class="detail-value success">83%</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Booking Stats -->
-        <div class="stat-card stat-card-green">
-            <div class="stat-header">
-                <div class="stat-icon">
-                    <i class="fas fa-calendar-check"></i>
-                </div>
-                <div>
-                    <h3 class="stat-title">Bookings</h3>
-                    <p class="stat-subtitle">Current & upcoming bookings</p>
-                </div>
-            </div>
-            <div class="stat-content">
-                <div class="stat-main">
-                    <span class="stat-number">8</span>
-                    <span class="stat-unit">Active</span>
-                </div>
-                <div class="stat-details">
-                    <div class="stat-detail">
-                        <span class="detail-label">Pending</span>
-                        <span class="detail-value warning">3</span>
-                    </div>
-                    <div class="stat-detail">
-                        <span class="detail-label">Completed</span>
-                        <span class="detail-value">37</span>
-                    </div>
-                    <div class="stat-detail">
-                        <span class="detail-label">Revenue</span>
-                        <span class="detail-value success">$2,450</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Financial Stats -->
-        <div class="stat-card stat-card-purple">
-            <div class="stat-header">
-                <div class="stat-icon">
-                    <i class="fas fa-money-bill-wave"></i>
-                </div>
-                <div>
-                    <h3 class="stat-title">Financial Summary</h3>
-                    <p class="stat-subtitle">Earnings & revenue</p>
-                </div>
-            </div>
-            <div class="stat-content">
-                <div class="stat-main">
-                    <span class="stat-number">$24.5K</span>
-                    <span class="stat-unit">Total</span>
-                </div>
-                <div class="stat-details">
-                    <div class="stat-detail">
-                        <span class="detail-label">This Month</span>
-                        <span class="detail-value success">$2,450</span>
-                    </div>
-                    <div class="stat-detail">
-                        <span class="detail-label">Growth</span>
-                        <span class="detail-value success">+14%</span>
-                    </div>
-                    <div class="stat-detail">
-                        <span class="detail-label">Commission</span>
-                        <span class="detail-value">5%</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Performance Stats -->
-        <div class="stat-card stat-card-yellow">
-            <div class="stat-header">
-                <div class="stat-icon">
-                    <i class="fas fa-star"></i>
-                </div>
-                <div>
-                    <h3 class="stat-title">Performance</h3>
-                    <p class="stat-subtitle">Ratings & satisfaction</p>
-                </div>
-            </div>
-            <div class="stat-content">
-                <div class="stat-main">
-                    <span class="stat-number">4.7</span>
-                    <span class="stat-unit">/5 Rating</span>
-                </div>
-                <div class="stat-details">
-                    <div class="stat-detail">
-                        <span class="detail-label">Satisfaction</span>
-                        <span class="detail-value success">98%</span>
-                    </div>
-                    <div class="stat-detail">
-                        <span class="detail-label">Response Time</span>
-                        <span class="detail-value">2.4h</span>
-                    </div>
-                    <div class="stat-detail">
-                        <span class="detail-label">Success Rate</span>
-                        <span class="detail-value success">94%</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Main Content Area -->
-    <div class="content-grid">
-        <!-- Recent Bookings - New Table Design -->
-        <div class="content-card content-card-wide">
-            <div class="card-header">
-                <div class="card-title-section">
-                    <h2 class="card-title">Recent Bookings</h2>
-                    <p class="card-subtitle">Latest property reservations</p>
-                </div>
-                <div class="card-actions">
-                    <select class="card-select">
-                        <option>All Properties</option>
-                        <option>Hostels</option>
-                        <option>Apartments</option>
-                    </select>
-                    <button class="card-button">
-                        <i class="fas fa-download"></i>
-                        Export
-                    </button>
-                </div>
-            </div>
-            
-            <div class="table-container">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Booking ID</th>
-                            <th>Guest</th>
-                            <th>Property</th>
-                            <th>Dates</th>
-                            <th>Amount</th>
-                            <th>Status</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td><span class="booking-id">#BK-2024-001</span></td>
-                            <td><span class="guest">John Doe</span></td>
-                            <td><span class="property">Sunshine Apartments Unit #302</span></td>
-                            <td><span class="dates">Mar 15 - Apr 30</span><span class="days-badge">47 days</span></td>
-                            <td><span class="amount">$1,250</span> <span style="color: #10b981; font-weight: 600;">Paid</span></td>
-                            <td><span class="status status-active">Active</span></td>
-                            <td>
-                                <div class="actions">
-                                    <button class="action-btn email-btn" title="Send Email">
-                                        <i class="fas fa-envelope"></i>
-                                    </button>
-                                    <button class="action-btn email-btn" title="Send Reminder">
-                                        <i class="fas fa-bell"></i>
-                                    </button>
-                                    <button class="action-btn email-btn" title="View Details">
-                                        <i class="fas fa-eye"></i>
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td><span class="booking-id">#BK-2024-002</span></td>
-                            <td><span class="guest">Sarah Johnson</span></td>
-                            <td><span class="property">City Hostel Room #12</span></td>
-                            <td><span class="dates">Mar 1 - Jun 1</span><span class="days-badge">92 days</span></td>
-                            <td><span class="amount">$850</span> <span style="color: #f59e0b; font-weight: 600;">Pending</span></td>
-                            <td><span class="status status-pending">Pending</span></td>
-                            <td>
-                                <div class="actions">
-                                    <button class="action-btn cancel-btn" title="Cancel Booking">
-                                        <i class="fas fa-times"></i>
-                                    </button>
-                                    <button class="action-btn cancel-btn" title="Send Warning">
-                                        <i class="fas fa-exclamation-triangle"></i>
-                                    </button>
-                                    <button class="action-btn cancel-btn" title="Delete">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td><span class="booking-id">#BK-2024-003</span></td>
-                            <td><span class="guest">Michael Chen</span></td>
-                            <td><span class="property">Luxury Apartments Unit #405</span></td>
-                            <td><span class="dates">Jan 15 - Feb 15</span><span class="days-badge">31 days</span></td>
-                            <td><span class="amount">$2,100</span> <span style="color: #10b981; font-weight: 600;">Paid</span></td>
-                            <td><span class="status status-completed">Completed</span></td>
-                            <td>
-                                <div class="actions">
-                                    <button class="action-btn email-btn" title="Send Email">
-                                        <i class="fas fa-envelope"></i>
-                                    </button>
-                                    <button class="action-btn email-btn" title="Request Review">
-                                        <i class="fas fa-star"></i>
-                                    </button>
-                                    <button class="action-btn email-btn" title="View Details">
-                                        <i class="fas fa-eye"></i>
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-            
-            <div class="card-footer">
-                <div class="pagination-info">
-                    Showing <span class="font-semibold">1 to 3</span> of <span class="font-semibold">48</span> bookings
-                </div>
-                <div class="pagination-controls">
-                    <button class="pagination-btn disabled">
-                        <i class="fas fa-chevron-left"></i>
-                    </button>
-                    <button class="pagination-btn active">1</button>
-                    <button class="pagination-btn">2</button>
-                    <button class="pagination-btn">3</button>
-                    <span class="pagination-ellipsis">...</span>
-                    <button class="pagination-btn">10</button>
-                    <button class="pagination-btn">
-                        <i class="fas fa-chevron-right"></i>
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Sidebar Content -->
-        <div class="sidebar-grid">
-            <!-- Notifications -->
-            <div class="content-card">
-                <div class="card-header">
-                    <h2 class="card-title">Notifications</h2>
-                    <button class="text-sm text-blue-600 hover:text-blue-800">
-                        Mark all read
-                    </button>
-                </div>
-                
-                <div class="notification-list">
-                    <div class="notification-item new">
-                        <div class="notification-icon">
-                            <i class="fas fa-calendar-check"></i>
-                        </div>
-                        <div class="notification-content">
-                            <p class="notification-title">New booking received</p>
-                            <p class="notification-desc">Apartment #302 booked for 6 months</p>
-                            <p class="notification-time">2 hours ago</p>
-                        </div>
-                    </div>
+    <!-- Welcome Banner -->
+    <div class="bg-gradient-to-r from-[#174455] to-[#286b7f] rounded-xl shadow-lg text-white p-8 mb-8">
+        <div class="flex flex-col md:flex-row items-center justify-between">
+            <div class="md:w-2/3">
+                <h2 class="text-2xl font-bold mb-2">Property Owner Dashboard</h2>
+                <p class="text-[#ffdb9f] mb-4">
+                    Manage your properties, track bookings, and monitor your revenue.
+                    @if(($pendingProperties ?? 0) > 0)
+                        <br><i class="fas fa-bell mr-1"></i> You have <strong>{{ $pendingProperties }}</strong> property(ies) pending approval.
+                    @endif
+                    @if(($todayBookings ?? 0) > 0)
+                        <br><i class="fas fa-bell mr-1"></i> You have <strong>{{ $todayBookings }}</strong> booking(s) today.
+                    @endif
+                </p>
+                <div class="flex flex-wrap gap-3">
+                    <a href="{{ route('owner.properties.create') }}" 
+                       class="inline-flex items-center px-4 py-2 bg-[#ffdb9f] text-[#174455] rounded-lg hover:bg-[#f8c570] transition">
+                        <i class="fas fa-plus-circle mr-2"></i> Add New Property
+                    </a>
                     
-                    <div class="notification-item">
-                        <div class="notification-icon icon-green">
-                            <i class="fas fa-money-bill-wave"></i>
-                        </div>
-                        <div class="notification-content">
-                            <p class="notification-title">Payment confirmed</p>
-                            <p class="notification-desc">$850 payment for Hostel Room #12</p>
-                            <p class="notification-time">5 hours ago</p>
-                        </div>
-                    </div>
-                    
-                    <div class="notification-item">
-                        <div class="notification-icon icon-yellow">
-                            <i class="fas fa-exclamation-triangle"></i>
-                        </div>
-                        <div class="notification-content">
-                            <p class="notification-title">Complaint received</p>
-                            <p class="notification-desc">New complaint about water supply</p>
-                            <p class="notification-time">1 day ago</p>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="card-footer">
-                    <a href="{{ route('owner.notifications') }}" class="view-all-link">
-                        View all notifications
+                    @if(($pendingProperties ?? 0) > 0)
+                        <a href="{{ route('owner.properties.index', ['status' => 'PENDING']) }}" 
+                           class="inline-flex items-center px-4 py-2 bg-[#ffdb9f] text-[#174455] rounded-lg hover:bg-[#f8c570] transition">
+                            <i class="fas fa-clock mr-2"></i> View Pending Properties
+                        </a>
+                    @endif
+
+                    <a href="{{ route('owner.bookings.index', ['date' => 'today']) }}" 
+                       class="inline-flex items-center px-4 py-2 bg-[#ffdb9f] text-[#174455] rounded-lg hover:bg-[#f8c570] transition">
+                        <i class="fas fa-calendar-check mr-2"></i> Today's Bookings
                     </a>
                 </div>
             </div>
-
-            <!-- Quick Actions -->
-            <div class="content-card">
-                <h2 class="card-title">Quick Actions</h2>
-                <div class="quick-actions-grid">
-                    <button class="quick-action-btn">
-                        <div class="quick-action-icon">
-                            <i class="fas fa-plus"></i>
-                        </div>
-                        <span>New Booking</span>
-                    </button>
-                    <button class="quick-action-btn">
-                        <div class="quick-action-icon">
-                            <i class="fas fa-print"></i>
-                        </div>
-                        <span>Print Report</span>
-                    </button>
-                    <button class="quick-action-btn">
-                        <div class="quick-action-icon">
-                            <i class="fas fa-envelope"></i>
-                        </div>
-                        <span>Send Emails</span>
-                    </button>
-                    <button class="quick-action-btn">
-                        <div class="quick-action-icon">
-                            <i class="fas fa-chart-pie"></i>
-                        </div>
-                        <span>Analytics</span>
-                    </button>
+            <div class="mt-6 md:mt-0">
+                <div class="h-40 w-40 rounded-full bg-[#ffdb9f] bg-opacity-10 flex items-center justify-center border-4 border-[#ffdb9f] border-opacity-20">
+                    @if(Auth::user()->avatar_url)
+                        <img src="{{ Auth::user()->avatar_url }}" alt="Avatar" class="h-36 w-36 rounded-full object-cover">
+                    @else
+                        <i class="fas fa-user-tie text-6xl text-[#ffdb9f] opacity-80"></i>
+                    @endif
                 </div>
             </div>
         </div>
     </div>
+
+    <!-- Quick Actions -->
+    <div class="mb-8">
+        <h3 class="text-xl font-semibold text-[#174455] mb-4">Quick Actions</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <a href="{{ route('owner.properties.create') }}" class="bg-white border border-[#286b7f] border-opacity-20 rounded-xl p-6 hover:shadow-md transition-shadow">
+                <div class="flex items-center mb-4">
+                    <div class="h-12 w-12 rounded-lg bg-[#174455] bg-opacity-10 flex items-center justify-center">
+                        <i class="fas fa-plus-circle text-[#174455] text-xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <h4 class="text-lg font-medium text-[#174455]">Add Property</h4>
+                        <p class="text-sm text-gray-500">List new hostel/apartment</p>
+                    </div>
+                </div>
+                <span class="inline-flex items-center text-[#174455] hover:text-[#286b7f] font-medium">
+                    Create Listing <i class="fas fa-arrow-right ml-2"></i>
+                </span>
+            </a>
+
+            <a href="{{ route('owner.bookings.index') }}" class="bg-white border border-[#286b7f] border-opacity-20 rounded-xl p-6 hover:shadow-md transition-shadow">
+                <div class="flex items-center mb-4">
+                    <div class="h-12 w-12 rounded-lg bg-[#1f556b] bg-opacity-10 flex items-center justify-center">
+                        <i class="fas fa-calendar-alt text-[#1f556b] text-xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <h4 class="text-lg font-medium text-[#174455]">Manage Bookings</h4>
+                        <p class="text-sm text-gray-500">{{ $pendingBookings ?? 0 }} pending bookings</p>
+                    </div>
+                </div>
+                <span class="inline-flex items-center text-[#1f556b] hover:text-[#286b7f] font-medium">
+                    View Bookings <i class="fas fa-arrow-right ml-2"></i>
+                </span>
+            </a>
+
+            <!-- FIXED: Changed to properties.index since rooms are managed within properties -->
+            <a href="{{ route('owner.properties.index') }}" class="bg-white border border-[#286b7f] border-opacity-20 rounded-xl p-6 hover:shadow-md transition-shadow">
+                <div class="flex items-center mb-4">
+                    <div class="h-12 w-12 rounded-lg bg-[#286b7f] bg-opacity-10 flex items-center justify-center">
+                        <i class="fas fa-door-open text-[#286b7f] text-xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <h4 class="text-lg font-medium text-[#174455]">Manage Rooms</h4>
+                        <p class="text-sm text-gray-500">{{ $occupancyRate ?? 0 }}% occupied</p>
+                    </div>
+                </div>
+                <span class="inline-flex items-center text-[#286b7f] hover:text-[#174455] font-medium">
+                    View Properties <i class="fas fa-arrow-right ml-2"></i>
+                </span>
+            </a>
+
+            <div class="bg-white border border-[#286b7f] border-opacity-20 rounded-xl p-6 hover:shadow-md transition-shadow">
+                <div class="flex items-center mb-4">
+                    <div class="h-12 w-12 rounded-lg bg-[#ffdb9f] bg-opacity-30 flex items-center justify-center">
+                        <i class="fas fa-star text-[#174455] text-xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <h4 class="text-lg font-medium text-[#174455]">Performance</h4>
+                        <p class="text-sm text-gray-500">{{ $averageRating ?? 0 }} avg rating ({{ $totalRatings ?? 0 }} reviews)</p>
+                    </div>
+                </div>
+                <span class="inline-flex items-center text-[#174455] hover:text-[#286b7f] font-medium">
+                    View Reports <i class="fas fa-arrow-right ml-2"></i>
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Bookings & Notifications -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+        <!-- Recent Bookings -->
+        <div class="lg:col-span-2">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-xl font-semibold text-[#174455]">Recent Bookings</h3>
+                <a href="{{ route('owner.bookings.index') }}" class="text-sm text-[#286b7f] hover:text-[#174455]">
+                    View all ({{ $totalBookings ?? 0 }})
+                </a>
+            </div>
+            <div class="bg-white border border-[#286b7f] border-opacity-20 rounded-xl overflow-hidden">
+                @forelse($recentBookings ?? [] as $booking)
+                    <div class="p-4 hover:bg-gray-50 border-b border-gray-100 last:border-b-0">
+                        <div class="flex items-start justify-between">
+                            <div class="flex-1">
+                                <div class="flex items-center">
+                                    <h4 class="text-sm font-medium text-gray-900">{{ $booking->property->name ?? 'N/A' }}</h4>
+                                    <span class="ml-2 text-xs text-gray-500">#{{ $booking->booking_reference ?? 'BK-'.str_pad($booking->id, 6, '0', STR_PAD_LEFT) }}</span>
+                                </div>
+                                <p class="text-sm text-gray-600 mt-1">
+                                    <i class="fas fa-user mr-1 text-[#286b7f]"></i> {{ $booking->user->name ?? 'N/A' }}
+                                    @if($booking->user->phone ?? false)
+                                        <span class="mx-2">•</span>
+                                        <i class="fas fa-phone mr-1 text-[#286b7f]"></i> {{ $booking->user->phone }}
+                                    @endif
+                                </p>
+                                <div class="flex items-center mt-2 text-xs text-gray-500">
+                                    <i class="fas fa-calendar-check text-[#174455] mr-1"></i>
+                                    {{ $booking->check_in ? \Carbon\Carbon::parse($booking->check_in)->format('M d, Y') : 'N/A' }}
+                                    <span class="mx-2">→</span>
+                                    {{ $booking->check_out ? \Carbon\Carbon::parse($booking->check_out)->format('M d, Y') : 'N/A' }}
+                                    @if($booking->room ?? false)
+                                        <span class="mx-2">•</span>
+                                        <i class="fas fa-door-open text-[#174455] mr-1"></i>
+                                        {{ $booking->room->room_number ?? 'N/A' }}
+                                    @endif
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                @php
+                                    $statusColors = [
+                                        'pending' => 'bg-yellow-100 text-yellow-800',
+                                        'confirmed' => 'bg-green-100 text-green-800',
+                                        'checked_in' => 'bg-blue-100 text-blue-800',
+                                        'checked_out' => 'bg-gray-100 text-gray-800',
+                                        'cancelled' => 'bg-red-100 text-red-800',
+                                    ];
+                                    $status = strtolower($booking->status ?? 'pending');
+                                @endphp
+                                <span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium {{ $statusColors[$status] ?? 'bg-gray-100 text-gray-800' }}">
+                                    {{ str_replace('_', ' ', $booking->status ?? 'pending') }}
+                                </span>
+                                <p class="text-sm font-medium text-gray-900 mt-1">৳ {{ number_format($booking->total_amount ?? 0) }}</p>
+                                <a href="{{ route('owner.bookings.show', $booking) }}" 
+                                   class="text-xs text-[#286b7f] hover:text-[#174455] mt-2 inline-block">
+                                    View Details <i class="fas fa-arrow-right ml-1"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                @empty
+                    <div class="p-8 text-center">
+                        <i class="fas fa-calendar text-gray-300 text-4xl mb-3"></i>
+                        <p class="text-gray-500">No bookings yet</p>
+                        <p class="text-sm text-gray-400 mt-2">Bookings will appear here when guests make reservations</p>
+                    </div>
+                @endforelse
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Recent Complaints & Property Stats -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <!-- Recent Complaints -->
+        <div>
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-xl font-semibold text-[#174455]">Recent Complaints</h3>
+                <a href="{{ route('owner.complaints.index') }}" class="text-sm text-[#286b7f] hover:text-[#174455]">
+                    View all
+                </a>
+            </div>
+            <div class="bg-white border border-[#286b7f] border-opacity-20 rounded-xl overflow-hidden">
+                @forelse($recentComplaints ?? [] as $complaint)
+                    <div class="p-4 hover:bg-gray-50 border-b border-gray-100 last:border-b-0">
+                        <div class="flex">
+                            <div class="flex-shrink-0">
+                                <div class="h-10 w-10 rounded-lg bg-red-100 bg-opacity-20 flex items-center justify-center">
+                                    <i class="fas fa-exclamation-triangle text-red-500"></i>
+                                </div>
+                            </div>
+                            <div class="ml-3 flex-1">
+                                <div class="flex items-center justify-between">
+                                    <h4 class="text-sm font-medium text-gray-900">{{ $complaint->title }}</h4>
+                                    @php
+                                        $priorityColor = [
+                                            'URGENT' => 'bg-red-100 text-red-800',
+                                            'HIGH' => 'bg-orange-100 text-orange-800',
+                                            'MEDIUM' => 'bg-yellow-100 text-yellow-800',
+                                            'LOW' => 'bg-green-100 text-green-800',
+                                        ][$complaint->priority] ?? 'bg-gray-100 text-gray-800';
+                                    @endphp
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium {{ $priorityColor }}">
+                                        {{ $complaint->priority }}
+                                    </span>
+                                </div>
+                                <p class="text-xs text-gray-500 mt-1">
+                                    By {{ $complaint->user->name ?? 'N/A' }} • {{ $complaint->created_at->diffForHumans() }}
+                                </p>
+                                <p class="text-sm text-gray-600 mt-2">{{ Str::limit($complaint->description ?? '', 100) }}</p>
+                                <div class="mt-2">
+                                    <a href="{{ route('owner.complaints.show', $complaint) }}" 
+                                       class="text-xs text-[#286b7f] hover:text-[#174455]">
+                                        View & Respond <i class="fas fa-arrow-right ml-1"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                @empty
+                    <div class="p-8 text-center">
+                        <i class="fas fa-check-circle text-gray-300 text-4xl mb-3"></i>
+                        <p class="text-gray-500">No complaints found</p>
+                    </div>
+                @endforelse
+            </div>
+        </div>
+    </div>
+
+    <!-- Profile Completion (if incomplete) -->
+    @php
+        $user = Auth::user();
+        $totalFields = 3;
+        $completedFields = 0;
+        if($user->phone) $completedFields++;
+        if($user->gender) $completedFields++;
+        
+        // You might want to pass this from controller
+        $userAddressesCount = 0; 
+        if($userAddressesCount > 0) $completedFields++;
+        
+        $percentage = ($completedFields / $totalFields) * 100;
+    @endphp
+    
+    @if($percentage < 100)
+        <div class="mt-8 bg-gradient-to-r from-[#174455] to-[#286b7f] bg-opacity-5 border border-[#286b7f] border-opacity-20 rounded-xl p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h3 class="text-lg font-semibold text-[#174455] mb-2">Complete Your Profile</h3>
+                    <p class="text-gray-600">Complete your profile to build trust with potential guests</p>
+                    
+                    <div class="mt-4 space-y-3">
+                        @if(!$user->phone)
+                            <div class="flex items-center">
+                                <i class="fas fa-phone text-[#286b7f] mr-3"></i>
+                                <span class="text-gray-700">Add phone number</span>
+                            </div>
+                        @endif
+                        
+                        @if(!$user->gender)
+                            <div class="flex items-center">
+                                <i class="fas fa-venus-mars text-[#286b7f] mr-3"></i>
+                                <span class="text-gray-700">Specify gender</span>
+                            </div>
+                        @endif
+                        
+                        <div class="flex items-center">
+                            <i class="fas fa-map-marker-alt text-[#286b7f] mr-3"></i>
+                            <span class="text-gray-700">Add business address</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="text-center">
+                    <div class="relative w-32 h-32">
+                        <svg class="w-full h-full" viewBox="0 0 36 36">
+                            <path d="M18 2.0845
+                                    a 15.9155 15.9155 0 0 1 0 31.831
+                                    a 15.9155 15.9155 0 0 1 0 -31.831"
+                                  fill="none" stroke="#E5E7EB" stroke-width="3"/>
+                            <path d="M18 2.0845
+                                    a 15.9155 15.9155 0 0 1 0 31.831
+                                    a 15.9155 15.9155 0 0 1 0 -31.831"
+                                  fill="none" stroke="#174455" stroke-width="3" stroke-dasharray="{{ $percentage }}, 100"/>
+                        </svg>
+                        <div class="absolute inset-0 flex items-center justify-center">
+                            <span class="text-2xl font-bold text-[#174455]">{{ round($percentage) }}%</span>
+                        </div>
+                    </div>
+                    <a href="{{ route('profile.edit') }}" 
+                       class="mt-4 inline-flex items-center px-4 py-2 bg-[#174455] text-white rounded-lg hover:bg-[#286b7f] transition">
+                        <i class="fas fa-user-edit mr-2"></i> Complete Now
+                    </a>
+                </div>
+            </div>
+        </div>
+    @endif
 </div>
 
-<style>
-/* Welcome Section */
-.welcome-section {
-    background: linear-gradient(135deg, #26244d 0%, #3f6798 100%);
-    border-radius: 1rem;
-    padding: 2rem;
-    color: white;
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
-}
-
-.welcome-content {
-    display: flex;
-    align-items: center;
-    gap: 1.5rem;
-}
-
-.welcome-icon {
-    width: 4rem;
-    height: 4rem;
-    background: rgba(255, 255, 255, 0.2);
-    border-radius: 0.75rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.5rem;
-}
-
-.welcome-text h1 {
-    font-size: 1.875rem;
-    font-weight: bold;
-    margin-bottom: 0.5rem;
-}
-
-.welcome-text p {
-    opacity: 0.9;
-    margin-bottom: 1rem;
-}
-
-.welcome-stats {
-    display: flex;
-    gap: 2rem;
-}
-
-.stat-item {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-}
-
-.stat-number {
-    font-size: 1.5rem;
-    font-weight: bold;
-}
-
-.stat-label {
-    font-size: 0.875rem;
-    opacity: 0.8;
-}
-
-.welcome-actions {
-    display: flex;
-    gap: 1rem;
-    flex-wrap: wrap;
-}
-
-.btn-primary, .btn-secondary {
-    padding: 0.75rem 1.5rem;
-    border-radius: 0.5rem;
-    font-weight: 600;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    transition: all 0.2s;
-}
-
-.btn-primary {
-    background: white;
-    color: #3b085f;
-}
-
-.btn-primary:hover {
-    background: #f8fafc;
-    transform: translateY(-1px);
-}
-
-.btn-secondary {
-    background: rgba(255, 255, 255, 0.2);
-    color: white;
-    border: 1px solid rgba(255, 255, 255, 0.3);
-}
-
-.btn-secondary:hover {
-    background: rgba(255, 255, 255, 0.3);
-}
-
-/* Stats Grid */
-.stats-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 1.5rem;
-}
-
-.stat-card {
-    background: white;
-    border-radius: 0.75rem;
-    padding: 1.5rem;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    transition: all 0.3s;
-}
-
-.stat-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-}
-
-.stat-card-blue {
-    border-top: 4px solid #3b82f6;
-}
-
-.stat-card-green {
-    border-top: 4px solid #10b981;
-}
-
-.stat-card-purple {
-    border-top: 4px solid #8b5cf6;
-}
-
-.stat-card-yellow {
-    border-top: 4px solid #f59e0b;
-}
-
-.stat-header {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    margin-bottom: 1.5rem;
-}
-
-.stat-icon {
-    width: 3rem;
-    height: 3rem;
-    border-radius: 0.5rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.25rem;
-}
-
-.stat-card-blue .stat-icon {
-    background: #dbeafe;
-    color: #0f5b84;
-}
-
-.stat-card-green .stat-icon {
-    background: #d1fae5;
-    color: #10b981;
-}
-
-.stat-card-purple .stat-icon {
-    background: #ede9fe;
-    color: #8b5cf6;
-}
-
-.stat-card-yellow .stat-icon {
-    background: #fef3c7;
-    color: #f59e0b;
-}
-
-.stat-title {
-    font-weight: 600;
-    color: #1f2937;
-    margin-bottom: 0.25rem;
-}
-
-.stat-subtitle {
-    font-size: 0.875rem;
-    color: #6b7280;
-}
-
-.stat-content {
-    margin-top: 1rem;
-}
-
-.stat-main {
-    display: flex;
-    align-items: baseline;
-    gap: 0.5rem;
-    margin-bottom: 1rem;
-}
-
-.stat-number {
-    font-size: 2rem;
-    font-weight: bold;
-    color: #1f2937;
-}
-
-.stat-unit {
-    font-size: 0.875rem;
-    color: #6b7280;
-}
-
-.stat-details {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 0.75rem;
-}
-
-.stat-detail {
-    display: flex;
-    flex-direction: column;
-}
-
-.detail-label {
-    font-size: 0.75rem;
-    color: #6b7280;
-    margin-bottom: 0.25rem;
-}
-
-.detail-value {
-    font-weight: 600;
-    color: #1f2937;
-}
-
-.detail-value.success {
-    color: #10b981;
-}
-
-.detail-value.warning {
-    color: #f59e0b;
-}
-
-/* Content Grid */
-.content-grid {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 1.5rem;
-}
-
-@media (min-width: 1024px) {
-    .content-grid {
-        grid-template-columns: 2fr 1fr;
-    }
-}
-
-.content-card {
-    background: white;
-    border-radius: 0.75rem;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
-
-.content-card-wide {
-    grid-column: 1 / -1;
-}
-
-@media (min-width: 1024px) {
-    .content-card-wide {
-        grid-column: 1;
-    }
-}
-
-.card-header {
-    padding: 1.5rem 1.5rem 0;
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    flex-wrap: wrap;
-    gap: 1rem;
-}
-
-.card-title-section {
-    flex: 1;
-}
-
-.card-title {
-    font-size: 1.25rem;
-    font-weight: 600;
-    color: #1f2937;
-    margin-bottom: 0.25rem;
-}
-
-.card-subtitle {
-    font-size: 0.875rem;
-    color: #6b7280;
-}
-
-.card-actions {
-    display: flex;
-    gap: 0.75rem;
-    align-items: center;
-}
-
-.card-select {
-    padding: 0.5rem 2rem 0.5rem 0.75rem;
-    border: 1px solid #2c5bc9;
-    border-radius: 0.375rem;
-    font-size: 0.875rem;
-    background-color: white;
-    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
-    background-position: right 0.5rem center;
-    background-repeat: no-repeat;
-    background-size: 1.5em 1.5em;
-}
-
-.card-button {
-    padding: 0.5rem 1rem;
-    background: #142f9d;
-    color: white;
-    border-radius: 0.375rem;
-    font-size: 0.875rem;
-    font-weight: 500;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    transition: all 0.2s;
-}
-
-.card-button:hover {
-    background: #8d149d;
-}
-
-/* New Table Styles from your HTML */
-.table-container {
-    background-color: #ffffff;
-    border-radius: 12px;
-    border: 1px solid #e2e8f0; /* NEW */
-    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.06);
-    overflow: hidden;
-    overflow-x: auto;
-    margin: 1.5rem;
-}
-
-
-.table-container table {
-    width: 100%;
-    border-collapse: collapse;
-    min-width: 900px;
-}
-
-.table-container thead {
-    background-color: #f8fafc;
-    border-bottom: 1.5px solid #cbd5f5;
-}
-
-
-
-.table-container th {
-    padding: 18px 16px;
-    text-align: left;
-    font-weight: 600;
-    color: #475569;
-    font-size: 13px;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    white-space: nowrap;
-    border-right: 1px solid #e2e8f0;
-}
-
-.table-container th:last-child {
-    border-right: none;
-}
-
-
-.table-container td {
-    padding: 18px 16px;
-    border-bottom: 1px solid #e5e7eb; /* cleaner line */
-    vertical-align: middle;
-}
-
-
-.table-container tbody tr {
-    transition: background-color 0.15s ease, box-shadow 0.15s ease;
-}
-
-.table-container tbody tr:hover {
-    background-color: #f8fafc;
-    box-shadow: inset 3px 0 0 #3b82f6; /* subtle left accent */
-}
-
-
-.booking-id {
-    font-weight: 600;
-    color: #3b82f6;
-}
-
-.guest {
-    font-weight: 500;
-    color: #1e293b;
-}
-
-.property {
-    max-width: 200px;
-    color: #475569;
-}
-
-.dates {
-    color: #475569;
-}
-
-.days-badge {
-    display: inline-block;
-    background-color: #e0f2fe;
-    color: #0369a1;
-    font-size: 12px;
-    padding: 3px 8px;
-    border-radius: 10px;
-    margin-left: 8px;
-    font-weight: 500;
-}
-
-.amount {
-    font-weight: 700;
-    color: #1e293b;
-}
-
-.status {
-    display: inline-block;
-    padding: 6px 12px;
-    border-radius: 20px;
-    font-size: 13px;
-    font-weight: 600;
-    text-align: center;
-    min-width: 100px;
-}
-
-.status-active {
-    background-color: #d1fae5;
-    color: #065f46;
-}
-
-.status-pending {
-    background-color: #fef3c7;
-    color: #92400e;
-}
-
-.status-completed {
-    background-color: #e0e7ff;
-    color: #3730a3;
-}
-
-.actions {
-    display: flex;
-    gap: 10px;
-}
-
-.action-btn {
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    border: none;
-    font-size: 16px;
-}
-
-.action-btn:hover {
-    transform: translateY(-2px);
-}
-
-.email-btn {
-    background-color: #dbeafe;
-    color: #1d4ed8;
-}
-
-.email-btn:hover {
-    background-color: #bfdbfe;
-}
-
-.cancel-btn {
-    background-color: #fee2e2;
-    color: #dc2626;
-}
-
-.cancel-btn:hover {
-    background-color: #fecaca;
-}
-
-/* Card Footer */
-.card-footer {
-    padding: 1rem 1.5rem;
-    border-top: 1px solid #e2e8f0;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 1rem;
-}
-
-.pagination-info {
-    font-size: 0.875rem;
-    color: #6b7280;
-}
-
-.pagination-controls {
-    display: flex;
-    align-items: center;
-    gap: 0.25rem;
-}
-
-.pagination-btn {
-    width: 2rem;
-    height: 2rem;
-    border: 1px solid #d1d5db;
-    border-radius: 0.375rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.875rem;
-    transition: all 0.2s;
-}
-
-.pagination-btn:hover:not(.disabled):not(.active) {
-    background: #f3f4f6;
-}
-
-.pagination-btn.active {
-    background: #3b82f6;
-    color: white;
-    border-color: #3b82f6;
-}
-
-.pagination-btn.disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-
-.pagination-ellipsis {
-    padding: 0 0.5rem;
-    color: #6b7280;
-}
-
-/* Sidebar Grid */
-.sidebar-grid {
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
-}
-
-/* Notifications */
-.notification-list {
-    padding: 1rem 1.5rem;
-}
-
-.notification-item {
-    display: flex;
-    gap: 1rem;
-    padding: 0.75rem 0;
-    border-bottom: 1px solid #f1f5f9;
-}
-
-.notification-item:last-child {
-    border-bottom: none;
-}
-
-.notification-item.new {
-    background: #f0f9ff;
-    margin: 0 -1.5rem;
-    padding: 0.75rem 1.5rem;
-    border-left: 4px solid #3b82f6;
-}
-
-.notification-icon {
-    width: 2.5rem;
-    height: 2.5rem;
-    border-radius: 0.5rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: #dbeafe;
-    color: #3b82f6;
-    flex-shrink: 0;
-}
-
-.notification-icon.icon-green {
-    background: #d1fae5;
-    color: #10b981;
-}
-
-.notification-icon.icon-yellow {
-    background: #fef3c7;
-    color: #f59e0b;
-}
-
-.notification-content {
-    flex: 1;
-}
-
-.notification-title {
-    font-weight: 500;
-    color: #1f2937;
-    margin-bottom: 0.25rem;
-}
-
-.notification-desc {
-    font-size: 0.875rem;
-    color: #6b7280;
-    margin-bottom: 0.25rem;
-}
-
-.notification-time {
-    font-size: 0.75rem;
-    color: #9ca3af;
-}
-
-.view-all-link {
-    display: block;
-    text-align: center;
-    color: #3b82f6;
-    font-weight: 500;
-    font-size: 0.875rem;
-    padding: 0.5rem;
-}
-
-.view-all-link:hover {
-    color: #2563eb;
-}
-
-/* Quick Actions */
-.quick-actions-grid {
-    padding: 1.5rem;
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 1rem;
-}
-
-.quick-action-btn {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.75rem;
-    padding: 1rem;
-    background: white;
-    border: 1px solid #e5e7eb;
-    border-radius: 0.5rem;
-    transition: all 0.2s;
-}
-
-.quick-action-btn:hover {
-    border-color: #3b82f6;
-    background: #f8fafc;
-    transform: translateY(-2px);
-}
-
-.quick-action-icon {
-    width: 3rem;
-    height: 3rem;
-    border-radius: 0.5rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.25rem;
-    background: #dbeafe;
-    color: #3b82f6;
-}
-
-.quick-action-btn:nth-child(2) .quick-action-icon {
-    background: #d1fae5;
-    color: #10b981;
-}
-
-.quick-action-btn:nth-child(3) .quick-action-icon {
-    background: #ede9fe;
-    color: #8b5cf6;
-}
-
-.quick-action-btn:nth-child(4) .quick-action-icon {
-    background: #fef3c7;
-    color: #f59e0b;
-}
-
-.quick-action-btn span {
-    font-size: 0.875rem;
-    font-weight: 500;
-    color: #1f2937;
-}
-
-/* Footer info from your HTML */
-.footer-info {
-    margin-top: 20px;
-    text-align: right;
-    color: #64748b;
-    font-size: 14px;
-    padding: 0 1.5rem 1.5rem;
-}
-</style>
-
+@push('scripts')
 <script>
-    // Add interactivity to action buttons
-    document.addEventListener('DOMContentLoaded', function() {
-        document.querySelectorAll('.action-btn').forEach(button => {
-            button.addEventListener('click', function() {
-                const action = this.getAttribute('title');
-                const bookingId = this.closest('tr').querySelector('.booking-id').textContent;
-                const guest = this.closest('tr').querySelector('.guest').textContent;
-                
-                // Show a simple alert for demonstration
-                alert(`Action: ${action}\nBooking: ${bookingId}\nGuest: ${guest}`);
-                
-                // In a real application, you would trigger specific functionality here
-                // For example, open a modal, send an API request, etc.
-            });
-        });
+function markAllNotificationsRead() {
+    fetch('/owner/notifications/mark-all-read', {
+        method: 'POST',
+        headers: {
+            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
     });
+}
 </script>
+@endpush
 @endsection

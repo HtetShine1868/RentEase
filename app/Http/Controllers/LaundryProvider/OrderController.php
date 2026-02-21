@@ -4,11 +4,10 @@ namespace App\Http\Controllers\LaundryProvider;
 
 use App\Http\Controllers\Controller;
 use App\Models\LaundryOrder;
-use App\Models\LaundryItem;
+use App\Models\LaundryOrderItem;
 use App\Models\ServiceProvider;
-use App\Models\LaundryServiceConfig;
 use App\Models\User;
-use App\Traits\Notifiable;
+use App\Models\Notification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -16,136 +15,241 @@ use Carbon\Carbon;
 
 class OrderController extends Controller
 {
-    use Notifiable;
-
+    protected $provider;
+    
     /**
-     * Display orders with filters
+     * Get the authenticated laundry provider
+     */
+    private function getProvider()
+    {
+        if (!$this->provider) {
+            $this->provider = ServiceProvider::where('user_id', Auth::id())
+                ->where('service_type', 'LAUNDRY')
+                ->firstOrFail();
+        }
+        return $this->provider;
+    }
+    
+    /**
+     * Display a listing of orders with tabs
      */
     public function index(Request $request)
     {
-        // Get service provider directly in the method
-        $serviceProvider = ServiceProvider::where('user_id', Auth::id())
-            ->where('service_type', 'LAUNDRY')
-            ->first();
-            
-        if (!$serviceProvider) {
-            abort(403, 'No laundry service provider found for this user.');
+        $provider = $this->getProvider();
+        
+        $date = $request->get('date', Carbon::today()->format('Y-m-d'));
+        $carbonDate = Carbon::parse($date);
+        
+        // Get all orders for this provider with pagination
+        $allOrders = LaundryOrder::with(['user', 'items.laundryItem'])
+            ->where('service_provider_id', $provider->id)
+            ->orderBy('created_at', 'desc')
+            ->paginate(20);
+        
+        // Normal orders data
+        $normalOrders = [
+            'pickup_today' => $this->getNormalPickupToday($provider->id, $carbonDate),
+            'deliver_today' => $this->getNormalDeliverToday($provider->id, $carbonDate),
+            'in_progress' => $this->getNormalInProgress($provider->id),
+            'all' => $this->getNormalOrders($provider->id)
+        ];
+        
+        // Rush orders data
+        $rushOrders = [
+            'rush_pickup_today' => $this->getRushPickupToday($provider->id, $carbonDate),
+            'rush_deliver_today' => $this->getRushDeliverToday($provider->id, $carbonDate),
+            'rush_in_progress' => $this->getRushInProgress($provider->id),
+            'all' => $this->getRushOrders($provider->id)
+        ];
+        
+        // Calculate rush count for badge
+        $rushCount = $rushOrders['rush_pickup_today']->count() + 
+                     $rushOrders['rush_deliver_today']->count() + 
+                     $rushOrders['rush_in_progress']->count();
+        
+        return view('laundry-provider.orders.index', compact(
+            'normalOrders',
+            'rushOrders',
+            'allOrders',
+            'rushCount'
+        ));
+    }
+    
+    /**
+     * Get rush orders only (for rush tab)
+     */
+    public function rushOrders(Request $request)
+    {
+        $provider = $this->getProvider();
+        
+        $date = $request->get('date', Carbon::today()->format('Y-m-d'));
+        $carbonDate = Carbon::parse($date);
+        
+        $rushOrders = [
+            'rush_pickup_today' => $this->getRushPickupToday($provider->id, $carbonDate),
+            'rush_deliver_today' => $this->getRushDeliverToday($provider->id, $carbonDate),
+            'rush_in_progress' => $this->getRushInProgress($provider->id),
+            'all' => $this->getRushOrders($provider->id)
+        ];
+        
+        if ($request->ajax()) {
+            return response()->json([
+                'html' => view('laundry-provider.orders.partials.rush-tab', ['orders' => $rushOrders])->render()
+            ]);
         }
-
-        $config = LaundryServiceConfig::where('service_provider_id', $serviceProvider->id)->first();
-
-        $query = LaundryOrder::with(['user', 'items.laundryItem'])
-            ->where('service_provider_id', $serviceProvider->id);
-
-        // Apply filters
-        if ($request->filled('status')) {
-            $query->where('status', $request->status);
+        
+        return view('laundry-provider.orders.rush', compact('rushOrders'));
+    }
+    
+    /**
+     * Get normal orders only (for normal tab)
+     */
+    public function normalOrders(Request $request)
+    {
+        $provider = $this->getProvider();
+        
+        $date = $request->get('date', Carbon::today()->format('Y-m-d'));
+        $carbonDate = Carbon::parse($date);
+        
+        $normalOrders = [
+            'pickup_today' => $this->getNormalPickupToday($provider->id, $carbonDate),
+            'deliver_today' => $this->getNormalDeliverToday($provider->id, $carbonDate),
+            'in_progress' => $this->getNormalInProgress($provider->id),
+            'all' => $this->getNormalOrders($provider->id)
+        ];
+        
+        if ($request->ajax()) {
+            return response()->json([
+                'html' => view('laundry-provider.orders.partials.normal-tab', ['orders' => $normalOrders])->render()
+            ]);
         }
-
-        if ($request->filled('service_mode')) {
-            $query->where('service_mode', $request->service_mode);
-        }
-
-        if ($request->filled('date_range')) {
-            switch ($request->date_range) {
-                case 'today':
-                    $query->whereDate('created_at', Carbon::today());
-                    break;
-                case 'yesterday':
-                    $query->whereDate('created_at', Carbon::yesterday());
-                    break;
-                case 'this_week':
-                    $query->whereBetween('created_at', [Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek()]);
-                    break;
-                case 'this_month':
-                    $query->whereMonth('created_at', Carbon::now()->month)
-                          ->whereYear('created_at', Carbon::now()->year);
-                    break;
+        
+        return view('laundry-provider.orders.normal', compact('normalOrders'));
+    }
+    
+    /**
+     * Filter orders by date and tab (AJAX endpoint)
+     */
+    public function filter(Request $request)
+    {
+        $provider = $this->getProvider();
+        
+        $date = $request->get('date', Carbon::today()->format('Y-m-d'));
+        $tab = $request->get('tab', 'normal');
+        $search = $request->get('search', '');
+        $carbonDate = Carbon::parse($date);
+        
+        $response = [];
+        
+        // Always prepare all tabs data for faster switching
+        // Normal tab data
+        $normalOrders = [
+            'pickup_today' => $this->getNormalPickupToday($provider->id, $carbonDate),
+            'deliver_today' => $this->getNormalDeliverToday($provider->id, $carbonDate),
+            'in_progress' => $this->getNormalInProgress($provider->id)
+        ];
+        
+        // Apply search filter if provided
+        if ($search) {
+            foreach ($normalOrders as $key => $collection) {
+                $normalOrders[$key] = $collection->filter(function($order) use ($search) {
+                    return str_contains(strtolower($order->order_reference), strtolower($search)) ||
+                           str_contains(strtolower($order->user->name), strtolower($search)) ||
+                           str_contains(strtolower($order->user->phone ?? ''), strtolower($search));
+                });
             }
         }
-
-        if ($request->filled('search')) {
-            $search = $request->search;
-            $query->where(function($q) use ($search) {
-                $q->where('order_reference', 'like', "%{$search}%")
-                  ->orWhereHas('user', function($userQuery) use ($search) {
-                      $userQuery->where('name', 'like', "%{$search}%")
-                               ->orWhere('email', 'like', "%{$search}%")
-                               ->orWhere('phone', 'like', "%{$search}%");
-                  });
+        $response['normal'] = view('laundry-provider.orders.partials.normal-tab', ['orders' => $normalOrders])->render();
+        
+        // Rush tab data
+        $rushOrders = [
+            'rush_pickup_today' => $this->getRushPickupToday($provider->id, $carbonDate),
+            'rush_deliver_today' => $this->getRushDeliverToday($provider->id, $carbonDate),
+            'rush_in_progress' => $this->getRushInProgress($provider->id)
+        ];
+        
+        // Apply search filter if provided
+        if ($search) {
+            foreach ($rushOrders as $key => $collection) {
+                $rushOrders[$key] = $collection->filter(function($order) use ($search) {
+                    return str_contains(strtolower($order->order_reference), strtolower($search)) ||
+                           str_contains(strtolower($order->user->name), strtolower($search)) ||
+                           str_contains(strtolower($order->user->phone ?? ''), strtolower($search));
+                });
+            }
+        }
+        $response['rush'] = view('laundry-provider.orders.partials.rush-tab', ['orders' => $rushOrders])->render();
+        
+        // All orders tab data
+        $allOrders = LaundryOrder::with(['user', 'items.laundryItem'])
+            ->where('service_provider_id', $provider->id)
+            ->whereDate('created_at', $carbonDate)
+            ->orderBy('created_at', 'desc')
+            ->get();
+            
+        // Apply search filter if provided
+        if ($search) {
+            $allOrders = $allOrders->filter(function($order) use ($search) {
+                return str_contains(strtolower($order->order_reference), strtolower($search)) ||
+                       str_contains(strtolower($order->user->name), strtolower($search)) ||
+                       str_contains(strtolower($order->user->phone ?? ''), strtolower($search));
             });
         }
-
-        // Sort
-        $sortField = $request->get('sort', 'created_at');
-        $sortDirection = $request->get('direction', 'desc');
+        $response['all'] = view('laundry-provider.orders.partials.all-orders-tab', ['orders' => $allOrders])->render();
         
-        // Validate sort field
-        $allowedSortFields = ['created_at', 'total_amount', 'status', 'expected_return_date', 'order_reference'];
-        if (!in_array($sortField, $allowedSortFields)) {
-            $sortField = 'created_at';
-        }
-        
-        $query->orderBy($sortField, $sortDirection);
-
-        $orders = $query->paginate(15)->withQueryString();
-
-        // Get statistics for the filtered results
-        $stats = [
-            'total' => LaundryOrder::where('service_provider_id', $serviceProvider->id)->count(),
-            'pending' => LaundryOrder::where('service_provider_id', $serviceProvider->id)
-                ->where('status', 'PENDING')->count(),
-            'pickup_scheduled' => LaundryOrder::where('service_provider_id', $serviceProvider->id)
-                ->where('status', 'PICKUP_SCHEDULED')->count(),
-            'picked_up' => LaundryOrder::where('service_provider_id', $serviceProvider->id)
-                ->where('status', 'PICKED_UP')->count(),
-            'in_progress' => LaundryOrder::where('service_provider_id', $serviceProvider->id)
-                ->whereIn('status', ['PICKED_UP', 'IN_PROGRESS'])->count(),
-            'ready' => LaundryOrder::where('service_provider_id', $serviceProvider->id)
-                ->where('status', 'READY')->count(),
-            'out_for_delivery' => LaundryOrder::where('service_provider_id', $serviceProvider->id)
-                ->where('status', 'OUT_FOR_DELIVERY')->count(),
-            'delivered' => LaundryOrder::where('service_provider_id', $serviceProvider->id)
-                ->where('status', 'DELIVERED')->count(),
-            'cancelled' => LaundryOrder::where('service_provider_id', $serviceProvider->id)
-                ->where('status', 'CANCELLED')->count(),
-            'rush' => LaundryOrder::where('service_provider_id', $serviceProvider->id)
-                ->where('service_mode', 'RUSH')
-                ->whereNotIn('status', ['DELIVERED', 'CANCELLED'])->count(),
-        ];
-
-        return view('laundry-provider.orders.index', compact('orders', 'stats', 'config'));
+        return response()->json($response);
     }
-
+    
     /**
-     * Show single order details
+     * Search orders (AJAX endpoint)
+     */
+    public function search(Request $request)
+    {
+        $provider = $this->getProvider();
+        
+        $searchTerm = $request->get('q', '');
+        $date = $request->get('date', Carbon::today()->format('Y-m-d'));
+        $carbonDate = Carbon::parse($date);
+        
+        $orders = LaundryOrder::with(['user', 'items.laundryItem'])
+            ->where('service_provider_id', $provider->id)
+            ->whereDate('created_at', $carbonDate)
+            ->where(function($query) use ($searchTerm) {
+                $query->where('order_reference', 'LIKE', "%{$searchTerm}%")
+                      ->orWhereHas('user', function($q) use ($searchTerm) {
+                          $q->where('name', 'LIKE', "%{$searchTerm}%")
+                            ->orWhere('phone', 'LIKE', "%{$searchTerm}%")
+                            ->orWhere('email', 'LIKE', "%{$searchTerm}%");
+                      });
+            })
+            ->orderBy('created_at', 'desc')
+            ->get();
+        
+        return response()->json([
+            'html' => view('laundry-provider.orders.partials.search-results', ['orders' => $orders])->render(),
+            'count' => $orders->count()
+        ]);
+    }
+    
+    /**
+     * Display the specified order
      */
     public function show($id)
     {
-        $serviceProvider = ServiceProvider::where('user_id', Auth::id())
-            ->where('service_type', 'LAUNDRY')
-            ->first();
-            
-        if (!$serviceProvider) {
-            abort(403, 'No laundry service provider found for this user.');
-        }
-
-        $order = LaundryOrder::with(['user', 'items.laundryItem', 'booking'])
-            ->where('service_provider_id', $serviceProvider->id)
+        $provider = $this->getProvider();
+        
+        $order = LaundryOrder::with(['user', 'items.laundryItem', 'serviceProvider'])
+            ->where('service_provider_id', $provider->id)
             ->findOrFail($id);
-
-        // Calculate progress
-        $statuses = ['PENDING', 'PICKUP_SCHEDULED', 'PICKED_UP', 'IN_PROGRESS', 'READY', 'OUT_FOR_DELIVERY', 'DELIVERED'];
-        $currentIndex = array_search($order->status, $statuses);
-        $progress = $currentIndex !== false ? round(($currentIndex + 1) / count($statuses) * 100) : 0;
-
-        // Check if rush order is on track
-        $rushDeadline = Carbon::parse($order->expected_return_date);
-        $isRushOnTrack = $order->service_mode === 'RUSH' && !Carbon::today()->gt($rushDeadline);
-
-        return view('laundry-provider.orders.show', compact('order', 'progress', 'isRushOnTrack'));
+        
+        // If it's an AJAX request, return just the modal content
+        if (request()->ajax()) {
+            return view('laundry-provider.orders.partials.order-details-content', compact('order'));
+        }
+        
+        return view('laundry-provider.orders.show', compact('order'));
     }
-
+    
     /**
      * Update order status
      */
@@ -154,302 +258,813 @@ class OrderController extends Controller
         $request->validate([
             'status' => 'required|in:PENDING,PICKUP_SCHEDULED,PICKED_UP,IN_PROGRESS,READY,OUT_FOR_DELIVERY,DELIVERED,CANCELLED'
         ]);
-
-        $serviceProvider = ServiceProvider::where('user_id', Auth::id())
-            ->where('service_type', 'LAUNDRY')
-            ->first();
-            
-        if (!$serviceProvider) {
-            return response()->json(['success' => false, 'message' => 'Service provider not found'], 403);
-        }
-
-        $order = LaundryOrder::where('service_provider_id', $serviceProvider->id)
+        
+        $provider = $this->getProvider();
+        
+        $order = LaundryOrder::where('service_provider_id', $provider->id)
             ->findOrFail($id);
-
+        
         $oldStatus = $order->status;
         $order->status = $request->status;
-
-        // Set actual return date when delivered
-        if ($request->status === 'DELIVERED') {
-            $order->actual_return_date = Carbon::now();
-        }
-
-        // If cancelled, add cancellation reason
-        if ($request->status === 'CANCELLED' && $request->filled('cancellation_reason')) {
-            $order->cancellation_reason = $request->cancellation_reason;
-        }
-
-        $order->save();
-
-        // ============ SEND NOTIFICATIONS ============
         
-        $statusMessages = [
-            'PICKUP_SCHEDULED' => 'Your laundry pickup has been scheduled',
-            'PICKED_UP' => 'Your laundry items have been picked up',
-            'IN_PROGRESS' => 'Your laundry is now being processed',
-            'READY' => 'Your laundry is ready for delivery',
-            'OUT_FOR_DELIVERY' => 'Your laundry is out for delivery',
-            'DELIVERED' => 'Your laundry has been delivered',
-            'CANCELLED' => 'Your laundry order has been cancelled'
-        ];
-
-        if (isset($statusMessages[$request->status])) {
-            DB::table('notifications')->insert([
-                'user_id' => $order->user_id,
-                'type' => 'ORDER',
-                'title' => 'Laundry Order Updated',
-                'message' => $statusMessages[$request->status] . " for order #{$order->order_reference}",
-                'related_entity_type' => 'laundry_order',
-                'related_entity_id' => $order->id,
-                'channel' => 'IN_APP',
-                'is_read' => false,
-                'is_sent' => true,
-                'sent_at' => now(),
-                'created_at' => now(),
-                'updated_at' => now()
-            ]);
+        // Update timestamps based on status
+        if ($request->status == 'PICKED_UP' && $oldStatus != 'PICKED_UP') {
+            $order->pickup_time = now();
+        } elseif ($request->status == 'DELIVERED' && $oldStatus != 'DELIVERED') {
+            $order->actual_return_date = now();
+        } elseif ($request->status == 'IN_PROGRESS' && $oldStatus != 'IN_PROGRESS') {
+            // Could add started_processing_at timestamp if you have that field
         }
-
-        // Special notifications for rush orders
-        if ($order->service_mode === 'RUSH' && $request->status === 'READY') {
-            DB::table('notifications')->insert([
-                'user_id' => $order->user_id,
-                'type' => 'ORDER',
-                'title' => '🎯 Rush Order Ready Early!',
-                'message' => "Your rush order #{$order->order_reference} is ready earlier than expected!",
-                'related_entity_type' => 'laundry_order',
-                'related_entity_id' => $order->id,
-                'channel' => 'IN_APP',
-                'is_read' => false,
-                'is_sent' => true,
-                'sent_at' => now(),
-                'created_at' => now(),
-                'updated_at' => now()
-            ]);
+        
+        $order->save();
+        
+        // Create notification for customer if status changes to certain states
+        if (in_array($request->status, ['PICKED_UP', 'READY', 'OUT_FOR_DELIVERY', 'DELIVERED'])) {
+            $this->sendStatusNotification($order);
         }
-
-        if ($request->wantsJson()) {
+        
+        if ($request->ajax()) {
             return response()->json([
                 'success' => true,
                 'message' => 'Order status updated successfully',
+                'status' => $order->status,
                 'order' => $order
             ]);
         }
-
+        
         return redirect()->back()->with('success', 'Order status updated successfully');
     }
-
+    
     /**
-     * Get rush orders
+     * Accept an order
      */
-    public function rushOrders(Request $request)
+    public function accept(Request $request, $id)
     {
-        $serviceProvider = ServiceProvider::where('user_id', Auth::id())
-            ->where('service_type', 'LAUNDRY')
-            ->first();
-            
-        if (!$serviceProvider) {
-            abort(403, 'No laundry service provider found for this user.');
-        }
-
-        $rushOrders = LaundryOrder::with(['user', 'items.laundryItem'])
-            ->where('service_provider_id', $serviceProvider->id)
-            ->where('service_mode', 'RUSH')
-            ->whereNotIn('status', ['DELIVERED', 'CANCELLED'])
-            ->orderBy('expected_return_date')
-            ->get();
-
-        // Calculate urgency
-        foreach ($rushOrders as $order) {
-            $daysLeft = Carbon::today()->diffInDays(Carbon::parse($order->expected_return_date), false);
-            $order->urgency = $daysLeft <= 1 ? 'critical' : ($daysLeft <= 2 ? 'warning' : 'normal');
-            $order->days_left = $daysLeft;
-        }
-
-        return view('laundry-provider.orders.rush', compact('rushOrders'));
+        $provider = $this->getProvider();
+        
+        $order = LaundryOrder::where('service_provider_id', $provider->id)
+            ->findOrFail($id);
+        
+        $order->status = 'PICKUP_SCHEDULED';
+        $order->save();
+        
+        // Notify customer
+        Notification::create([
+            'user_id' => $order->user_id,
+            'type' => 'ORDER',
+            'title' => 'Order Accepted',
+            'message' => "Your laundry order #{$order->order_reference} has been accepted and pickup is scheduled.",
+            'related_entity_type' => 'laundry_order',
+            'related_entity_id' => $order->id,
+            'channel' => 'IN_APP'
+        ]);
+        
+        return response()->json([
+            'success' => true,
+            'message' => 'Order accepted successfully'
+        ]);
     }
-
+    
+    /**
+     * Schedule pickup for an order
+     */
+    public function schedulePickup(Request $request, $id)
+    {
+        $request->validate([
+            'pickup_time' => 'required|date',
+            'notes' => 'nullable|string|max:255'
+        ]);
+        
+        $provider = $this->getProvider();
+        
+        $order = LaundryOrder::where('service_provider_id', $provider->id)
+            ->findOrFail($id);
+        
+        $order->pickup_time = Carbon::parse($request->pickup_time);
+        $order->status = 'PICKUP_SCHEDULED';
+        $order->save();
+        
+        // Notify customer
+        Notification::create([
+            'user_id' => $order->user_id,
+            'type' => 'ORDER',
+            'title' => 'Pickup Scheduled',
+            'message' => "Your laundry pickup has been scheduled for " . Carbon::parse($request->pickup_time)->format('M d, Y g:i A'),
+            'related_entity_type' => 'laundry_order',
+            'related_entity_id' => $order->id,
+            'channel' => 'IN_APP'
+        ]);
+        
+        return response()->json([
+            'success' => true,
+            'message' => 'Pickup scheduled successfully'
+        ]);
+    }
+    
+    /**
+     * Mark order as picked up
+     */
+    public function markPickedUp(Request $request, $id)
+    {
+        $provider = $this->getProvider();
+        
+        $order = LaundryOrder::where('service_provider_id', $provider->id)
+            ->findOrFail($id);
+        
+        $order->status = 'PICKED_UP';
+        $order->pickup_time = now(); // Update actual pickup time
+        $order->save();
+        
+        $this->sendStatusNotification($order);
+        
+        return response()->json([
+            'success' => true,
+            'message' => 'Order marked as picked up'
+        ]);
+    }
+    
+    /**
+     * Start processing order
+     */
+    public function startProcessing(Request $request, $id)
+    {
+        $provider = $this->getProvider();
+        
+        $order = LaundryOrder::where('service_provider_id', $provider->id)
+            ->findOrFail($id);
+        
+        $order->status = 'IN_PROGRESS';
+        $order->save();
+        
+        return response()->json([
+            'success' => true,
+            'message' => 'Processing started'
+        ]);
+    }
+    
+    /**
+     * Mark order as ready
+     */
+    public function markReady(Request $request, $id)
+    {
+        $provider = $this->getProvider();
+        
+        $order = LaundryOrder::where('service_provider_id', $provider->id)
+            ->findOrFail($id);
+        
+        $order->status = 'READY';
+        $order->save();
+        
+        $this->sendStatusNotification($order);
+        
+        return response()->json([
+            'success' => true,
+            'message' => 'Order marked as ready'
+        ]);
+    }
+    
+    /**
+     * Mark order as out for delivery
+     */
+    public function outForDelivery(Request $request, $id)
+    {
+        $provider = $this->getProvider();
+        
+        $order = LaundryOrder::where('service_provider_id', $provider->id)
+            ->findOrFail($id);
+        
+        $order->status = 'OUT_FOR_DELIVERY';
+        $order->save();
+        
+        $this->sendStatusNotification($order);
+        
+        return response()->json([
+            'success' => true,
+            'message' => 'Order marked as out for delivery'
+        ]);
+    }
+    
+    /**
+     * Mark order as delivered
+     */
+    public function deliver(Request $request, $id)
+    {
+        $provider = $this->getProvider();
+        
+        $order = LaundryOrder::where('service_provider_id', $provider->id)
+            ->findOrFail($id);
+        
+        $order->status = 'DELIVERED';
+        $order->actual_return_date = now();
+        $order->save();
+        
+        $this->sendStatusNotification($order);
+        
+        // Update provider's total orders count
+        $provider = ServiceProvider::find($order->service_provider_id);
+        $provider->total_orders = LaundryOrder::where('service_provider_id', $provider->id)
+            ->where('status', 'DELIVERED')
+            ->count();
+        $provider->save();
+        
+        return response()->json([
+            'success' => true,
+            'message' => 'Order marked as delivered'
+        ]);
+    }
+    
+    /**
+     * Assign staff to order
+     */
+    public function assignStaff(Request $request, $id)
+    {
+        $request->validate([
+            'staff_id' => 'required|integer',
+            'staff_name' => 'nullable|string|max:100'
+        ]);
+        
+        $provider = $this->getProvider();
+        
+        $order = LaundryOrder::where('service_provider_id', $provider->id)
+            ->findOrFail($id);
+        
+        // Add assigned_staff_id and assigned_staff_name to your orders table if needed
+        // $order->assigned_staff_id = $request->staff_id;
+        // $order->assigned_staff_name = $request->staff_name;
+        $order->save();
+        
+        return response()->json([
+            'success' => true,
+            'message' => 'Staff assigned successfully'
+        ]);
+    }
+    
+    /**
+     * Reschedule pickup time
+     */
+    public function reschedule(Request $request, $id)
+    {
+        $request->validate([
+            'pickup_time' => 'required|date',
+            'reason' => 'nullable|string|max:500'
+        ]);
+        
+        $provider = $this->getProvider();
+        
+        $order = LaundryOrder::where('service_provider_id', $provider->id)
+            ->findOrFail($id);
+        
+        $oldPickupTime = $order->pickup_time;
+        $order->pickup_time = Carbon::parse($request->pickup_time);
+        $order->save();
+        
+        // Notify customer about reschedule
+        Notification::create([
+            'user_id' => $order->user_id,
+            'type' => 'ORDER',
+            'title' => 'Pickup Rescheduled',
+            'message' => "Your pickup time has been changed from " . 
+                Carbon::parse($oldPickupTime)->format('M d, g:i A') . " to " . 
+                Carbon::parse($request->pickup_time)->format('M d, g:i A'),
+            'related_entity_type' => 'laundry_order',
+            'related_entity_id' => $order->id,
+            'channel' => 'IN_APP'
+        ]);
+        
+        return response()->json([
+            'success' => true,
+            'message' => 'Pickup time rescheduled successfully'
+        ]);
+    }
+    
+    /**
+     * Cancel an order
+     */
+    public function cancel(Request $request, $id)
+    {
+        $request->validate([
+            'reason' => 'required|string|max:500'
+        ]);
+        
+        $provider = $this->getProvider();
+        
+        $order = LaundryOrder::where('service_provider_id', $provider->id)
+            ->findOrFail($id);
+        
+        $order->status = 'CANCELLED';
+        $order->cancellation_reason = $request->reason;
+        $order->save();
+        
+        // Notify customer about cancellation
+        Notification::create([
+            'user_id' => $order->user_id,
+            'type' => 'ORDER',
+            'title' => 'Order Cancelled',
+            'message' => "Your order #{$order->order_reference} has been cancelled. Reason: {$request->reason}",
+            'related_entity_type' => 'laundry_order',
+            'related_entity_id' => $order->id,
+            'channel' => 'IN_APP'
+        ]);
+        
+        return response()->json([
+            'success' => true,
+            'message' => 'Order cancelled successfully'
+        ]);
+    }
+    
     /**
      * Bulk update order status
      */
-    public function bulkUpdate(Request $request)
+    public function bulkUpdateStatus(Request $request)
     {
         $request->validate([
             'order_ids' => 'required|array',
-            'order_ids.*' => 'exists:laundry_orders,id',
-            'status' => 'required|in:PICKUP_SCHEDULED,PICKED_UP,IN_PROGRESS,READY,OUT_FOR_DELIVERY,DELIVERED'
+            'order_ids.*' => 'integer',
+            'status' => 'required|in:PENDING,PICKUP_SCHEDULED,PICKED_UP,IN_PROGRESS,READY,OUT_FOR_DELIVERY,DELIVERED,CANCELLED'
         ]);
-
-        $serviceProvider = ServiceProvider::where('user_id', Auth::id())
-            ->where('service_type', 'LAUNDRY')
-            ->first();
-            
-        if (!$serviceProvider) {
-            return response()->json(['success' => false, 'message' => 'Service provider not found'], 403);
-        }
-
+        
+        $provider = $this->getProvider();
+        
+        $updated = LaundryOrder::whereIn('id', $request->order_ids)
+            ->where('service_provider_id', $provider->id)
+            ->update(['status' => $request->status]);
+        
+        // Notify all affected customers
         $orders = LaundryOrder::whereIn('id', $request->order_ids)
-            ->where('service_provider_id', $serviceProvider->id)
+            ->where('service_provider_id', $provider->id)
             ->get();
-
-        $updated = 0;
+            
         foreach ($orders as $order) {
-            $order->status = $request->status;
-            
-            if ($request->status === 'DELIVERED') {
-                $order->actual_return_date = Carbon::now();
+            if (in_array($request->status, ['PICKED_UP', 'READY', 'OUT_FOR_DELIVERY', 'DELIVERED'])) {
+                $this->sendStatusNotification($order);
             }
-            
-            $order->save();
-            $updated++;
         }
-
+        
         return response()->json([
             'success' => true,
-            'message' => "{$updated} orders updated successfully"
+            'message' => $updated . ' orders updated successfully'
         ]);
     }
-
+    
+    /**
+     * Bulk assign staff
+     */
+    public function bulkAssign(Request $request)
+    {
+        $request->validate([
+            'order_ids' => 'required|array',
+            'order_ids.*' => 'integer',
+            'staff_id' => 'required|integer',
+            'staff_name' => 'nullable|string|max:100'
+        ]);
+        
+        $provider = $this->getProvider();
+        
+        $updated = LaundryOrder::whereIn('id', $request->order_ids)
+            ->where('service_provider_id', $provider->id)
+            ->update([
+                'assigned_staff_id' => $request->staff_id,
+                'assigned_staff_name' => $request->staff_name
+            ]);
+        
+        return response()->json([
+            'success' => true,
+            'message' => $updated . ' orders assigned successfully'
+        ]);
+    }
+    
+    /**
+     * Get calendar view of orders
+     */
+    public function calendar(Request $request)
+    {
+        $provider = $this->getProvider();
+        
+        $month = $request->get('month', Carbon::now()->month);
+        $year = $request->get('year', Carbon::now()->year);
+        
+        $startDate = Carbon::createFromDate($year, $month, 1)->startOfMonth();
+        $endDate = Carbon::createFromDate($year, $month, 1)->endOfMonth();
+        
+        $pickups = LaundryOrder::where('service_provider_id', $provider->id)
+            ->whereBetween('pickup_time', [$startDate, $endDate])
+            ->with('user')
+            ->get()
+            ->groupBy(function($order) {
+                return Carbon::parse($order->pickup_time)->format('Y-m-d');
+            });
+        
+        $deliveries = LaundryOrder::where('service_provider_id', $provider->id)
+            ->whereBetween('expected_return_date', [$startDate, $endDate])
+            ->with('user')
+            ->get()
+            ->groupBy(function($order) {
+                return Carbon::parse($order->expected_return_date)->format('Y-m-d');
+            });
+        
+        if ($request->ajax()) {
+            return response()->json([
+                'pickups' => $pickups,
+                'deliveries' => $deliveries
+            ]);
+        }
+        
+        return view('laundry-provider.orders.calendar', compact('pickups', 'deliveries', 'month', 'year'));
+    }
+    
+    /**
+     * Get timeline view
+     */
+    public function timeline(Request $request)
+    {
+        $provider = $this->getProvider();
+        
+        $date = $request->get('date', Carbon::today()->format('Y-m-d'));
+        $carbonDate = Carbon::parse($date);
+        
+        $pickups = LaundryOrder::where('service_provider_id', $provider->id)
+            ->whereDate('pickup_time', $carbonDate)
+            ->whereIn('status', ['PENDING', 'PICKUP_SCHEDULED'])
+            ->with('user')
+            ->orderBy('pickup_time')
+            ->get();
+        
+        $deliveries = LaundryOrder::where('service_provider_id', $provider->id)
+            ->whereDate('expected_return_date', $carbonDate)
+            ->whereIn('status', ['READY', 'OUT_FOR_DELIVERY'])
+            ->with('user')
+            ->orderBy('expected_return_date')
+            ->get();
+        
+        return view('laundry-provider.orders.timeline', compact('pickups', 'deliveries', 'date'));
+    }
+    
     /**
      * Export orders to CSV
      */
     public function export(Request $request)
     {
-        $serviceProvider = ServiceProvider::where('user_id', Auth::id())
-            ->where('service_type', 'LAUNDRY')
-            ->first();
+        $provider = $this->getProvider();
+        
+        $date = $request->get('date', Carbon::today()->format('Y-m-d'));
+        $type = $request->get('type', 'all'); // all, normal, rush
+        $format = $request->get('format', 'csv'); // csv, excel
+        
+        $query = LaundryOrder::with(['user', 'items.laundryItem'])
+            ->where('service_provider_id', $provider->id)
+            ->whereDate('created_at', $date);
             
-        if (!$serviceProvider) {
-            abort(403, 'No laundry service provider found for this user.');
+        if ($type != 'all') {
+            $query->where('service_mode', strtoupper($type));
         }
-
-        $query = LaundryOrder::with('user')
-            ->where('service_provider_id', $serviceProvider->id);
-
-        if ($request->filled('status')) {
-            $query->where('status', $request->status);
-        }
-
-        if ($request->filled('date_range')) {
-            switch ($request->date_range) {
-                case 'today':
-                    $query->whereDate('created_at', Carbon::today());
-                    break;
-                case 'this_week':
-                    $query->whereBetween('created_at', [Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek()]);
-                    break;
-                case 'this_month':
-                    $query->whereMonth('created_at', Carbon::now()->month);
-                    break;
-            }
-        }
-
+        
         $orders = $query->get();
-
-        $filename = 'laundry-orders-' . Carbon::now()->format('Y-m-d-His') . '.csv';
+        
+        // Generate CSV export
+        $filename = "orders-{$date}-{$type}.csv";
         $headers = [
             'Content-Type' => 'text/csv',
             'Content-Disposition' => "attachment; filename=\"$filename\"",
         ];
-
-        $columns = [
-            'Order Reference', 'Customer', 'Phone', 'Service Mode', 
-            'Items Count', 'Status', 'Pickup Time', 'Expected Return',
-            'Actual Return', 'Base Amount', 'Rush Surcharge', 'Total Amount'
-        ];
-
-        $callback = function() use ($orders, $columns) {
+        
+        $callback = function() use ($orders) {
             $file = fopen('php://output', 'w');
-            fputcsv($file, $columns);
-
+            
+            // Add UTF-8 BOM for Excel compatibility
+            fprintf($file, chr(0xEF).chr(0xBB).chr(0xBF));
+            
+            // Headers
+            fputcsv($file, [
+                'Order Reference',
+                'Customer Name',
+                'Customer Phone',
+                'Service Mode',
+                'Is Rush',
+                'Status',
+                'Items Count',
+                'Base Amount',
+                'Rush Surcharge',
+                'Pickup Fee',
+                'Commission',
+                'Total Amount',
+                'Pickup Time',
+                'Expected Return',
+                'Actual Return',
+                'Created At'
+            ]);
+            
+            // Data rows
             foreach ($orders as $order) {
                 fputcsv($file, [
                     $order->order_reference,
-                    $order->user->name ?? 'N/A',
-                    $order->user->phone ?? 'N/A',
+                    $order->user->name,
+                    $order->user->phone ?? '',
                     $order->service_mode,
-                    $order->items->count(),
+                    $order->is_rush ? 'Yes' : 'No',
                     $order->status,
-                    $order->pickup_time ? Carbon::parse($order->pickup_time)->format('Y-m-d H:i') : 'N/A',
-                    $order->expected_return_date ? Carbon::parse($order->expected_return_date)->format('Y-m-d') : 'N/A',
-                    $order->actual_return_date ? Carbon::parse($order->actual_return_date)->format('Y-m-d') : 'N/A',
+                    $order->items->sum('quantity'),
                     number_format($order->base_amount, 2),
-                    number_format($order->rush_surcharge, 2),
-                    number_format($order->total_amount, 2)
+                    number_format($order->rush_surcharge ?? 0, 2),
+                    number_format($order->pickup_fee ?? 0, 2),
+                    number_format($order->commission_amount ?? 0, 2),
+                    number_format($order->total_amount, 2),
+                    $order->pickup_time ? Carbon::parse($order->pickup_time)->format('Y-m-d H:i') : '',
+                    $order->expected_return_date ? Carbon::parse($order->expected_return_date)->format('Y-m-d') : '',
+                    $order->actual_return_date ? Carbon::parse($order->actual_return_date)->format('Y-m-d H:i') : '',
+                    $order->created_at->format('Y-m-d H:i')
                 ]);
             }
-
+            
             fclose($file);
         };
-
+        
         return response()->stream($callback, 200, $headers);
     }
-
+    
     /**
-     * Print invoice
+     * Print invoice for an order
      */
     public function printInvoice($id)
     {
-        $serviceProvider = ServiceProvider::where('user_id', Auth::id())
-            ->where('service_type', 'LAUNDRY')
-            ->first();
-            
-        if (!$serviceProvider) {
-            abort(403, 'No laundry service provider found for this user.');
-        }
-
+        $provider = $this->getProvider();
+        
         $order = LaundryOrder::with(['user', 'items.laundryItem', 'serviceProvider'])
-            ->where('service_provider_id', $serviceProvider->id)
+            ->where('service_provider_id', $provider->id)
             ->findOrFail($id);
-
+        
         return view('laundry-provider.orders.print', compact('order'));
     }
-
+    
     /**
-     * Update expected return date (for rush orders)
+     * Get recent orders for dashboard
      */
-    public function updateReturnDate(Request $request, $id)
+    public function recentOrders(Request $request)
     {
-        $request->validate([
-            'expected_return_date' => 'required|date|after:today'
+        $provider = $this->getProvider();
+        
+        $limit = $request->get('limit', 5);
+        
+        $orders = LaundryOrder::with('user')
+            ->where('service_provider_id', $provider->id)
+            ->orderBy('created_at', 'desc')
+            ->limit($limit)
+            ->get();
+        
+        return response()->json([
+            'html' => view('laundry-provider.orders.partials.recent-orders', compact('orders'))->render(),
+            'count' => $orders->count()
         ]);
-
-        $serviceProvider = ServiceProvider::where('user_id', Auth::id())
-            ->where('service_type', 'LAUNDRY')
-            ->first();
-            
-        if (!$serviceProvider) {
-            return response()->json(['success' => false, 'message' => 'Service provider not found'], 403);
-        }
-
-        $order = LaundryOrder::where('service_provider_id', $serviceProvider->id)
-            ->findOrFail($id);
-
-        $oldDate = $order->expected_return_date;
-        $order->expected_return_date = $request->expected_return_date;
-        $order->save();
-
-        // Notify user about date change
-        if ($order->service_mode === 'RUSH') {
-            DB::table('notifications')->insert([
+    }
+    
+    /**
+     * Get upcoming pickups for dashboard
+     */
+    public function upcomingPickups(Request $request)
+    {
+        $provider = $this->getProvider();
+        
+        $orders = LaundryOrder::with('user')
+            ->where('service_provider_id', $provider->id)
+            ->whereDate('pickup_time', '>=', Carbon::today())
+            ->whereIn('status', ['PENDING', 'PICKUP_SCHEDULED'])
+            ->orderBy('pickup_time')
+            ->limit(5)
+            ->get();
+        
+        return response()->json([
+            'html' => view('laundry-provider.orders.partials.upcoming-pickups', compact('orders'))->render(),
+            'count' => $orders->count()
+        ]);
+    }
+    
+    /**
+     * Get overdue orders for dashboard
+     */
+    public function overdueOrders(Request $request)
+    {
+        $provider = $this->getProvider();
+        
+        $orders = LaundryOrder::with('user')
+            ->where('service_provider_id', $provider->id)
+            ->where('pickup_time', '<', Carbon::now())
+            ->whereIn('status', ['PENDING', 'PICKUP_SCHEDULED'])
+            ->orderBy('pickup_time')
+            ->get();
+        
+        return response()->json([
+            'html' => view('laundry-provider.orders.partials.overdue-orders', compact('orders'))->render(),
+            'count' => $orders->count()
+        ]);
+    }
+    
+    /**
+     * Get order statistics
+     */
+    public function getStatistics()
+    {
+        $provider = $this->getProvider();
+        
+        $today = Carbon::today();
+        $weekStart = Carbon::now()->startOfWeek();
+        $monthStart = Carbon::now()->startOfMonth();
+        
+        $stats = [
+            'today' => [
+                'total' => LaundryOrder::where('service_provider_id', $provider->id)
+                    ->whereDate('created_at', $today)
+                    ->count(),
+                'pending' => LaundryOrder::where('service_provider_id', $provider->id)
+                    ->whereDate('created_at', $today)
+                    ->whereIn('status', ['PENDING', 'PICKUP_SCHEDULED'])
+                    ->count(),
+                'completed' => LaundryOrder::where('service_provider_id', $provider->id)
+                    ->whereDate('created_at', $today)
+                    ->where('status', 'DELIVERED')
+                    ->count(),
+                'revenue' => LaundryOrder::where('service_provider_id', $provider->id)
+                    ->whereDate('created_at', $today)
+                    ->where('status', 'DELIVERED')
+                    ->sum('total_amount')
+            ],
+            'week' => [
+                'total' => LaundryOrder::where('service_provider_id', $provider->id)
+                    ->whereDate('created_at', '>=', $weekStart)
+                    ->count(),
+                'revenue' => LaundryOrder::where('service_provider_id', $provider->id)
+                    ->whereDate('created_at', '>=', $weekStart)
+                    ->where('status', 'DELIVERED')
+                    ->sum('total_amount')
+            ],
+            'month' => [
+                'total' => LaundryOrder::where('service_provider_id', $provider->id)
+                    ->whereDate('created_at', '>=', $monthStart)
+                    ->count(),
+                'revenue' => LaundryOrder::where('service_provider_id', $provider->id)
+                    ->whereDate('created_at', '>=', $monthStart)
+                    ->where('status', 'DELIVERED')
+                    ->sum('total_amount')
+            ],
+            'all_time' => [
+                'total' => LaundryOrder::where('service_provider_id', $provider->id)->count(),
+                'completed' => LaundryOrder::where('service_provider_id', $provider->id)
+                    ->where('status', 'DELIVERED')
+                    ->count(),
+                'revenue' => LaundryOrder::where('service_provider_id', $provider->id)
+                    ->where('status', 'DELIVERED')
+                    ->sum('total_amount')
+            ]
+        ];
+        
+        return response()->json($stats);
+    }
+    
+    /**
+     * Send status notification to customer
+     */
+    private function sendStatusNotification($order)
+    {
+        $messages = [
+            'PICKED_UP' => 'Your laundry has been picked up and is being processed.',
+            'READY' => 'Your laundry is ready for delivery.',
+            'OUT_FOR_DELIVERY' => 'Your laundry is out for delivery.',
+            'DELIVERED' => 'Your laundry has been delivered. Thank you for choosing us!'
+        ];
+        
+        if (isset($messages[$order->status])) {
+            Notification::create([
                 'user_id' => $order->user_id,
                 'type' => 'ORDER',
-                'title' => 'Rush Order Update',
-                'message' => "Your rush order #{$order->order_reference} expected return date has been changed to " . Carbon::parse($request->expected_return_date)->format('M d, Y'),
+                'title' => 'Order Status Update',
+                'message' => $messages[$order->status],
                 'related_entity_type' => 'laundry_order',
                 'related_entity_id' => $order->id,
-                'channel' => 'IN_APP',
-                'is_read' => false,
-                'is_sent' => true,
-                'sent_at' => now(),
-                'created_at' => now(),
-                'updated_at' => now()
+                'channel' => 'IN_APP'
             ]);
         }
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Return date updated successfully'
-        ]);
+    }
+    
+    // ==================== PRIVATE HELPER METHODS ====================
+    
+    /**
+     * Get all normal orders
+     */
+    private function getNormalOrders($providerId)
+    {
+        return LaundryOrder::with(['user', 'items.laundryItem'])
+            ->where('service_provider_id', $providerId)
+            ->where('service_mode', 'NORMAL')
+            ->orderBy('created_at', 'desc')
+            ->paginate(20);
+    }
+    
+    /**
+     * Get all rush orders
+     */
+    private function getRushOrders($providerId)
+    {
+        return LaundryOrder::with(['user', 'items.laundryItem'])
+            ->where('service_provider_id', $providerId)
+            ->where('service_mode', 'RUSH')
+            ->orderBy('created_at', 'desc')
+            ->paginate(20);
+    }
+    
+    /**
+     * Get normal orders that need pickup today
+     */
+    private function getNormalPickupToday($providerId, $date)
+    {
+        return LaundryOrder::with(['user', 'items.laundryItem'])
+            ->where('service_provider_id', $providerId)
+            ->where('service_mode', 'NORMAL')
+            ->whereDate('pickup_time', $date)
+            ->whereIn('status', ['PENDING', 'PICKUP_SCHEDULED'])
+            ->orderBy('pickup_time', 'asc')
+            ->get();
+    }
+    
+    /**
+     * Get normal orders that need delivery today
+     */
+    private function getNormalDeliverToday($providerId, $date)
+    {
+        return LaundryOrder::with(['user', 'items.laundryItem'])
+            ->where('service_provider_id', $providerId)
+            ->where('service_mode', 'NORMAL')
+            ->whereDate('expected_return_date', $date)
+            ->whereNotIn('status', ['DELIVERED', 'CANCELLED'])
+            ->orderBy('expected_return_date', 'asc')
+            ->get();
+    }
+    
+    /**
+     * Get normal orders in progress
+     */
+    private function getNormalInProgress($providerId)
+    {
+        return LaundryOrder::with(['user', 'items.laundryItem'])
+            ->where('service_provider_id', $providerId)
+            ->where('service_mode', 'NORMAL')
+            ->whereIn('status', ['PICKED_UP', 'IN_PROGRESS', 'READY', 'OUT_FOR_DELIVERY'])
+            ->orderBy('updated_at', 'desc')
+            ->get();
+    }
+    
+    /**
+     * Get rush orders that need pickup today
+     */
+    private function getRushPickupToday($providerId, $date)
+    {
+        return LaundryOrder::with(['user', 'items.laundryItem'])
+            ->where('service_provider_id', $providerId)
+            ->where('service_mode', 'RUSH')
+            ->whereDate('pickup_time', $date)
+            ->whereIn('status', ['PENDING', 'PICKUP_SCHEDULED'])
+            ->orderBy('pickup_time', 'asc')
+            ->get();
+    }
+    
+    /**
+     * Get rush orders that need delivery today
+     */
+    private function getRushDeliverToday($providerId, $date)
+    {
+        return LaundryOrder::with(['user', 'items.laundryItem'])
+            ->where('service_provider_id', $providerId)
+            ->where('service_mode', 'RUSH')
+            ->whereDate('expected_return_date', $date)
+            ->whereNotIn('status', ['DELIVERED', 'CANCELLED'])
+            ->orderBy('expected_return_date', 'asc')
+            ->get();
+    }
+    
+    /**
+     * Get rush orders in progress
+     */
+    private function getRushInProgress($providerId)
+    {
+        return LaundryOrder::with(['user', 'items.laundryItem'])
+            ->where('service_provider_id', $providerId)
+            ->where('service_mode', 'RUSH')
+            ->whereIn('status', ['PICKED_UP', 'IN_PROGRESS', 'READY', 'OUT_FOR_DELIVERY'])
+            ->orderBy('updated_at', 'desc')
+            ->get();
+    }
+    
+    /**
+     * Get statistics for an order
+     */
+    private function getOrderStats($order)
+    {
+        $stats = [
+            'total_items' => $order->items->sum('quantity'),
+            'unique_items' => $order->items->count(),
+            'processing_days' => $order->actual_return_date ? 
+                Carbon::parse($order->pickup_time)->diffInDays(Carbon::parse($order->actual_return_date)) : null,
+            'is_on_time' => $order->actual_return_date ? 
+                Carbon::parse($order->actual_return_date)->lte(Carbon::parse($order->expected_return_date)) : null
+        ];
+        
+        return $stats;
     }
 }

@@ -363,8 +363,8 @@
                 </a>
 
                 <!-- Profile -->
-                <a href="{{ route('profile.show') }}" 
-                   @click.prevent="navigate('{{ route('profile.show') }}')"
+                <a href="{{ route('profile.index') }}" 
+                   @click.prevent="navigate('{{ route('profile.index') }}')"
                    :class="currentPage === 'profile' ? 'bg-[#286b7f] text-white' : 'text-gray-300 hover:bg-[#1f556b] hover:text-white'"
                    class="group flex items-center px-3 py-3 rounded-md sidebar-transition">
                     <i class="fas fa-user text-lg w-6 text-center"></i>
@@ -573,8 +573,8 @@
                                  class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-50"
                                  style="display: none;">
                                 <div class="py-1">
-                                    <a href="{{ route('profile.show') }}" 
-                                       @click.prevent="navigate('{{ route('profile.show') }}')"
+                                    <a href="{{ route('profile.index') }}" 
+                                       @click.prevent="navigate('{{ route('profile.index') }}')"
                                        class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                                         <i class="fas fa-user mr-2"></i> Profile
                                     </a>
