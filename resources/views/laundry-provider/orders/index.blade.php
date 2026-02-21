@@ -38,7 +38,7 @@
             </div>
             <div class="flex-1 min-w-[200px]">
                 <label class="block text-sm font-medium text-gray-700 mb-1">🔍 Search</label>
-                <input type="text" x-model="searchTerm" @input="filterOrders()" placeholder="Order #, Customer..." 
+                <input type="text" x-model="searchTerm" @input.debounce.500ms="filterOrders()" placeholder="Order #, Customer..." 
                        class="w-full rounded-lg border-gray-300 shadow-sm focus:border-[#174455] focus:ring-[#174455]">
             </div>
             <div class="flex items-end">
@@ -75,7 +75,24 @@
 </div>
 
 {{-- Order Details Modal --}}
-@include('laundry-provider.orders.partials.order-details-modal')
+<div id="orderDetailsModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden overflow-y-auto h-full w-full z-50">
+    <div class="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-lg bg-white">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-xl font-bold text-[#174455]">Order Details</h3>
+            <button onclick="closeOrderModal()" class="text-gray-400 hover:text-gray-600">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+        </div>
+        
+        <div id="modalContent" class="space-y-4">
+            {{-- Content will be loaded via AJAX --}}
+            <div class="text-center py-8">
+                <div class="loading-spinner rounded-full h-12 w-12 border-t-2 border-b-2 border-[#174455] mx-auto mb-3"></div>
+                <p class="text-gray-600">Loading order details...</p>
+            </div>
+        </div>
+    </div>
+</div>
 @endsection
 
 @push('scripts')
@@ -88,6 +105,13 @@ function orderManager() {
         loading: false,
         
         init() {
+            // Check URL for tab parameter
+            const urlParams = new URLSearchParams(window.location.search);
+            const tabParam = urlParams.get('tab');
+            if (tabParam && ['normal', 'rush', 'all'].includes(tabParam)) {
+                this.activeTab = tabParam;
+            }
+            
             // Initialize event listeners for order actions
             this.initOrderActionListeners();
         },
@@ -117,11 +141,11 @@ function orderManager() {
             .then(response => response.json())
             .then(data => {
                 // Update the active tab content
-                if (this.activeTab === 'normal') {
+                if (this.activeTab === 'normal' && data.normal) {
                     document.getElementById('normal-tab-content').innerHTML = data.normal;
-                } else if (this.activeTab === 'rush') {
+                } else if (this.activeTab === 'rush' && data.rush) {
                     document.getElementById('rush-tab-content').innerHTML = data.rush;
-                } else {
+                } else if (this.activeTab === 'all' && data.all) {
                     document.getElementById('all-tab-content').innerHTML = data.all;
                 }
                 
@@ -132,7 +156,7 @@ function orderManager() {
             .catch(error => {
                 console.error('Error:', error);
                 this.loading = false;
-                alert('Failed to load orders. Please try again.');
+                alert('Failed to load orders. Please refresh the page.');
             });
         },
         
@@ -143,47 +167,67 @@ function orderManager() {
         },
         
         initOrderActionListeners() {
-            // Remove existing listeners to prevent duplicates
+            // Accept Order
             document.querySelectorAll('.accept-order-btn').forEach(btn => {
                 btn.removeEventListener('click', this.handleAcceptOrder);
                 btn.addEventListener('click', this.handleAcceptOrder);
             });
             
+            // Schedule Pickup
+            document.querySelectorAll('.schedule-pickup-btn').forEach(btn => {
+                btn.removeEventListener('click', this.handleSchedulePickup);
+                btn.addEventListener('click', this.handleSchedulePickup);
+            });
+            
+            // Mark as Picked Up
             document.querySelectorAll('.mark-picked-up-btn').forEach(btn => {
                 btn.removeEventListener('click', this.handleMarkPickedUp);
                 btn.addEventListener('click', this.handleMarkPickedUp);
             });
             
+            // Start Processing
             document.querySelectorAll('.start-processing-btn').forEach(btn => {
                 btn.removeEventListener('click', this.handleStartProcessing);
                 btn.addEventListener('click', this.handleStartProcessing);
             });
             
+            // Mark as Ready
             document.querySelectorAll('.mark-ready-btn').forEach(btn => {
                 btn.removeEventListener('click', this.handleMarkReady);
                 btn.addEventListener('click', this.handleMarkReady);
             });
             
+            // Out for Delivery
             document.querySelectorAll('.out-for-delivery-btn').forEach(btn => {
                 btn.removeEventListener('click', this.handleOutForDelivery);
                 btn.addEventListener('click', this.handleOutForDelivery);
             });
             
+            // Mark as Delivered
             document.querySelectorAll('.delivered-btn').forEach(btn => {
                 btn.removeEventListener('click', this.handleDelivered);
                 btn.addEventListener('click', this.handleDelivered);
             });
             
+            // Cancel Order
             document.querySelectorAll('.cancel-order-btn').forEach(btn => {
                 btn.removeEventListener('click', this.handleCancelOrder);
                 btn.addEventListener('click', this.handleCancelOrder);
             });
             
+            // Reschedule
+            document.querySelectorAll('.reschedule-btn').forEach(btn => {
+                btn.removeEventListener('click', this.handleReschedule);
+                btn.addEventListener('click', this.handleReschedule);
+            });
+            
+            // View Details
             document.querySelectorAll('.view-details-btn').forEach(btn => {
                 btn.removeEventListener('click', this.handleViewDetails);
                 btn.addEventListener('click', this.handleViewDetails);
             });
             
+            // Call Customer
             document.querySelectorAll('.call-customer-btn').forEach(btn => {
                 btn.removeEventListener('click', this.handleCallCustomer);
                 btn.addEventListener('click', this.handleCallCustomer);
@@ -234,6 +278,52 @@ function orderManager() {
             }
         },
         
+        handleSchedulePickup(e) {
+            e.preventDefault();
+            const btn = e.currentTarget;
+            const orderId = btn.dataset.id;
+            
+            if (!orderId) {
+                alert('Order ID not found');
+                return;
+            }
+            
+            // Simple prompt for pickup time - in production, use a date picker modal
+            const pickupTime = prompt('Enter pickup date and time (YYYY-MM-DD HH:MM):');
+            if (!pickupTime) return;
+            
+            btn.disabled = true;
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Scheduling...';
+            
+            fetch(`/laundry-provider/orders/${orderId}/schedule-pickup`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify({ pickup_time: pickupTime })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Pickup scheduled successfully');
+                    location.reload();
+                } else {
+                    alert(data.message || 'Failed to schedule pickup');
+                    btn.disabled = false;
+                    btn.innerHTML = originalText;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error scheduling pickup');
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            });
+        },
+        
         handleMarkPickedUp(e) {
             e.preventDefault();
             const btn = e.currentTarget;
@@ -245,7 +335,6 @@ function orderManager() {
             }
             
             if (confirm('Mark this order as picked up?')) {
-                // Disable button and show loading
                 btn.disabled = true;
                 const originalText = btn.innerHTML;
                 btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Updating...';
@@ -288,7 +377,6 @@ function orderManager() {
                 return;
             }
             
-            // Disable button and show loading
             btn.disabled = true;
             const originalText = btn.innerHTML;
             btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Starting...';
@@ -331,7 +419,6 @@ function orderManager() {
             }
             
             if (confirm('Mark this order as ready for delivery?')) {
-                // Disable button and show loading
                 btn.disabled = true;
                 const originalText = btn.innerHTML;
                 btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Updating...';
@@ -375,7 +462,6 @@ function orderManager() {
             }
             
             if (confirm('Mark this order as out for delivery?')) {
-                // Disable button and show loading
                 btn.disabled = true;
                 const originalText = btn.innerHTML;
                 btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Updating...';
@@ -419,7 +505,6 @@ function orderManager() {
             }
             
             if (confirm('Mark this order as delivered?')) {
-                // Disable button and show loading
                 btn.disabled = true;
                 const originalText = btn.innerHTML;
                 btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Updating...';
@@ -465,7 +550,6 @@ function orderManager() {
             const reason = prompt('Please provide a reason for cancellation:');
             if (!reason) return;
             
-            // Disable button and show loading
             btn.disabled = true;
             const originalText = btn.innerHTML;
             btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Cancelling...';
@@ -493,6 +577,56 @@ function orderManager() {
             .catch(error => {
                 console.error('Error:', error);
                 alert('Error cancelling order');
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            });
+        },
+        
+        handleReschedule(e) {
+            e.preventDefault();
+            const btn = e.currentTarget;
+            const orderId = btn.dataset.id;
+            
+            if (!orderId) {
+                alert('Order ID not found');
+                return;
+            }
+            
+            const newPickupTime = prompt('Enter new pickup date and time (YYYY-MM-DD HH:MM):');
+            if (!newPickupTime) return;
+            
+            const reason = prompt('Reason for rescheduling (optional):');
+            
+            btn.disabled = true;
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Rescheduling...';
+            
+            fetch(`/laundry-provider/orders/${orderId}/reschedule`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify({ 
+                    pickup_time: newPickupTime,
+                    reason: reason 
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Pickup rescheduled successfully');
+                    location.reload();
+                } else {
+                    alert(data.message || 'Failed to reschedule');
+                    btn.disabled = false;
+                    btn.innerHTML = originalText;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error rescheduling');
                 btn.disabled = false;
                 btn.innerHTML = originalText;
             });

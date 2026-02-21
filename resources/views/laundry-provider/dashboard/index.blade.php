@@ -60,7 +60,7 @@
             <div class="flex items-center justify-between">
                 <div>
                     <p class="text-gray-500 text-sm">Today's Earnings</p>
-                    <p class="text-3xl font-bold text-green-600">৳{{ number_format($stats['total_earnings_today'], 2) }}</p>
+                    <p class="text-3xl font-bold text-green-600">${{ number_format($stats['total_earnings_today'], 2) }}</p>
                 </div>
                 <div class="bg-green-100 p-3 rounded-lg">
                     <i class="fas fa-dollar-sign text-green-600 text-xl"></i>

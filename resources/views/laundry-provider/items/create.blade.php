@@ -57,11 +57,11 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                         <label for="base_price" class="block text-sm font-medium text-gray-700 mb-1">
-                            Base Price (৳) <span class="text-red-500">*</span>
+                            Base Price ($) <span class="text-red-500">*</span>
                         </label>
                         <div class="relative">
                             <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <span class="text-gray-500">৳</span>
+                                <span class="text-gray-500">$</span>
                             </div>
                             <input type="number" name="base_price" id="base_price" value="{{ old('base_price') }}" required
                                    step="0.01" min="0"

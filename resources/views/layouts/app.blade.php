@@ -1,35 +1,35 @@
-<!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="csrf-token" content="{{ csrf_token() }}">
+@auth
+<li class="nav-item">
+    <a href="{{ route('chat.index') }}" class="nav-link position-relative">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+        </svg>
+        Messages
+        <span id="unread-badge" class="badge bg-danger position-absolute top-0 start-100 translate-middle" style="display: none;">0</span>
+    </a>
+</li>
+@endauth
 
-    <title>{{ config('app.name', 'RMS') }} - @yield('title', 'Rent Management System')</title>
+@push('scripts')
+<script>
+// Update unread count periodically
+function updateUnreadCount() {
+    fetch('{{ route("chat.unread-count") }}')
+        .then(response => response.json())
+        .then(data => {
+            const badge = document.getElementById('unread-badge');
+            if (data.unread_count > 0) {
+                badge.textContent = data.unread_count;
+                badge.style.display = 'inline';
+            } else {
+                badge.style.display = 'none';
+            }
+        });
+}
 
-    <!-- Fonts -->
-    <link rel="preconnect" href="https://fonts.bunny.net">
-    <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
-    
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <!-- Scripts -->
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
-    
-    <!-- Alpine.js -->
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-    
-    @stack('styles')
-</head>
-<body class="font-sans antialiased">
-    <div class="min-h-screen bg-gray-50">
-        <!-- Page Content -->
-        <main>
-            @yield('content')
-        </main>
-    </div>
-
-    @stack('scripts')
-</body>
-</html>
+// Update every 30 seconds
+setInterval(updateUnreadCount, 30000);
+// Initial update
+updateUnreadCount();
+</script>
+@endpush

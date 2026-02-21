@@ -53,7 +53,7 @@
                 <div>
                     <div class="mb-4">
                         <p class="text-sm text-gray-500">Base Price</p>
-                        <p class="text-2xl font-bold text-[#174455]">৳{{ number_format($item->base_price, 2) }}</p>
+                        <p class="text-2xl font-bold text-[#174455]">${{ number_format($item->base_price, 2) }}</p>
                     </div>
                     
                     <div class="mb-4">
@@ -68,7 +68,7 @@
                     
                     <div class="mb-4">
                         <p class="text-sm text-gray-500">Total Price (with commission)</p>
-                        <p class="text-2xl font-bold text-green-600">৳{{ number_format($item->total_price, 2) }}</p>
+                        <p class="text-2xl font-bold text-green-600">${{ number_format($item->total_price, 2) }}</p>
                     </div>
                     
                     <div class="mb-4">

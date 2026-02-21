@@ -30,51 +30,123 @@ class OrderController extends Controller
         return $this->provider;
     }
     
-    /**
-     * Display a listing of orders with tabs
-     */
-    public function index(Request $request)
-    {
-        $provider = $this->getProvider();
-        
-        $date = $request->get('date', Carbon::today()->format('Y-m-d'));
-        $carbonDate = Carbon::parse($date);
-        
-        // Get all orders for this provider with pagination
-        $allOrders = LaundryOrder::with(['user', 'items.laundryItem'])
-            ->where('service_provider_id', $provider->id)
-            ->orderBy('created_at', 'desc')
-            ->paginate(20);
-        
-        // Normal orders data
-        $normalOrders = [
-            'pickup_today' => $this->getNormalPickupToday($provider->id, $carbonDate),
-            'deliver_today' => $this->getNormalDeliverToday($provider->id, $carbonDate),
-            'in_progress' => $this->getNormalInProgress($provider->id),
-            'all' => $this->getNormalOrders($provider->id)
-        ];
-        
-        // Rush orders data
-        $rushOrders = [
-            'rush_pickup_today' => $this->getRushPickupToday($provider->id, $carbonDate),
-            'rush_deliver_today' => $this->getRushDeliverToday($provider->id, $carbonDate),
-            'rush_in_progress' => $this->getRushInProgress($provider->id),
-            'all' => $this->getRushOrders($provider->id)
-        ];
-        
-        // Calculate rush count for badge
-        $rushCount = $rushOrders['rush_pickup_today']->count() + 
-                     $rushOrders['rush_deliver_today']->count() + 
-                     $rushOrders['rush_in_progress']->count();
-        
-        return view('laundry-provider.orders.index', compact(
-            'normalOrders',
-            'rushOrders',
-            'allOrders',
-            'rushCount'
-        ));
-    }
+/**
+ * Display a listing of orders with tabs
+ */
+public function index(Request $request)
+{
+    $provider = $this->getProvider();
     
+    $date = $request->get('date', Carbon::today()->format('Y-m-d'));
+    $carbonDate = Carbon::parse($date);
+    
+    // Get all orders for this provider with pagination
+    $allOrders = LaundryOrder::with(['user', 'items.laundryItem'])
+        ->where('service_provider_id', $provider->id)
+        ->orderBy('created_at', 'desc')
+        ->paginate(20);
+    
+    // NORMAL ORDERS DATA
+    $normalOrders = [
+        'pickup_today' => $this->getNormalPickupToday($provider->id, $carbonDate),
+        'deliver_today' => $this->getNormalDeliverToday($provider->id, $carbonDate),
+        'active' => $this->getNormalActiveOrders($provider->id),
+        'all' => $this->getNormalOrders($provider->id)
+    ];
+    
+    // RUSH ORDERS DATA
+    $rushOrders = [
+        'rush_pickup_today' => $this->getRushPickupToday($provider->id, $carbonDate),
+        'rush_deliver_today' => $this->getRushDeliverToday($provider->id, $carbonDate),
+        'active' => $this->getRushActiveOrders($provider->id),
+        'all' => $this->getRushOrders($provider->id)
+    ];
+    
+    // Calculate rush count for badge
+    $rushCount = $rushOrders['rush_pickup_today']->count() + 
+                 $rushOrders['rush_deliver_today']->count() + 
+                 $rushOrders['active']->count();
+    
+    return view('laundry-provider.orders.index', compact(
+        'normalOrders',
+        'rushOrders',
+        'allOrders',
+        'rushCount'
+    ));
+}
+
+        /**
+         * Filter orders by date and tab (AJAX endpoint)
+         */
+        public function filter(Request $request)
+        {
+            $provider = $this->getProvider();
+            
+            $date = $request->get('date', Carbon::today()->format('Y-m-d'));
+            $tab = $request->get('tab', 'normal');
+            $search = $request->get('search', '');
+            $carbonDate = Carbon::parse($date);
+            
+            $response = [];
+            
+            if ($tab == 'normal') {
+                $normalOrders = [
+                    'pickup_today' => $this->getNormalPickupToday($provider->id, $carbonDate),
+                    'deliver_today' => $this->getNormalDeliverToday($provider->id, $carbonDate),
+                    'active' => $this->getNormalActiveOrders($provider->id)
+                ];
+                
+                // Apply search filter if provided
+                if ($search) {
+                    foreach ($normalOrders as $key => $collection) {
+                        $normalOrders[$key] = $collection->filter(function($order) use ($search) {
+                            return stripos($order->order_reference, $search) !== false ||
+                                stripos($order->user->name, $search) !== false;
+                        });
+                    }
+                }
+                
+                $response['normal'] = view('laundry-provider.orders.partials.normal-tab', ['orders' => $normalOrders])->render();
+                
+            } elseif ($tab == 'rush') {
+                $rushOrders = [
+                    'rush_pickup_today' => $this->getRushPickupToday($provider->id, $carbonDate),
+                    'rush_deliver_today' => $this->getRushDeliverToday($provider->id, $carbonDate),
+                    'active' => $this->getRushActiveOrders($provider->id)
+                ];
+                
+                // Apply search filter if provided
+                if ($search) {
+                    foreach ($rushOrders as $key => $collection) {
+                        $rushOrders[$key] = $collection->filter(function($order) use ($search) {
+                            return stripos($order->order_reference, $search) !== false ||
+                                stripos($order->user->name, $search) !== false;
+                        });
+                    }
+                }
+                
+                $response['rush'] = view('laundry-provider.orders.partials.rush-tab', ['orders' => $rushOrders])->render();
+                
+            } else {
+                $allOrders = LaundryOrder::with(['user', 'items.laundryItem'])
+                    ->where('service_provider_id', $provider->id)
+                    ->whereDate('created_at', $carbonDate)
+                    ->orderBy('created_at', 'desc')
+                    ->get();
+                    
+                // Apply search filter if provided
+                if ($search) {
+                    $allOrders = $allOrders->filter(function($order) use ($search) {
+                        return stripos($order->order_reference, $search) !== false ||
+                            stripos($order->user->name, $search) !== false;
+                    });
+                }
+                
+                $response['all'] = view('laundry-provider.orders.partials.all-orders-tab', ['orders' => $allOrders])->render();
+            }
+            
+            return response()->json($response);
+        }
     /**
      * Get rush orders only (for rush tab)
      */
@@ -88,7 +160,7 @@ class OrderController extends Controller
         $rushOrders = [
             'rush_pickup_today' => $this->getRushPickupToday($provider->id, $carbonDate),
             'rush_deliver_today' => $this->getRushDeliverToday($provider->id, $carbonDate),
-            'rush_in_progress' => $this->getRushInProgress($provider->id),
+            'active' => $this->getRushActiveOrders($provider->id),
             'all' => $this->getRushOrders($provider->id)
         ];
         
@@ -114,7 +186,7 @@ class OrderController extends Controller
         $normalOrders = [
             'pickup_today' => $this->getNormalPickupToday($provider->id, $carbonDate),
             'deliver_today' => $this->getNormalDeliverToday($provider->id, $carbonDate),
-            'in_progress' => $this->getNormalInProgress($provider->id),
+            'active' => $this->getNormalActiveOrders($provider->id),
             'all' => $this->getNormalOrders($provider->id)
         ];
         
@@ -126,79 +198,7 @@ class OrderController extends Controller
         
         return view('laundry-provider.orders.normal', compact('normalOrders'));
     }
-    
-    /**
-     * Filter orders by date and tab (AJAX endpoint)
-     */
-    public function filter(Request $request)
-    {
-        $provider = $this->getProvider();
-        
-        $date = $request->get('date', Carbon::today()->format('Y-m-d'));
-        $tab = $request->get('tab', 'normal');
-        $search = $request->get('search', '');
-        $carbonDate = Carbon::parse($date);
-        
-        $response = [];
-        
-        // Always prepare all tabs data for faster switching
-        // Normal tab data
-        $normalOrders = [
-            'pickup_today' => $this->getNormalPickupToday($provider->id, $carbonDate),
-            'deliver_today' => $this->getNormalDeliverToday($provider->id, $carbonDate),
-            'in_progress' => $this->getNormalInProgress($provider->id)
-        ];
-        
-        // Apply search filter if provided
-        if ($search) {
-            foreach ($normalOrders as $key => $collection) {
-                $normalOrders[$key] = $collection->filter(function($order) use ($search) {
-                    return str_contains(strtolower($order->order_reference), strtolower($search)) ||
-                           str_contains(strtolower($order->user->name), strtolower($search)) ||
-                           str_contains(strtolower($order->user->phone ?? ''), strtolower($search));
-                });
-            }
-        }
-        $response['normal'] = view('laundry-provider.orders.partials.normal-tab', ['orders' => $normalOrders])->render();
-        
-        // Rush tab data
-        $rushOrders = [
-            'rush_pickup_today' => $this->getRushPickupToday($provider->id, $carbonDate),
-            'rush_deliver_today' => $this->getRushDeliverToday($provider->id, $carbonDate),
-            'rush_in_progress' => $this->getRushInProgress($provider->id)
-        ];
-        
-        // Apply search filter if provided
-        if ($search) {
-            foreach ($rushOrders as $key => $collection) {
-                $rushOrders[$key] = $collection->filter(function($order) use ($search) {
-                    return str_contains(strtolower($order->order_reference), strtolower($search)) ||
-                           str_contains(strtolower($order->user->name), strtolower($search)) ||
-                           str_contains(strtolower($order->user->phone ?? ''), strtolower($search));
-                });
-            }
-        }
-        $response['rush'] = view('laundry-provider.orders.partials.rush-tab', ['orders' => $rushOrders])->render();
-        
-        // All orders tab data
-        $allOrders = LaundryOrder::with(['user', 'items.laundryItem'])
-            ->where('service_provider_id', $provider->id)
-            ->whereDate('created_at', $carbonDate)
-            ->orderBy('created_at', 'desc')
-            ->get();
-            
-        // Apply search filter if provided
-        if ($search) {
-            $allOrders = $allOrders->filter(function($order) use ($search) {
-                return str_contains(strtolower($order->order_reference), strtolower($search)) ||
-                       str_contains(strtolower($order->user->name), strtolower($search)) ||
-                       str_contains(strtolower($order->user->phone ?? ''), strtolower($search));
-            });
-        }
-        $response['all'] = view('laundry-provider.orders.partials.all-orders-tab', ['orders' => $allOrders])->render();
-        
-        return response()->json($response);
-    }
+
     
     /**
      * Search orders (AJAX endpoint)
@@ -272,8 +272,6 @@ class OrderController extends Controller
             $order->pickup_time = now();
         } elseif ($request->status == 'DELIVERED' && $oldStatus != 'DELIVERED') {
             $order->actual_return_date = now();
-        } elseif ($request->status == 'IN_PROGRESS' && $oldStatus != 'IN_PROGRESS') {
-            // Could add started_processing_at timestamp if you have that field
         }
         
         $order->save();
@@ -700,102 +698,6 @@ class OrderController extends Controller
     }
     
     /**
-     * Export orders to CSV
-     */
-    public function export(Request $request)
-    {
-        $provider = $this->getProvider();
-        
-        $date = $request->get('date', Carbon::today()->format('Y-m-d'));
-        $type = $request->get('type', 'all'); // all, normal, rush
-        $format = $request->get('format', 'csv'); // csv, excel
-        
-        $query = LaundryOrder::with(['user', 'items.laundryItem'])
-            ->where('service_provider_id', $provider->id)
-            ->whereDate('created_at', $date);
-            
-        if ($type != 'all') {
-            $query->where('service_mode', strtoupper($type));
-        }
-        
-        $orders = $query->get();
-        
-        // Generate CSV export
-        $filename = "orders-{$date}-{$type}.csv";
-        $headers = [
-            'Content-Type' => 'text/csv',
-            'Content-Disposition' => "attachment; filename=\"$filename\"",
-        ];
-        
-        $callback = function() use ($orders) {
-            $file = fopen('php://output', 'w');
-            
-            // Add UTF-8 BOM for Excel compatibility
-            fprintf($file, chr(0xEF).chr(0xBB).chr(0xBF));
-            
-            // Headers
-            fputcsv($file, [
-                'Order Reference',
-                'Customer Name',
-                'Customer Phone',
-                'Service Mode',
-                'Is Rush',
-                'Status',
-                'Items Count',
-                'Base Amount',
-                'Rush Surcharge',
-                'Pickup Fee',
-                'Commission',
-                'Total Amount',
-                'Pickup Time',
-                'Expected Return',
-                'Actual Return',
-                'Created At'
-            ]);
-            
-            // Data rows
-            foreach ($orders as $order) {
-                fputcsv($file, [
-                    $order->order_reference,
-                    $order->user->name,
-                    $order->user->phone ?? '',
-                    $order->service_mode,
-                    $order->is_rush ? 'Yes' : 'No',
-                    $order->status,
-                    $order->items->sum('quantity'),
-                    number_format($order->base_amount, 2),
-                    number_format($order->rush_surcharge ?? 0, 2),
-                    number_format($order->pickup_fee ?? 0, 2),
-                    number_format($order->commission_amount ?? 0, 2),
-                    number_format($order->total_amount, 2),
-                    $order->pickup_time ? Carbon::parse($order->pickup_time)->format('Y-m-d H:i') : '',
-                    $order->expected_return_date ? Carbon::parse($order->expected_return_date)->format('Y-m-d') : '',
-                    $order->actual_return_date ? Carbon::parse($order->actual_return_date)->format('Y-m-d H:i') : '',
-                    $order->created_at->format('Y-m-d H:i')
-                ]);
-            }
-            
-            fclose($file);
-        };
-        
-        return response()->stream($callback, 200, $headers);
-    }
-    
-    /**
-     * Print invoice for an order
-     */
-    public function printInvoice($id)
-    {
-        $provider = $this->getProvider();
-        
-        $order = LaundryOrder::with(['user', 'items.laundryItem', 'serviceProvider'])
-            ->where('service_provider_id', $provider->id)
-            ->findOrFail($id);
-        
-        return view('laundry-provider.orders.print', compact('order'));
-    }
-    
-    /**
      * Get recent orders for dashboard
      */
     public function recentOrders(Request $request)
@@ -943,7 +845,35 @@ class OrderController extends Controller
         }
     }
     
-    // ==================== PRIVATE HELPER METHODS ====================
+    // ==================== NEW HELPER METHODS FOR ACTIVE ORDERS ====================
+    
+    /**
+     * Get normal active orders (all statuses except DELIVERED and CANCELLED)
+     */
+    private function getNormalActiveOrders($providerId)
+    {
+        return LaundryOrder::with(['user', 'items.laundryItem'])
+            ->where('service_provider_id', $providerId)
+            ->where('service_mode', 'NORMAL')
+            ->whereNotIn('status', ['DELIVERED', 'CANCELLED'])
+            ->orderBy('created_at', 'desc')
+            ->get();
+    }
+    
+    /**
+     * Get rush active orders (all statuses except DELIVERED and CANCELLED)
+     */
+    private function getRushActiveOrders($providerId)
+    {
+        return LaundryOrder::with(['user', 'items.laundryItem'])
+            ->where('service_provider_id', $providerId)
+            ->where('service_mode', 'RUSH')
+            ->whereNotIn('status', ['DELIVERED', 'CANCELLED'])
+            ->orderBy('created_at', 'desc')
+            ->get();
+    }
+    
+    // ==================== EXISTING HELPER METHODS ====================
     
     /**
      * Get all normal orders
@@ -998,7 +928,7 @@ class OrderController extends Controller
     }
     
     /**
-     * Get normal orders in progress
+     * Get normal orders in progress (kept for backward compatibility)
      */
     private function getNormalInProgress($providerId)
     {
@@ -1039,7 +969,7 @@ class OrderController extends Controller
     }
     
     /**
-     * Get rush orders in progress
+     * Get rush orders in progress (kept for backward compatibility)
      */
     private function getRushInProgress($providerId)
     {

@@ -88,9 +88,9 @@
                                     {{ $itemTypes[$item->item_type] ?? $item->item_type }}
                                 </span>
                             </td>
-                            <td class="px-6 py-4 font-medium">৳{{ number_format($item->base_price, 2) }}</td>
+                            <td class="px-6 py-4 font-medium">${{ number_format($item->base_price, 2) }}</td>
                             <td class="px-6 py-4">{{ $item->rush_surcharge_percent }}%</td>
-                            <td class="px-6 py-4 font-bold text-[#174455]">৳{{ number_format($item->total_price, 2) }}</td>
+                            <td class="px-6 py-4 font-bold text-[#174455]">${{ number_format($item->total_price, 2) }}</td>
                             <td class="px-6 py-4">
                                 @if($item->is_active)
                                     <span class="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">Active</span>
