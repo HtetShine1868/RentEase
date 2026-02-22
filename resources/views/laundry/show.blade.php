@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('dashboard')
 
 @section('title', $provider->business_name)
 @section('subtitle', 'Laundry Service Provider')

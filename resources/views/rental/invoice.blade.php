@@ -1,5 +1,5 @@
 {{-- resources/views/rental/invoice.blade.php --}}
-@extends('layouts.app')
+@extends('dashboard')
 
 @section('title', 'Booking Invoice')
 

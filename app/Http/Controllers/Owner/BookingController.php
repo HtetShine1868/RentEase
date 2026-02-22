@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Property;
 use App\Models\Booking;
 use App\Models\Room;
+use App\Models\ChatMessage;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
@@ -18,6 +19,7 @@ class BookingController extends Controller
     public function index(Request $request)
     {
         $owner = Auth::user();
+        $ownerId = $owner->id;
         
         // Get owner's properties for the filter dropdown
         $properties = Property::where('owner_id', $owner->id)
@@ -27,7 +29,7 @@ class BookingController extends Controller
         
         // Build query for owner's bookings
         $bookingsQuery = Booking::with([
-            'user:id,name,email,phone',
+            'user:id,name,email,phone,avatar_url',
             'property:id,name,type,city,area',
             'room:id,room_number,room_type'
         ])->whereHas('property', function($query) use ($owner) {
@@ -111,6 +113,16 @@ class BookingController extends Controller
         
         $bookings = $bookingsQuery->paginate(10)->withQueryString();
         
+        // ===== ADD UNREAD CHAT COUNTS TO EACH BOOKING =====
+        foreach ($bookings as $booking) {
+            $booking->unread_chat_count = ChatMessage::whereHas('conversation', function($q) use ($booking) {
+                    $q->where('booking_id', $booking->id);
+                })
+                ->where('receiver_id', $ownerId)
+                ->where('is_read', false)
+                ->count();
+        }
+        
         return view('owner.pages.bookings.index', [
             'bookings' => $bookings,
             'properties' => $properties,
@@ -183,8 +195,6 @@ class BookingController extends Controller
         
         // Add status change note if provided
         if ($request->filled('notes')) {
-            // You might want to create a BookingNote model for this
-            // For now, we'll just update the booking
             $booking->cancellation_reason = $request->notes;
             $booking->save();
         }

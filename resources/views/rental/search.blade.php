@@ -52,7 +52,7 @@
                     <label class="block text-sm font-medium text-gray-700 mb-1">Min Price</label>
                     <input type="number" name="min_price" value="{{ request('min_price') }}"
                            class="block w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 text-sm"
-                           placeholder="৳0">
+                           placeholder="$">
                 </div>
 
                 <!-- Max Price -->
@@ -60,7 +60,7 @@
                     <label class="block text-sm font-medium text-gray-700 mb-1">Max Price</label>
                     <input type="number" name="max_price" value="{{ request('max_price') }}"
                            class="block w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 text-sm"
-                           placeholder="৳Any">
+                           placeholder="Any">
                 </div>
 
                 <!-- City -->
@@ -151,7 +151,7 @@
                         @endif
                         @if(request('min_price'))
                             <span class="inline-flex items-center px-2 py-1 rounded-full text-xs bg-yellow-100 text-yellow-800">
-                                Min: ৳{{ number_format(request('min_price')) }}
+                                Min: ${{ number_format(request('min_price')) }}
                                 <a href="{{ request()->fullUrlWithQuery(['min_price' => null]) }}" class="ml-1 text-yellow-600">
                                     &times;
                                 </a>
@@ -196,7 +196,7 @@
                                     <!-- Price Badge -->
                                     <div class="absolute top-3 right-3">
                                         <span class="px-2 py-1 bg-white rounded-lg shadow text-sm font-semibold">
-                                            ৳{{ number_format($property->base_price) }}/month
+                                            ${{ number_format($property->base_price) }}/month
                                         </span>
                                     </div>
                                     

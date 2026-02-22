@@ -120,13 +120,17 @@ Route::middleware('auth')->group(function () {
                 Route::get('/my-orders', [App\Http\Controllers\LaundryController::class, 'myOrders'])->name('my-orders');
             });
         });
-        // Rental Chat Routes
+
+                // Rental Chat Routes
         Route::middleware(['auth'])->prefix('rental')->name('rental.')->group(function () {
             Route::get('/chats', [RentalChatController::class, 'index'])->name('chats');
-            Route::get('/chat/{booking}', [RentalChatController::class, 'show'])->name('chat.show'); // Changed from 'chat' to 'chat.show'
+            Route::get('/chat/{booking}', [RentalChatController::class, 'show'])->name('chat.show');
             Route::post('/chat/{booking}/send', [RentalChatController::class, 'sendMessage'])->name('chat.send');
             Route::get('/chat/{booking}/new', [RentalChatController::class, 'getNewMessages'])->name('chat.new');
             Route::get('/unread-count', [RentalChatController::class, 'getUnreadCount'])->name('unread-count');
+            
+            // ADD THIS ROUTE - Start a new chat from property page
+            Route::get('/start/{property}', [RentalChatController::class, 'startFromProperty'])->name('chat.start');
         });
         // Payments
         Route::prefix('payments')->name('payments.')->group(function () {
@@ -238,6 +242,11 @@ Route::middleware(['auth', 'role:OWNER'])->group(function () {
         Route::get('/notifications', function () { return view('owner.pages.notifications'); })->name('notifications');
         Route::get('/settings', function () { return view('owner.pages.settings.index'); })->name('settings.index');
         Route::get('/profile', function () { return view('owner.pages.profile'); })->name('profile');
+        Route::get('/chats', [App\Http\Controllers\Owner\ChatController::class, 'index'])->name('chats');
+        Route::get('/chat/{booking}', [App\Http\Controllers\Owner\ChatController::class, 'show'])->name('chat.show');
+        Route::post('/chat/{booking}/send', [App\Http\Controllers\Owner\ChatController::class, 'sendMessage'])->name('chat.send');
+        Route::get('/chat/{booking}/new', [App\Http\Controllers\Owner\ChatController::class, 'getNewMessages'])->name('chat.new');
+
         
         Route::prefix('properties')->name('properties.')->group(function () {
             Route::get('/', [PropertyController::class, 'index'])->name('index');

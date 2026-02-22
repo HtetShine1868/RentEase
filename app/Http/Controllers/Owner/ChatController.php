@@ -1,34 +1,35 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Owner;
 
+use App\Http\Controllers\Controller;
 use App\Models\Booking;
 use App\Models\ChatConversation;
 use App\Models\ChatMessage;
-use App\Models\Property;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
-class RentalChatController extends Controller
+class ChatController extends Controller
 {
-    // REMOVE THE ENTIRE __construct METHOD
-    
     /**
-     * Show all chats for the user
+     * Show all chats for the owner
      */
     public function index()
     {
-        $user = Auth::user();
+        $ownerId = Auth::id();
         
-        $conversations = ChatConversation::where('tenant_id', $user->id)
-            ->orWhere('owner_id', $user->id)
-            ->with(['booking.property', 'tenant', 'owner', 'messages' => function($query) {
-                $query->latest()->limit(1);
-            }])
+        $conversations = ChatConversation::where('owner_id', $ownerId)
+            ->with([
+                'booking.property', 
+                'tenant', 
+                'messages' => function($query) {
+                    $query->latest()->limit(1);
+                }
+            ])
             ->orderBy('updated_at', 'desc')
             ->get();
 
-        return view('rental.chats.index', compact('conversations'));
+        return view('owner.pages.chats.index', compact('conversations'));
     }
 
     /**
@@ -36,12 +37,14 @@ class RentalChatController extends Controller
      */
     public function show(Booking $booking)
     {
-        $user = Auth::user();
+        $ownerId = Auth::id();
         
-        if ($user->id !== $booking->user_id && $user->id !== $booking->property->owner_id) {
+        // Verify owner owns this property
+        if ($booking->property->owner_id !== $ownerId) {
             abort(403, 'You are not authorized to view this chat.');
         }
 
+        // Get or create conversation
         $conversation = ChatConversation::firstOrCreate(
             [
                 'booking_id' => $booking->id
@@ -49,66 +52,22 @@ class RentalChatController extends Controller
             [
                 'property_id' => $booking->property_id,
                 'tenant_id' => $booking->user_id,
-                'owner_id' => $booking->property->owner_id,
-                'last_message_at' => now()
+                'owner_id' => $ownerId
             ]
         );
 
+        // Get messages
         $messages = $conversation->messages()->with('sender')->orderBy('created_at', 'asc')->get();
 
+        // Mark messages as read
         ChatMessage::where('conversation_id', $conversation->id)
-            ->where('receiver_id', $user->id)
+            ->where('receiver_id', $ownerId)
             ->where('is_read', false)
             ->update(['is_read' => true, 'read_at' => now()]);
 
-        $otherUser = $conversation->getOtherParticipant($user->id);
+        $tenant = $booking->user;
 
-        return view('rental.chats.show', compact('booking', 'conversation', 'messages', 'otherUser'));
-    }
-
-    /**
-     * Start a new chat from a property page (without a booking)
-     */
-    public function startFromProperty(Property $property)
-    {
-        $user = Auth::user();
-        
-        // Don't allow chatting with yourself
-        if ($property->owner_id == $user->id) {
-            return redirect()->route('properties.show', $property)
-                ->with('error', 'You cannot start a conversation with yourself');
-        }
-
-        // Check if there's an existing conversation for this property between these users
-        $existingConversation = ChatConversation::where('property_id', $property->id)
-            ->where('tenant_id', $user->id)
-            ->where('owner_id', $property->owner_id)
-            ->first();
-
-        if ($existingConversation) {
-            return redirect()->route('rental.chats')
-                ->with('info', 'You already have a conversation about this property.');
-        }
-
-        // Create a new conversation without a booking
-        $conversation = ChatConversation::create([
-            'property_id' => $property->id,
-            'tenant_id' => $user->id,
-            'owner_id' => $property->owner_id,
-            'last_message_at' => now()
-        ]);
-
-        // Create a welcome message
-        ChatMessage::create([
-            'conversation_id' => $conversation->id,
-            'sender_id' => $user->id,
-            'receiver_id' => $property->owner_id,
-            'message' => "Hello, I'm interested in your property: {$property->name}",
-            'is_read' => false
-        ]);
-
-        return redirect()->route('rental.chats')
-            ->with('success', 'Conversation started successfully!');
+        return view('owner.pages.chats.show', compact('booking', 'conversation', 'messages', 'tenant'));
     }
 
     /**
@@ -118,12 +77,14 @@ class RentalChatController extends Controller
     {
         $request->validate(['message' => 'required|string|max:1000']);
 
-        $user = Auth::user();
+        $ownerId = Auth::id();
         
-        if ($user->id !== $booking->user_id && $user->id !== $booking->property->owner_id) {
+        // Verify owner owns this property
+        if ($booking->property->owner_id !== $ownerId) {
             return response()->json(['error' => 'Unauthorized'], 403);
         }
 
+        // Get or create conversation
         $conversation = ChatConversation::firstOrCreate(
             [
                 'booking_id' => $booking->id
@@ -131,22 +92,20 @@ class RentalChatController extends Controller
             [
                 'property_id' => $booking->property_id,
                 'tenant_id' => $booking->user_id,
-                'owner_id' => $booking->property->owner_id
+                'owner_id' => $ownerId
             ]
         );
 
-        $receiverId = $user->id === $booking->user_id 
-            ? $booking->property->owner_id 
-            : $booking->user_id;
-
+        // Create message
         $message = ChatMessage::create([
             'conversation_id' => $conversation->id,
-            'sender_id' => $user->id,
-            'receiver_id' => $receiverId,
+            'sender_id' => $ownerId,
+            'receiver_id' => $booking->user_id,
             'message' => $request->message
         ]);
 
-        $conversation->touch();
+        $conversation->touch(); // Update updated_at
+
         $message->load('sender');
 
         return response()->json([
@@ -171,9 +130,9 @@ class RentalChatController extends Controller
      */
     public function getNewMessages(Request $request, Booking $booking)
     {
-        $user = Auth::user();
+        $ownerId = Auth::id();
         
-        if ($user->id !== $booking->user_id && $user->id !== $booking->property->owner_id) {
+        if ($booking->property->owner_id !== $ownerId) {
             return response()->json(['error' => 'Unauthorized'], 403);
         }
 
@@ -191,8 +150,9 @@ class RentalChatController extends Controller
             ->orderBy('created_at', 'asc')
             ->get();
 
+        // Mark as read
         foreach ($messages as $message) {
-            if ($message->receiver_id === $user->id && !$message->is_read) {
+            if ($message->receiver_id === $ownerId && !$message->is_read) {
                 $message->update(['is_read' => true, 'read_at' => now()]);
             }
         }
@@ -217,13 +177,13 @@ class RentalChatController extends Controller
     }
 
     /**
-     * Get unread count for the user
+     * Get unread count for the owner
      */
     public function getUnreadCount()
     {
-        $user = Auth::user();
+        $ownerId = Auth::id();
         
-        $count = ChatMessage::where('receiver_id', $user->id)
+        $count = ChatMessage::where('receiver_id', $ownerId)
             ->where('is_read', false)
             ->count();
 

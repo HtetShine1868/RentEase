@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('dashboard')
 
 @section('title', 'Laundry Services')
 @section('subtitle', 'Find laundry services near you')

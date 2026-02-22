@@ -209,9 +209,9 @@
                     <h3 class="text-lg font-medium text-gray-900 mb-4">Other Room Types</h3>
                     <div class="space-y-3">
                         @foreach($property->rooms->where('id', '!=', $room->id)->take(3) as $otherRoom)
-                        <a href="{{ url('/properties/' . $property->id . '/rooms/' . $otherRoom->id) }}" 
-                        class="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:border-indigo-300 hover:bg-indigo-50 transition-colors">
-                                                        <div>
+                            <a href="{{ url('/properties/' . $property->id . '/rooms/' . $otherRoom->id) }}" 
+                             class="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:border-indigo-300 hover:bg-indigo-50 transition-colors">
+                                <div>
                                     <div class="font-medium text-gray-900">{{ $otherRoom->room_type_name }}</div>
                                     <div class="text-sm text-gray-600">Room {{ $otherRoom->room_number }}</div>
                                 </div>

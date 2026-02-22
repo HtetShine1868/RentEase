@@ -20,12 +20,7 @@
     <!-- Right Section: Search, Notifications, Profile -->
     <div class="flex items-center space-x-4">
         <!-- Search Bar (Hidden on mobile) -->
-        <div class="hidden md:block relative">
-            <input type="text" 
-                   placeholder="Search properties, bookings..." 
-                   class="pl-10 pr-4 py-2 w-64 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm">
-            <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
-        </div>
+ 
         
 
         

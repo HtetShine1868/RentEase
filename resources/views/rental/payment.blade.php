@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('dashboard')
 
 @section('title', 'Make Payment - ' . $booking->booking_reference)
 
@@ -38,7 +38,7 @@
                             <p class="text-sm text-gray-600">{{ $booking->property->area }}, {{ $booking->property->city }}</p>
                         </div>
                         <div class="text-right">
-                            <div class="text-2xl font-bold text-indigo-600">৳{{ number_format($booking->total_amount, 2) }}</div>
+                            <div class="text-2xl font-bold text-indigo-600">${{ number_format($booking->total_amount, 2) }}</div>
                             <div class="text-sm text-gray-500">Total amount due</div>
                         </div>
                     </div>

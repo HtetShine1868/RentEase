@@ -205,7 +205,7 @@ class RentalController extends Controller
             ->limit(4)
             ->get();
         
-        return view('rental.property-details', compact('property', 'relatedProperties', 'averageRating'));
+        return view('properties.show', compact('property', 'relatedProperties', 'averageRating'));
     }
     private function addUnreadCountsToBookings($bookings, $userId)
 {
@@ -220,7 +220,8 @@ class RentalController extends Controller
     
     return $bookings;
 }
-    /**
+
+/**
  * Show individual room details
  */
 public function showRoom(Property $property, Room $room)

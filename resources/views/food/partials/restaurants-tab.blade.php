@@ -98,9 +98,9 @@
 
             <!-- Open Now Toggle -->
             <button @click="openNow = !openNow; loadRestaurants(1)"
-                    class="px-3 py-2 border rounded-lg text-sm flex items-center"
+                    class="px-3 py-2 border rounded-lg text-sm flex items-center transition-colors"
                     :class="openNow ? 'bg-indigo-600 text-white border-indigo-600' : 'border-gray-300 hover:bg-gray-50'">
-                <svg class="h-4 w-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg class="h-4 w-4 mr-1" :class="openNow ? 'text-white' : 'text-gray-500'" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
                           d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                 </svg>
@@ -167,12 +167,18 @@
                          :alt="restaurant.business_name"
                          class="w-full h-full object-cover">
                     
-                    <!-- Status Badges -->
+                    <!-- Status Badges - FIXED: Check both is_open and opening hours -->
                     <div class="absolute top-2 left-2 flex space-x-2">
-                        <span x-show="!restaurant.is_open" 
-                              class="bg-red-500 text-white px-2 py-1 rounded-full text-xs font-medium">
-                            Closed
-                        </span>
+                        <template x-if="restaurant.is_open === false">
+                            <span class="bg-red-500 text-white px-2 py-1 rounded-full text-xs font-medium">
+                                Closed Now
+                            </span>
+                        </template>
+                        <template x-if="restaurant.is_open === true">
+                            <span class="bg-green-500 text-white px-2 py-1 rounded-full text-xs font-medium">
+                                Open Now
+                            </span>
+                        </template>
                         <span x-show="restaurant.discount_percent && restaurant.discount_percent > 0" 
                               class="bg-green-500 text-white px-2 py-1 rounded-full text-xs font-medium">
                             <span x-text="restaurant.discount_percent"></span>% OFF
@@ -181,7 +187,7 @@
                     
                     <!-- Delivery Time -->
                     <div class="absolute bottom-2 right-2 bg-white px-2 py-1 rounded-lg text-sm font-medium shadow">
-                        <span x-text="restaurant.estimated_delivery_minutes || '30-45' + ' min'"></span>
+                        <span x-text="restaurant.estimated_delivery_minutes ? restaurant.estimated_delivery_minutes + ' min' : '30-45 min'"></span>
                     </div>
                 </div>
 
@@ -189,12 +195,19 @@
                 <div class="p-4">
                     <div class="flex justify-between items-start mb-2">
                         <h3 class="text-lg font-semibold text-gray-900" x-text="restaurant.business_name"></h3>
+                        
+                        <!-- Rating with total reviews count -->
                         <div class="flex items-center bg-green-100 px-2 py-1 rounded">
                             <span class="text-sm font-medium text-green-800" x-text="restaurant.rating?.toFixed(1) || '0.0'"></span>
                             <svg class="h-4 w-4 text-green-600 ml-1" fill="currentColor" viewBox="0 0 20 20">
                                 <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
                             </svg>
                         </div>
+                    </div>
+                    
+                    <!-- Total Reviews Count -->
+                    <div class="text-xs text-gray-500 mb-1">
+                        <span x-text="restaurant.total_reviews ? restaurant.total_reviews + ' reviews' : 'No reviews yet'"></span>
                     </div>
                     
                     <p class="text-sm text-gray-600 mb-2 line-clamp-2" x-text="restaurant.description || 'No description available'"></p>
@@ -222,7 +235,7 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
                                       d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
                             </svg>
-                            <span x-text="restaurant.distance_km || 'N/A'"></span>
+                            <span x-text="restaurant.distance_km ? restaurant.distance_km + ' km' : 'N/A'"></span>
                         </div>
                         <div class="flex items-center text-gray-500">
                             <svg class="h-4 w-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -252,11 +265,79 @@
                         </div>
                     </div>
 
-                    <!-- Rating Breakdown -->
-                    <div x-show="restaurant.rating_breakdown" class="mt-3 flex items-center text-xs text-gray-500">
-                        <span class="mr-3">Quality: <span class="font-medium" x-text="restaurant.rating_breakdown?.quality?.toFixed(1) || '0.0'"></span></span>
-                        <span class="mr-3">Delivery: <span class="font-medium" x-text="restaurant.rating_breakdown?.delivery?.toFixed(1) || '0.0'"></span></span>
-                        <span>Value: <span class="font-medium" x-text="restaurant.rating_breakdown?.value?.toFixed(1) || '0.0'"></span></span>
+                    <!-- Rating Breakdown with Visual Progress Bars -->
+                    <div x-show="restaurant.rating_breakdown" class="mt-3 pt-3 border-t border-gray-100">
+                        <p class="text-xs text-gray-500 mb-2">Rating Details:</p>
+                        
+                        <!-- Quality Rating -->
+                        <div class="mb-2">
+                            <div class="flex justify-between text-xs mb-1">
+                                <span class="text-gray-600">Quality</span>
+                                <span class="font-medium" x-text="restaurant.rating_breakdown?.quality?.toFixed(1) || '0.0' + ' / 5.0'"></span>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-1.5">
+                                <div class="bg-indigo-600 h-1.5 rounded-full" 
+                                     :style="'width: ' + ((restaurant.rating_breakdown?.quality || 0) / 5 * 100) + '%'"></div>
+                            </div>
+                        </div>
+                        
+                        <!-- Delivery Rating -->
+                        <div class="mb-2">
+                            <div class="flex justify-between text-xs mb-1">
+                                <span class="text-gray-600">Delivery</span>
+                                <span class="font-medium" x-text="restaurant.rating_breakdown?.delivery?.toFixed(1) || '0.0' + ' / 5.0'"></span>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-1.5">
+                                <div class="bg-indigo-600 h-1.5 rounded-full" 
+                                     :style="'width: ' + ((restaurant.rating_breakdown?.delivery || 0) / 5 * 100) + '%'"></div>
+                            </div>
+                        </div>
+                        
+                        <!-- Value Rating -->
+                        <div>
+                            <div class="flex justify-between text-xs mb-1">
+                                <span class="text-gray-600">Value</span>
+                                <span class="font-medium" x-text="restaurant.rating_breakdown?.value?.toFixed(1) || '0.0' + ' / 5.0'"></span>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-1.5">
+                                <div class="bg-indigo-600 h-1.5 rounded-full" 
+                                     :style="'width: ' + ((restaurant.rating_breakdown?.value || 0) / 5 * 100) + '%'"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Recent Reviews Preview -->
+                    <div x-show="restaurant.recent_reviews && restaurant.recent_reviews.length > 0" 
+                         class="mt-3 pt-3 border-t border-gray-100">
+                        <p class="text-xs text-gray-500 mb-2">Recent Reviews:</p>
+                        <template x-for="review in restaurant.recent_reviews.slice(0, 2)" :key="review.id">
+                            <div class="mb-2 text-xs">
+                                <div class="flex items-center">
+                                    <span class="font-medium text-gray-700 mr-2" x-text="review.user_name"></span>
+                                    <div class="flex">
+                                        <template x-for="i in 5">
+                                            <svg class="h-3 w-3" :class="i <= review.rating ? 'text-yellow-400' : 'text-gray-300'" 
+                                                 fill="currentColor" viewBox="0 0 20 20">
+                                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                                            </svg>
+                                        </template>
+                                    </div>
+                                </div>
+                                <p class="text-gray-600 mt-1 line-clamp-1" x-text="review.comment || 'No comment'"></p>
+                            </div>
+                        </template>
+                        <p x-show="restaurant.total_reviews > 2" 
+                           class="text-xs text-indigo-600 mt-1 hover:underline cursor-pointer"
+                           @click.stop="viewRestaurant(restaurant.id)">
+                            See all <span x-text="restaurant.total_reviews"></span> reviews →
+                        </p>
+                    </div>
+
+                    <!-- Operating Hours -->
+                    <div x-show="restaurant.opening_time && restaurant.closing_time" 
+                         class="mt-3 pt-3 border-t border-gray-100 text-xs text-gray-500">
+                        <span>Hours: </span>
+                        <span x-text="restaurant.opening_time + ' - ' + restaurant.closing_time"></span>
                     </div>
                 </div>
             </div>
@@ -304,10 +385,32 @@
     box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
 }
 
+.line-clamp-1 {
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
 .line-clamp-2 {
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
+}
+
+.loading-spinner {
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid #4f46e5;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    animation: spin 1s linear infinite;
+    margin: 0 auto;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
 }
 </style>

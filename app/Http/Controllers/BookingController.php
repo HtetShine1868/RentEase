@@ -131,7 +131,7 @@ class BookingController extends Controller
             'Your booking request has been submitted and is pending confirmation.'
         );
         
-        return redirect()->route('bookings.show', $booking)
+        return redirect()->route('payments.create', ['booking' => $booking->id])
             ->with('success', 'Apartment booking request submitted successfully! Please complete payment.');
     }
     

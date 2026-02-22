@@ -1,5 +1,5 @@
 {{-- resources/views/rental/complaints.blade.php --}}
-@extends('layouts.app')
+@extends('dashboard')
 
 @section('title', 'My Complaints')
 

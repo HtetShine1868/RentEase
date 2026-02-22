@@ -48,7 +48,7 @@ class PaymentController extends Controller
         $payment = Payment::create([
             'payment_reference' => 'PAY-' . strtoupper(uniqid()),
             'user_id' => Auth::id(),
-            'payable_type' => 'BOOKING',
+            'payable_type' => 'App\\Models\\Booking',
             'payable_id' => $booking->id,
             'amount' => $booking->total_amount,
             'commission_amount' => $booking->commission_amount,

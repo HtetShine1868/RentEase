@@ -141,7 +141,7 @@
 
                 <!-- Room Types (for Hostels) -->
                 @if($property->type === 'HOSTEL' && $property->rooms->count())
-                    <div class="bg-white rounded-lg shadow p-6">
+                    <div class="bg-white rounded-lg shadow p-6" id="rooms">
                         <h3 class="text-xl font-medium text-gray-900 mb-4">Available Rooms</h3>
                         <div class="space-y-4">
                             @foreach($property->rooms->groupBy('room_type') as $roomType => $rooms)
@@ -286,7 +286,7 @@
                         </div>
                     @endif
 
-                    <!-- Property Info -->
+                    <!-- Property Info with Chat Button -->
                     <div class="space-y-3 pt-4 border-t border-gray-200">
                         <div class="flex items-center">
                             <svg class="h-5 w-5 text-gray-400 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -297,8 +297,34 @@
                                 <div class="font-medium">{{ $property->owner->name ?? 'N/A' }}</div>
                             </div>
                         </div>
+                        
+                        <!-- CHAT WITH OWNER BUTTON -->
+                        @auth
+                            @if(Auth::id() !== $property->owner_id)
+                                <div class="mt-4">
+                                    <a href="{{ route('rental.chat.start', ['property' => $property->id]) }}" 
+                                       class="w-full inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                                        <svg class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                                        </svg>
+                                        Chat with Owner
+                                    </a>
+                                </div>
+                            @endif
+                        @else
+                            <div class="mt-4">
+                                <a href="{{ route('login') }}" 
+                                   class="w-full inline-flex justify-center items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                                    <svg class="h-5 w-5 mr-2 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
+                                    </svg>
+                                    Login to Chat with Owner
+                                </a>
+                            </div>
+                        @endauth
+
                         @if($property->owner->phone)
-                            <div class="flex items-center">
+                            <div class="flex items-center mt-3">
                                 <svg class="h-5 w-5 text-gray-400 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
                                 </svg>

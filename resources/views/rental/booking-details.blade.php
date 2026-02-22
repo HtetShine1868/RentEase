@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('dashboard')
 
 @section('title', 'Booking Details')
 
@@ -82,7 +82,7 @@
                                 </div>
                             </div>
                             <div class="text-right">
-                                <div class="text-2xl font-bold text-gray-900">৳{{ number_format($booking->total_amount, 2) }}</div>
+                                <div class="text-2xl font-bold text-gray-900">${{ number_format($booking->total_amount, 2) }}</div>
                                 <div class="text-sm text-gray-500">Total Amount</div>
                             </div>
                         </div>
@@ -133,50 +133,6 @@
                                 </div>
                             </div>
                             
-                            <!-- Days Counter -->
-                            @php
-                                $totalDays = \Carbon\Carbon::parse($booking->check_out)->diffInDays(\Carbon\Carbon::parse($booking->check_in));
-                                $daysPassed = \Carbon\Carbon::parse(now())->diffInDays(\Carbon\Carbon::parse($booking->check_in));
-                                $daysRemaining = \Carbon\Carbon::parse($booking->check_out)->diffInDays(now());
-                                $progress = min(100, max(0, ($daysPassed / $totalDays) * 100));
-                            @endphp
-                            
-                            <div class="mt-8">
-                                <div class="flex justify-between text-sm mb-2">
-                                    <span class="text-gray-600">Stay Progress</span>
-                                    <span class="font-semibold">{{ $daysPassed }} of {{ $totalDays }} days</span>
-                                </div>
-                                <div class="w-full bg-gray-200 rounded-full h-3">
-                                    <div class="bg-gradient-to-r from-green-400 to-blue-500 h-3 rounded-full" style="width: {{ $progress }}%"></div>
-                                </div>
-                                
-                                <!-- Days Remaining Alert -->
-                                @if($daysRemaining <= 3)
-                                    <div class="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
-                                        <div class="flex items-center">
-                                            <svg class="h-5 w-5 text-red-400 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.771-.833-2.502 0L4.232 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                                            </svg>
-                                            <div>
-                                                <h4 class="text-sm font-semibold text-red-800">Stay Ending Soon!</h4>
-                                                <p class="text-sm text-red-600">Only {{ $daysRemaining }} days remaining. Extend your stay if needed.</p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                @elseif($daysRemaining <= 7)
-                                    <div class="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                                        <div class="flex items-center">
-                                            <svg class="h-5 w-5 text-yellow-400 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.771-.833-2.502 0L4.232 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                                            </svg>
-                                            <div>
-                                                <h4 class="text-sm font-semibold text-yellow-800">Stay Ending in {{ $daysRemaining }} Days</h4>
-                                                <p class="text-sm text-yellow-600">Consider extending your stay if you need more time.</p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                @endif
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -288,7 +244,7 @@
                                 </div>
                                 <div class="flex justify-between">
                                     <dt class="text-sm text-gray-600">Room Price/Day:</dt>
-                                    <dd class="text-sm font-medium text-gray-900">৳{{ number_format($booking->room_price_per_day, 2) }}</dd>
+                                    <dd class="text-sm font-medium text-gray-900">${{ number_format($booking->room_price_per_day, 2) }}</dd>
                                 </div>
                             @else
                                 <div class="flex justify-between">
@@ -300,10 +256,7 @@
                                 <dt class="text-sm text-gray-600">Duration:</dt>
                                 <dd class="text-sm font-medium text-gray-900">{{ $booking->duration_days }} days</dd>
                             </div>
-                            <div class="flex justify-between">
-                                <dt class="text-sm text-gray-600">Commission:</dt>
-                                <dd class="text-sm font-medium text-gray-900">৳{{ number_format($booking->commission_amount, 2) }}</dd>
-                            </div>
+
                             <div class="pt-4 border-t">
                                 <div class="flex justify-between">
                                     <dt class="text-base font-semibold text-gray-900">Total Amount:</dt>

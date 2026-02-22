@@ -105,15 +105,15 @@
                             <div class="w-64 space-y-1 text-sm">
                                 <div class="flex justify-between">
                                     <span class="text-gray-600">Subtotal:</span>
-                                    <span class="text-gray-900" x-text="'৳' + order.base_amount"></span>
+                                    <span class="text-gray-900" x-text="'$ + order.base_amount"></span>
                                 </div>
                                 <div class="flex justify-between">
                                     <span class="text-gray-600">Delivery Fee:</span>
-                                    <span class="text-gray-900" x-text="'৳' + order.delivery_fee"></span>
+                                    <span class="text-gray-900" x-text="'$' + order.delivery_fee"></span>
                                 </div>
                                 <div class="flex justify-between font-medium pt-1 border-t border-gray-200">
                                     <span class="text-gray-900">Total:</span>
-                                    <span class="text-indigo-600" x-text="'৳' + order.total_amount"></span>
+                                    <span class="text-indigo-600" x-text="'$' + order.total_amount"></span>
                                 </div>
                             </div>
                         </div>

@@ -87,6 +87,22 @@
             min-width: 800px;
         }
     }
+    
+    /* Chat badge animation */
+    .chat-badge {
+        animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+        0% {
+            transform: scale(1);
+        }
+        50% {
+            transform: scale(1.1);
+        }
+        100% {
+            transform: scale(1);
+        }
+    }
 </style>
 @endpush
 
@@ -399,12 +415,26 @@
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                 <div class="flex items-center gap-2">
+                                    <!-- View Details Button -->
                                     <button onclick="viewBooking({{ $booking->id }})" 
                                             class="px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors action-btn"
                                             title="View Details">
                                         <i class="fas fa-eye"></i>
                                     </button>
                                     
+                                    <!-- CHAT WITH TENANT BUTTON -->
+                                    <a href="{{ route('owner.chat.show', $booking) }}" 
+                                       class="px-3 py-1.5 bg-green-50 text-green-700 rounded-lg hover:bg-green-100 transition-colors action-btn relative"
+                                       title="Chat with Tenant">
+                                        <i class="fas fa-comment"></i>
+                                        @if(isset($booking->unread_chat_count) && $booking->unread_chat_count > 0)
+                                            <span class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center chat-badge">
+                                                {{ $booking->unread_chat_count }}
+                                            </span>
+                                        @endif
+                                    </a>
+                                    
+                                    <!-- Status Update Buttons -->
                                     @if($booking->status == 'PENDING')
                                     <button onclick="updateStatus({{ $booking->id }}, 'CONFIRMED')" 
                                             class="px-3 py-1.5 bg-green-50 text-green-700 rounded-lg hover:bg-green-100 transition-colors action-btn"
@@ -519,10 +549,22 @@
                     </div>
                     
                     <div class="flex space-x-2">
+                        <!-- View Button -->
                         <button onclick="viewBooking({{ $booking->id }})" 
                                 class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg text-sm font-medium">
                             <i class="fas fa-eye mr-1"></i> View
                         </button>
+                        
+                        <!-- CHAT BUTTON FOR MOBILE -->
+                        <a href="{{ route('owner.chat.show', $booking) }}" 
+                           class="flex-1 bg-green-600 hover:bg-green-700 text-white py-2 rounded-lg text-sm font-medium relative">
+                            <i class="fas fa-comment mr-1"></i> Chat
+                            @if(isset($booking->unread_chat_count) && $booking->unread_chat_count > 0)
+                                <span class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center chat-badge">
+                                    {{ $booking->unread_chat_count }}
+                                </span>
+                            @endif
+                        </a>
                         
                         @if($booking->status == 'PENDING')
                         <button onclick="updateStatus({{ $booking->id }}, 'CONFIRMED')" 

@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('dashboard')
 
 @section('title', 'Rent ' . $property->name)
 
@@ -94,7 +94,7 @@
                             </div>
                         </div>
                         <div class="mt-4 md:mt-0">
-                            <div class="text-2xl font-bold text-gray-900">৳{{ number_format($property->total_price) }}</div>
+                            <div class="text-2xl font-bold text-gray-900">${{ number_format($property->total_price) }}</div>
                             <div class="text-sm text-gray-500">per month</div>
                         </div>
                     </div>
@@ -130,8 +130,6 @@
                                 <select name="duration_months" id="duration_months" required
                                         class="block w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 @error('duration_months') border-red-500 @enderror">
                                     <option value="">Select Duration</option>
-                                    <option value="1" {{ old('duration_months') == '1' ? 'selected' : '' }}>1 Month</option>
-                                    <option value="3" {{ old('duration_months') == '3' ? 'selected' : '' }}>3 Months</option>
                                     <option value="6" {{ old('duration_months') == '6' ? 'selected' : '' }}>6 Months</option>
                                     <option value="12" {{ old('duration_months') == '12' ? 'selected' : '' }}>12 Months</option>
                                     <option value="custom" {{ old('duration_months') == 'custom' ? 'selected' : '' }}>Custom Duration</option>
@@ -185,26 +183,48 @@
                         <p class="mt-1 text-sm text-gray-500">Maximum capacity: {{ $property->bedrooms * 2 }} persons</p>
                     </div>
 
-                    <!-- Contact Information -->
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <!-- Contact Information -->
+               
                         <!-- Phone Number -->
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">
                                 Phone Number <span class="text-red-500">*</span>
                             </label>
-                            <div class="relative">
-                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                    <svg class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-                                    </svg>
+                            <div class="flex">
+                                <div class="relative flex-shrink-0">
+                                    <select name="phone_country_code" 
+                                            id="phone_country_code"
+                                            class="rounded-l-lg border-r-0 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 h-full py-2 px-3 bg-gray-50">
+                                        <option value="+95" {{ old('phone_country_code', '+95') == '+95' ? 'selected' : '' }}>+95 (Myanmar)</option>
+                                        <option value="+1" {{ old('phone_country_code') == '+1' ? 'selected' : '' }}>+1 (USA)</option>
+                                        <option value="+44" {{ old('phone_country_code') == '+44' ? 'selected' : '' }}>+44 (UK)</option>
+                                        <option value="+65" {{ old('phone_country_code') == '+65' ? 'selected' : '' }}>+65 (Singapore)</option>
+                                        <option value="+86" {{ old('phone_country_code') == '+86' ? 'selected' : '' }}>+86 (China)</option>
+                                        <option value="+81" {{ old('phone_country_code') == '+81' ? 'selected' : '' }}>+81 (Japan)</option>
+                                        <option value="+82" {{ old('phone_country_code') == '+82' ? 'selected' : '' }}>+82 (Korea)</option>
+                                        <option value="+66" {{ old('phone_country_code') == '+66' ? 'selected' : '' }}>+66 (Thailand)</option>
+                                        <option value="+60" {{ old('phone_country_code') == '+60' ? 'selected' : '' }}>+60 (Malaysia)</option>
+                                        <option value="+84" {{ old('phone_country_code') == '+84' ? 'selected' : '' }}>+84 (Vietnam)</option>
+                                    </select>
                                 </div>
-                                <input type="tel" 
-                                       name="phone"
-                                       id="phone"
-                                       value="{{ old('phone', auth()->user()->phone) }}"
-                                       required
-                                       class="pl-10 block w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 @error('phone') border-red-500 @enderror"
-                                       placeholder="+8801XXXXXXXXX">
+                                <div class="relative flex-1">
+                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                        <svg class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                                        </svg>
+                                    </div>
+                                    <input type="tel" 
+                                        name="phone"
+                                        id="phone"
+                                        value="{{ old('phone', auth()->user()->phone ?? '') }}"
+                                        required
+                                        onkeypress="return event.charCode >= 48 && event.charCode <= 57"
+                                        oninput="this.value = this.value.replace(/[^0-9]/g, '')"
+                                        class="pl-10 block w-full rounded-r-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 @error('phone') border-red-500 @enderror"
+                                        placeholder="XXXXXXXXX"
+                                        pattern="[0-9]+"
+                                        title="Please enter only numbers">
+                                </div>
                             </div>
                             @error('phone')
                                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
@@ -214,23 +234,10 @@
                         <!-- Emergency Contact -->
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">
-                                Emergency Contact (Optional)
-                            </label>
-                            <div class="relative">
-                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                    <svg class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-                                    </svg>
-                                </div>
-                                <input type="tel" 
-                                       name="emergency_contact"
-                                       id="emergency_contact"
-                                       value="{{ old('emergency_contact') }}"
-                                       class="pl-10 block w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500"
-                                       placeholder="+8801XXXXXXXXX">
+                    
                             </div>
                         </div>
-                    </div>
+                
 
                     <!-- Special Requirements -->
                     <div>

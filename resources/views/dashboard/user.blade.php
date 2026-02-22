@@ -386,27 +386,27 @@
             <div class="flex items-center justify-between">
                 <div>
                     <h3 class="text-lg font-semibold text-[#174455] mb-2">Complete Your Profile</h3>
-                    <p class="text-gray-600">Complete your profile to get personalized recommendations</p>
+                    <p class="text-[#ffdb9f] mb-4">Complete your profile to get personalized recommendations</p>
                     
                     <div class="mt-4 space-y-3">
                         @if(!Auth::user()->phone)
                             <div class="flex items-center">
                                 <i class="fas fa-phone text-[#286b7f] mr-3"></i>
-                                <span class="text-gray-700">Add phone number</span>
+                                <span class="text-[#ffdb9f] mb-4">Add phone number</span>
                             </div>
                         @endif
                         
                         @if(!Auth::user()->gender)
                             <div class="flex items-center">
                                 <i class="fas fa-venus-mars text-[#286b7f] mr-3"></i>
-                                <span class="text-gray-700">Specify gender</span>
+                                <span class="text-[#ffdb9f] mb-4">Specify gender</span>
                             </div>
                         @endif
                         
                         @if(empty($userAddresses))
                             <div class="flex items-center">
                                 <i class="fas fa-map-marker-alt text-[#286b7f] mr-3"></i>
-                                <span class="text-gray-700">Add delivery address</span>
+                                <span class="text-[#ffdb9f] mb-4">Add delivery address</span>
                             </div>
                         @endif
                     </div>

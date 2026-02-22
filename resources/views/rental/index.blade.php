@@ -273,7 +273,7 @@
                                     </div>
                                 </div>
 
-                                <!-- Add this inside your booking card, before the View Details button -->
+  
                                 <div class="mb-3">
                                     <a href="{{ route('rental.chat.show', $booking) }}" 
                                     class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 transition duration-150 w-full justify-center">

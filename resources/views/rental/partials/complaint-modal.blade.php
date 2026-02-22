@@ -34,8 +34,6 @@
                                 onchange="updateComplaintType(this.value)">
                             <option value="">Select type</option>
                             <option value="PROPERTY">Property Issue</option>
-                            <option value="FOOD_SERVICE">Food Service</option>
-                            <option value="LAUNDRY_SERVICE">Laundry Service</option>
                             <option value="USER">User Issue</option>
                             <option value="SYSTEM">System Issue</option>
                         </select>
