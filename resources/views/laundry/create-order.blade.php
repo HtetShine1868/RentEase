@@ -6,19 +6,8 @@
 @push('styles')
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
 <style>
-    #location-map { 
-        height: 300px; 
-        width: 100%; 
-        border-radius: 8px; 
-        z-index: 1;
-        background-color: #f0f0f0;
-        border: 1px solid #ddd;
-    }
-    .leaflet-container { 
-        z-index: 1;
-        height: 100%;
-        width: 100%;
-    }
+    #location-map { height: 300px; width: 100%; border-radius: 8px; z-index: 1; }
+    .leaflet-container { z-index: 1; }
     .modal { z-index: 9999; }
     .item-card {
         transition: all 0.2s ease;
@@ -30,34 +19,6 @@
     .quantity-input {
         width: 80px;
         text-align: center;
-    }
-    .map-error {
-        padding: 20px;
-        text-align: center;
-        background: #fee;
-        border: 1px solid #f99;
-        border-radius: 8px;
-        margin: 10px 0;
-    }
-    .map-loading {
-        padding: 20px;
-        text-align: center;
-        background: #f0f0f0;
-        border-radius: 8px;
-        margin: 10px 0;
-    }
-    .loading-spinner {
-        border: 3px solid #f3f3f3;
-        border-top: 3px solid #174455;
-        border-radius: 50%;
-        width: 30px;
-        height: 30px;
-        animation: spin 1s linear infinite;
-        margin: 10px auto;
-    }
-    @keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
     }
 </style>
 @endpush
@@ -258,18 +219,6 @@
                 <div class="mb-4">
                     <label class="block text-sm font-medium text-gray-700 mb-1">Or select on map</label>
                     <div id="location-map"></div>
-                    <div id="map-error-message" class="hidden map-error">
-                        <i class="fas fa-exclamation-triangle text-red-500 text-2xl mb-2"></i>
-                        <p class="text-red-600 font-medium">Failed to load map</p>
-                        <p class="text-sm text-gray-600 mt-1">Please check your internet connection</p>
-                        <button onclick="retryMapLoad()" class="mt-3 px-4 py-2 bg-[#174455] text-white rounded-lg hover:bg-[#1f556b]">
-                            Retry
-                        </button>
-                    </div>
-                    <div id="map-loading" class="hidden map-loading">
-                        <div class="loading-spinner"></div>
-                        <p class="text-sm text-gray-600 mt-2">Loading map...</p>
-                    </div>
                     <p class="text-xs text-gray-500 mt-1">
                         <i class="fas fa-info-circle mr-1"></i>
                         Click on the map to set pickup location, or drag the marker
@@ -452,74 +401,11 @@
 @push('scripts')
 <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
 <script>
-    {{-- Leaflet CSS and JS --}}
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
-<script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
-
-<script>
-    // ============================================
-    // LEAFLET LOADING DIAGNOSTIC LOGS
-    // ============================================
-    
-    console.log('=================================');
-    console.log('🔍 LEAFLET DIAGNOSTIC CHECK');
-    console.log('=================================');
-    
-    // Check 1: Is Leaflet object available?
-    console.log('📦 Check 1: Leaflet object (L):', typeof L !== 'undefined' ? '✅ LOADED' : '❌ NOT LOADED');
-    if (typeof L !== 'undefined') {
-        console.log('   - Leaflet version:', L.version);
-        console.log('   - Leaflet methods available:', Object.keys(L).length);
-    }
-    
-    // Check 2: DOM element exists
-    const mapContainer = document.getElementById('location-map');
-    console.log('🗺️ Check 2: Map container element:', mapContainer ? '✅ FOUND' : '❌ NOT FOUND');
-    if (mapContainer) {
-        console.log('   - Element ID: location-map');
-        console.log('   - Element classes:', mapContainer.className);
-        console.log('   - Element dimensions:', mapContainer.clientHeight + 'x' + mapContainer.clientWidth);
-        
-        if (mapContainer.clientHeight === 0 || mapContainer.clientWidth === 0) {
-            console.warn('   ⚠️ WARNING: Map container has zero dimensions!');
-        }
-    }
-    
-    // Check 3: Leaflet CSS is loaded
-    const leafletCSS = Array.from(document.styleSheets).some(sheet => 
-        sheet.href && sheet.href.includes('leaflet')
-    );
-    console.log('🎨 Check 3: Leaflet CSS loaded:', leafletCSS ? '✅ YES' : '❌ NO');
-    
-    // Check 4: Network connection to OpenStreetMap
-    console.log('🌐 Check 4: Testing OpenStreetMap connection...');
-    const img = new Image();
-    img.onload = () => console.log('   - OpenStreetMap tile: ✅ REACHABLE');
-    img.onerror = () => console.warn('   - OpenStreetMap tile: ❌ NOT REACHABLE (possible network block)');
-    img.src = 'https://tile.openstreetmap.org/0/0/0.png?' + Date.now();
-    
-    // Check 5: Browser compatibility
-    console.log('💻 Check 5: Browser compatibility:');
-    console.log('   - User Agent:', navigator.userAgent);
-    console.log('   - Geolocation available:', navigator.geolocation ? '✅ YES' : '❌ NO');
-    console.log('   - Online status:', navigator.onLine ? '✅ ONLINE' : '❌ OFFLINE');
-    
-    // Check 6: Memory/Performance
-    if (performance && performance.memory) {
-        console.log('🧠 Check 6: Memory usage:');
-        console.log('   - JS heap limit:', Math.round(performance.memory.jsHeapSizeLimit / 1024 / 1024) + 'MB');
-        console.log('   - Used JS heap:', Math.round(performance.memory.usedJSHeapSize / 1024 / 1024) + 'MB');
-    }
-    
-    console.log('=================================');
-    
     let map, marker;
     let selectedLat = null;
     let selectedLng = null;
     let selectedAddress = '';
     let lastGeocodeData = null;
-    let mapLoadAttempts = 0;
-    const MAX_MAP_ATTEMPTS = 3;
     
     // Provider data
     const providerId = {{ $provider->id }};
@@ -527,8 +413,7 @@
     const commissionRate = 10; // Default commission rate
     
     document.addEventListener('DOMContentLoaded', function() {
-        console.log('DOM loaded, initializing components...');
-        checkMapContainer();
+        initMap();
         setupEventListeners();
         updateSummary();
         
@@ -538,203 +423,39 @@
         document.getElementById('pickup_date').valueAsDate = tomorrow;
     });
     
-    function checkMapContainer() {
-        const mapContainer = document.getElementById('location-map');
-        if (!mapContainer) {
-            console.error('Map container not found!');
-            showMapError('Map container element missing');
-            return;
-        }
-        
-        console.log('Map container found, dimensions:', mapContainer.clientHeight, 'x', mapContainer.clientWidth);
-        
-        if (mapContainer.clientHeight === 0 || mapContainer.clientWidth === 0) {
-            console.warn('Map container has zero dimensions, forcing height');
-            mapContainer.style.height = '300px';
-            mapContainer.style.width = '100%';
-        }
-        
-        // Start loading map
-        showMapLoading();
-        initMap();
-    }
-    
-    function showMapLoading() {
-        document.getElementById('map-loading').classList.remove('hidden');
-        document.getElementById('map-error-message').classList.add('hidden');
-    }
-    
-    function hideMapLoading() {
-        document.getElementById('map-loading').classList.add('hidden');
-    }
-    
-    function showMapError(message) {
-        hideMapLoading();
-        const errorDiv = document.getElementById('map-error-message');
-        errorDiv.classList.remove('hidden');
-        const errorText = errorDiv.querySelector('p.text-red-600');
-        if (errorText && message) {
-            errorText.textContent = message;
-        }
-        console.error('Map error:', message);
-    }
-    
-    function retryMapLoad() {
-        mapLoadAttempts++;
-        if (mapLoadAttempts > MAX_MAP_ATTEMPTS) {
-            showMapError('Maximum retry attempts reached. Please refresh the page.');
-            return;
-        }
-        
-        console.log(`Retrying map load (attempt ${mapLoadAttempts}/${MAX_MAP_ATTEMPTS})...`);
-        showMapLoading();
-        
-        // Clean up existing map if any
-        if (map) {
-            map.remove();
-            map = null;
-        }
-        
-        // Retry after a short delay
-        setTimeout(initMap, 1000);
-    }
-    
     function initMap() {
-        console.log('Initializing map...');
+        const defaultLat = {{ $addresses->first()->latitude ?? 23.8103 }};
+        const defaultLng = {{ $addresses->first()->longitude ?? 90.4125 }};
         
-        try {
-            const defaultLat = {{ $addresses->first()->latitude ?? 23.8103 }};
-            const defaultLng = {{ $addresses->first()->longitude ?? 90.4125 }};
-            
-            console.log('Default coordinates:', defaultLat, defaultLng);
-            
-            // Check if Leaflet is loaded
-            if (typeof L === 'undefined') {
-                throw new Error('Leaflet library not loaded');
-            }
-            
-            const mapContainer = document.getElementById('location-map');
-            if (!mapContainer) {
-                throw new Error('Map container not found');
-            }
-            
-            // Clear container
-            mapContainer.innerHTML = '';
-            
-            // Create map with error handling
-            map = L.map('location-map', {
-                center: [defaultLat, defaultLng],
-                zoom: 13,
-                zoomControl: true,
-                fadeAnimation: true,
-                error: function(error) {
-                    console.error('Map creation error:', error);
-                }
+        map = L.map('location-map').setView([defaultLat, defaultLng], 13);
+        
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+        
+        marker = L.marker([defaultLat, defaultLng], { draggable: true }).addTo(map);
+        
+        marker.on('dragend', function(e) {
+            const pos = e.target.getLatLng();
+            updateSelectedLocation(pos.lat, pos.lng);
+        });
+        
+        map.on('click', function(e) {
+            marker.setLatLng(e.latlng);
+            updateSelectedLocation(e.latlng.lat, e.latlng.lng);
+        });
+        
+        // Try to get user's current location
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(function(position) {
+                const userLat = position.coords.latitude;
+                const userLng = position.coords.longitude;
+                map.setView([userLat, userLng], 14);
+                marker.setLatLng([userLat, userLng]);
+                updateSelectedLocation(userLat, userLng);
+            }, function(error) {
+                console.log('Geolocation error:', error);
             });
-            
-            console.log('Map object created');
-            
-            // Try multiple tile providers
-            const tileProviders = [
-                {
-                    url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-                    attribution: '© OpenStreetMap contributors'
-                },
-                {
-                    url: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
-                    attribution: '© OpenTopoMap contributors'
-                },
-                {
-                    url: 'https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png',
-                    attribution: '© HOTOSM contributors'
-                }
-            ];
-            
-            let tileLayerAdded = false;
-            
-            function addTileLayer(providerIndex) {
-                if (tileLayerAdded || providerIndex >= tileProviders.length) return;
-                
-                const provider = tileProviders[providerIndex];
-                console.log(`Attempting tile layer ${providerIndex + 1}:`, provider.url);
-                
-                const tileLayer = L.tileLayer(provider.url, {
-                    attribution: provider.attribution,
-                    maxZoom: 19,
-                    timeout: 5000
-                });
-                
-                tileLayer.on('load', function() {
-                    console.log(`Tile layer ${providerIndex + 1} loaded successfully`);
-                    tileLayerAdded = true;
-                    hideMapLoading();
-                });
-                
-                tileLayer.on('tileerror', function(error) {
-                    console.warn(`Tile layer ${providerIndex + 1} failed:`, error);
-                    if (!tileLayerAdded) {
-                        // Try next provider
-                        addTileLayer(providerIndex + 1);
-                    }
-                });
-                
-                tileLayer.addTo(map);
-            }
-            
-            // Start with first provider
-            addTileLayer(0);
-            
-            // Fallback if no tiles load after 10 seconds
-            setTimeout(() => {
-                if (!tileLayerAdded) {
-                    console.error('All tile providers failed to load');
-                    showMapError('Unable to load map tiles. Please check your internet connection.');
-                }
-            }, 10000);
-            
-            // Create marker
-            marker = L.marker([defaultLat, defaultLng], { 
-                draggable: true,
-                autoPan: true
-            }).addTo(map);
-            
-            console.log('Marker created');
-            
-            // Marker events
-            marker.on('dragend', function(e) {
-                const pos = e.target.getLatLng();
-                console.log('Marker dragged to:', pos);
-                updateSelectedLocation(pos.lat, pos.lng);
-            });
-            
-            marker.on('dragstart', function() {
-                console.log('Marker drag started');
-            });
-            
-            // Map click event
-            map.on('click', function(e) {
-                console.log('Map clicked at:', e.latlng);
-                marker.setLatLng(e.latlng);
-                updateSelectedLocation(e.latlng.lat, e.latlng.lng);
-            });
-            
-            // Map load event
-            map.on('load', function() {
-                console.log('Map fully loaded');
-                hideMapLoading();
-            });
-            
-            // Force map to update its size
-            setTimeout(() => {
-                if (map) {
-                    map.invalidateSize();
-                    console.log('Map size invalidated');
-                }
-            }, 500);
-            
-        } catch (error) {
-            console.error('Map initialization error:', error);
-            showMapError('Failed to initialize map: ' + error.message);
         }
     }
     
@@ -745,9 +466,6 @@
         document.getElementById('selected-lat').textContent = lat.toFixed(6);
         document.getElementById('selected-lng').textContent = lng.toFixed(6);
         
-        // Show loading state
-        document.getElementById('selected-address').textContent = 'Fetching address...';
-        
         // Reverse geocode to get address
         fetch('{{ route("profile.reverse-geocode") }}', {
             method: 'POST',
@@ -757,26 +475,17 @@
             },
             body: JSON.stringify({ lat: lat, lng: lng })
         })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
-            }
-            return response.json();
-        })
+        .then(response => response.json())
         .then(data => {
             if (data.success) {
                 selectedAddress = data.address;
                 document.getElementById('selected-address').textContent = data.address.substring(0, 50) + '...';
+                
+                // Store the full geocode data for later use
                 lastGeocodeData = data;
-                console.log('Address fetched:', data.address);
-            } else {
-                throw new Error(data.message || 'Failed to get address');
             }
         })
-        .catch(error => {
-            console.error('Geocoding error:', error);
-            document.getElementById('selected-address').textContent = 'Address lookup failed. Coordinates saved.';
-        });
+        .catch(error => console.error('Error:', error));
     }
     
     function setupEventListeners() {
@@ -797,12 +506,13 @@
                     const lat = parseFloat(selected.dataset.lat);
                     const lng = parseFloat(selected.dataset.lng);
                     
-                    if (lat && lng && !isNaN(lat) && !isNaN(lng)) {
+                    if (lat && lng) {
                         map.setView([lat, lng], 15);
                         marker.setLatLng([lat, lng]);
                         updateSelectedLocation(lat, lng);
                     }
                     
+                    // Construct address from selected data
                     const addressLine = selected.dataset.line1;
                     const city = selected.dataset.city;
                     document.getElementById('selected-address').textContent = addressLine + ', ' + city;
@@ -855,9 +565,11 @@
     }
     
     function openSaveAddressModal() {
+        // Set coordinates
         document.getElementById('modal_latitude').value = selectedLat || '';
         document.getElementById('modal_longitude').value = selectedLng || '';
         
+        // Parse and fill address fields from the selected location
         if (lastGeocodeData) {
             fillAddressFromGeocode(lastGeocodeData);
         } else if (selectedAddress) {
@@ -868,23 +580,28 @@
     }
     
     function fillAddressFromGeocode(data) {
+        // Address line 1 (first part of display name)
         if (data.address) {
             const parts = data.address.split(',');
             document.getElementById('modal_address_line1').value = parts[0].trim();
         }
         
+        // City
         if (data.city) {
             document.getElementById('modal_city').value = data.city;
         }
         
+        // State
         if (data.state) {
             document.getElementById('modal_state').value = data.state;
         }
         
+        // Country
         if (data.country) {
             document.getElementById('modal_country').value = data.country;
         }
         
+        // Postal code
         if (data.postal_code) {
             document.getElementById('modal_postal_code').value = data.postal_code;
         }
@@ -893,6 +610,7 @@
     function parseAndFillAddress(fullAddress) {
         if (!fullAddress) return;
         
+        // Split address into parts
         const parts = fullAddress.split(',');
         
         if (parts.length >= 1) {
@@ -911,6 +629,7 @@
             document.getElementById('modal_country').value = parts[parts.length - 1].trim();
         }
         
+        // Try to extract postal code if present
         const postalCodeMatch = fullAddress.match(/\b\d{4,6}\b/);
         if (postalCodeMatch) {
             document.getElementById('modal_postal_code').value = postalCodeMatch[0];
@@ -926,9 +645,10 @@
         e.preventDefault();
         
         const formData = new FormData(this);
+        
+        // Show loading state
         const submitBtn = document.getElementById('save-address-btn');
         const originalText = submitBtn.innerHTML;
-        
         submitBtn.disabled = true;
         submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Saving...';
         
@@ -940,17 +660,12 @@
             },
             body: formData
         })
-        .then(response => {
-            if (!response.ok) {
-                return response.json().then(err => { throw err; });
-            }
-            return response.json();
-        })
+        .then(response => response.json())
         .then(data => {
             if (data.success) {
                 alert('Address saved successfully!');
                 closeSaveAddressModal();
-                location.reload();
+                location.reload(); // Refresh to show new address in dropdown
             } else {
                 alert('Error saving address: ' + (data.message || 'Unknown error'));
                 submitBtn.disabled = false;
@@ -959,13 +674,14 @@
         })
         .catch(error => {
             console.error('Error:', error);
-            alert('Error saving address. Please try again.');
+            alert('Error saving address');
             submitBtn.disabled = false;
             submitBtn.innerHTML = originalText;
         });
     });
     
     function placeOrder() {
+        // Collect items
         const items = [];
         document.querySelectorAll('[id^="quantity-"]').forEach(input => {
             const qty = parseInt(input.value) || 0;
@@ -1007,6 +723,7 @@
             items: items
         };
         
+        // Show loading state
         const btn = event.target;
         const originalText = btn.innerHTML;
         btn.disabled = true;
@@ -1020,12 +737,7 @@
             },
             body: JSON.stringify(formData)
         })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
-            }
-            return response.json();
-        })
+        .then(response => response.json())
         .then(data => {
             if (data.success) {
                 window.location.href = `/laundry/order/${data.order_id}/confirmation`;
@@ -1037,7 +749,7 @@
         })
         .catch(error => {
             console.error('Error:', error);
-            alert('Error placing order: ' + error.message);
+            alert('Error placing order');
             btn.disabled = false;
             btn.innerHTML = originalText;
         });
