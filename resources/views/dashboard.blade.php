@@ -1,770 +1,772 @@
-@extends('dashboard')
+<!DOCTYPE html>
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
 
-@section('title', 'Dashboard')
-@section('subtitle', 'Welcome back, ' . Auth::user()->name . '!')
+    <title>@yield('title', config('app.name', 'RMS'))</title>
 
-@section('breadcrumbs')
-    @php
-        $breadcrumbs = [
-            ['title' => 'Dashboard', 'url' => route('dashboard')]
-        ];
-    @endphp
-@endsection
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.bunny.net">
+    <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
 
-@section('content')
-<div class="p-6">
-    <!-- Dashboard Tabs -->
-    <div class="mb-6 border-b border-gray-200">
-        <ul class="flex flex-wrap -mb-px text-sm font-medium text-center" id="dashboardTabs" role="tablist">
-            <li class="mr-2" role="presentation">
-                <button class="inline-block p-4 border-b-2 rounded-t-lg" 
-                        id="overview-tab" 
-                        data-tabs-target="#overview" 
-                        type="button" 
-                        role="tab" 
-                        aria-controls="overview" 
-                        aria-selected="true">
-                    <i class="fas fa-chart-pie mr-2"></i>Overview
-                </button>
-            </li>
-            <li class="mr-2" role="presentation">
-                <button class="inline-block p-4 border-b-2 border-transparent rounded-t-lg hover:text-gray-600 hover:border-gray-300" 
-                        id="chat-tab" 
-                        data-tabs-target="#chat" 
-                        type="button" 
-                        role="tab" 
-                        aria-controls="chat" 
-                        aria-selected="false">
-                    <i class="fas fa-comments mr-2"></i>
-                    Messages
-                    <span id="chat-unread-badge-header" class="ml-2 bg-red-500 text-white text-xs font-medium px-2 py-0.5 rounded-full" style="display: none;">0</span>
-                </button>
-            </li>
-            @if(Auth::user()->hasRole('OWNER'))
-            <li class="mr-2" role="presentation">
-                <button class="inline-block p-4 border-b-2 border-transparent rounded-t-lg hover:text-gray-600 hover:border-gray-300" 
-                        id="properties-tab" 
-                        data-tabs-target="#properties" 
-                        type="button" 
-                        role="tab" 
-                        aria-controls="properties" 
-                        aria-selected="false">
-                    <i class="fas fa-building mr-2"></i>My Properties
-                </button>
-            </li>
-            @endif
-            @if(Auth::user()->hasRole('FOOD') || Auth::user()->hasRole('LAUNDRY'))
-            <li class="mr-2" role="presentation">
-                <button class="inline-block p-4 border-b-2 border-transparent rounded-t-lg hover:text-gray-600 hover:border-gray-300" 
-                        id="services-tab" 
-                        data-tabs-target="#services" 
-                        type="button" 
-                        role="tab" 
-                        aria-controls="services" 
-                        aria-selected="false">
-                    <i class="fas fa-concierge-bell mr-2"></i>My Services
-                </button>
-            </li>
-            @endif
-        </ul>
-    </div>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-    <!-- Tab Content -->
-    <div id="tabContent">
-        <!-- Overview Tab (Existing Dashboard Content) -->
-        <div class="tab-pane active" id="overview" role="tabpanel" aria-labelledby="overview-tab">
-            <!-- Stats Cards - Updated with green/teal colors -->
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                <!-- Active Bookings -->
-                <div class="bg-gradient-to-r from-[#174455] to-[#286b7f] rounded-xl shadow-lg text-white p-6">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-sm opacity-90">Active Bookings</p>
-                            <p class="text-3xl font-bold mt-2">{{ $stats['active_bookings'] ?? 0 }}</p>
-                        </div>
-                        <div class="h-12 w-12 rounded-full bg-[#ffdb9f] bg-opacity-20 flex items-center justify-center">
-                            <i class="fas fa-home text-xl" style="color: #ffdb9f;"></i>
-                        </div>
-                    </div>
-                    <a href="{{ route('bookings.my-bookings') }}" class="text-sm opacity-90 hover:opacity-100 inline-flex items-center mt-4">
-                        View all <i class="fas fa-arrow-right ml-1"></i>
-                    </a>
-                </div>
+    <!-- Scripts -->
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
 
-                <!-- Pending Orders -->
-                <div class="bg-gradient-to-r from-[#1f556b] to-[#2d7a94] rounded-xl shadow-lg text-white p-6">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-sm opacity-90">Pending Orders</p>
-                            <p class="text-3xl font-bold mt-2">{{ $stats['pending_orders'] ?? 0 }}</p>
-                        </div>
-                        <div class="h-12 w-12 rounded-full bg-[#ffdb9f] bg-opacity-20 flex items-center justify-center">
-                            <i class="fas fa-shopping-bag text-xl" style="color: #ffdb9f;"></i>
-                        </div>
-                    </div>
-                    @if(isset($stats['pending_orders']) && $stats['pending_orders'] > 0)
-                        <a href="{{ route('food.orders') ?? route('food.index') }}" class="text-sm opacity-90 hover:opacity-100 inline-flex items-center mt-4">
-                            View all <i class="fas fa-arrow-right ml-1"></i>
-                        </a>
-                    @else
-                        <span class="text-sm opacity-90 inline-flex items-center mt-4">
-                            No pending orders
-                        </span>
-                    @endif
-                </div>
+    <!-- Alpine.js -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 
-                <!-- Total Spent -->
-                <div class="bg-gradient-to-r from-[#286b7f] to-[#3a8da6] rounded-xl shadow-lg text-white p-6">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-sm opacity-90">Total Spent</p>
-                            <p class="text-3xl font-bold mt-2">৳ {{ number_format($stats['total_spent'] ?? 0) }}</p>
-                        </div>
-                        <div class="h-12 w-12 rounded-full bg-[#ffdb9f] bg-opacity-20 flex items-center justify-center">
-                            <i class="fas fa-wallet text-xl" style="color: #ffdb9f;"></i>
-                        </div>
-                    </div>
-                    <a href="{{ route('payments.index') }}" class="text-sm opacity-90 hover:opacity-100 inline-flex items-center mt-4">
-                        View details <i class="fas fa-arrow-right ml-1"></i>
-                    </a>
-                </div>
-
-                <!-- Rating -->
-                <div class="bg-gradient-to-r from-[#ffdb9f] to-[#f8c570] rounded-xl shadow-lg text-white p-6">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-sm opacity-90 text-[#174455]">Your Rating</p>
-                            <div class="flex items-center mt-2">
-                                <span class="text-3xl font-bold text-[#174455]">{{ number_format($stats['avg_rating'] ?? 0, 1) }}</span>
-                                <div class="ml-2">
-                                    <div class="flex">
-                                        @for($i = 1; $i <= 5; $i++)
-                                            <i class="fas fa-star text-sm {{ $i <= ($stats['avg_rating'] ?? 0) ? 'text-[#174455]' : 'text-gray-300' }}"></i>
-                                        @endfor
-                                    </div>
-                                    <p class="text-xs opacity-90 text-[#174455]">Based on {{ $stats['total_reviews'] ?? 0 }} reviews</p>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="h-12 w-12 rounded-full bg-[#174455] bg-opacity-20 flex items-center justify-center">
-                            <i class="fas fa-star text-xl" style="color: #174455;"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Welcome Banner - Updated with green/teal gradient -->
-            <div class="bg-gradient-to-r from-[#174455] to-[#286b7f] rounded-xl shadow-lg text-white p-8 mb-8">
-                <div class="flex flex-col md:flex-row items-center justify-between">
-                    <div class="md:w-2/3">
-                        <h2 class="text-2xl font-bold mb-2">Welcome to RMS!</h2>
-                        <p class="text-[#ffdb9f] mb-4">
-                            @if(Auth::user()->hasRole('OWNER'))
-                                You're logged in as a property owner. Manage your properties and bookings from here.
-                            @elseif(Auth::user()->hasRole('LAUNDRY'))
-                                You're logged in as a laundry service provider. Manage your orders and services.
-                            @elseif(Auth::user()->hasRole('FOOD'))
-                                You're logged in as a food service provider. Manage your menu and orders.
-                            @else
-                                You're logged in as a regular user. Complete your profile to get better recommendations 
-                                and start booking properties or ordering services.
-                            @endif
-                        </p>
-                        <div class="flex flex-wrap gap-3">
-                            @if(!Auth::user()->phone || !Auth::user()->gender)
-                                <a href="{{ route('profile.edit') }}" 
-                                   class="inline-flex items-center px-4 py-2 bg-[#ffdb9f] text-[#174455] rounded-lg hover:bg-[#f8c570] transition">
-                                    <i class="fas fa-user-edit mr-2"></i> Complete Profile
-                                </a>
-                            @endif
-                            
-                            @if(empty($userAddresses))
-                                <a href="{{ route('profile.address') }}" 
-                                   class="inline-flex items-center px-4 py-2 bg-[#ffdb9f] text-[#174455] rounded-lg hover:bg-[#f8c570] transition">
-                                    <i class="fas fa-map-marker-alt mr-2"></i> Add Address
-                                </a>
-                            @endif
-
-                            @if(auth()->user()->hasRole('USER') && !auth()->user()->hasRole('OWNER') && !auth()->user()->hasRole('FOOD') && !auth()->user()->hasRole('LAUNDRY'))
-                                <a href="{{ route('role.apply.index') }}" 
-                                   class="inline-flex items-center px-4 py-2 bg-[#ffdb9f] text-[#174455] rounded-lg hover:bg-[#f8c570] transition">
-                                    <i class="fas fa-user-plus mr-2"></i> Apply for Provider Role
-                                </a>
-                            @endif
-                        </div>
-                    </div>
-                    <div class="mt-6 md:mt-0">
-                        <div class="h-40 w-40 rounded-full bg-[#ffdb9f] bg-opacity-10 flex items-center justify-center border-4 border-[#ffdb9f] border-opacity-20">
-                            @if(Auth::user()->avatar_url)
-                                <img src="{{ Auth::user()->avatar_url }}" alt="Avatar" class="h-36 w-36 rounded-full object-cover">
-                            @else
-                                <i class="fas fa-user text-6xl text-[#ffdb9f] opacity-80"></i>
-                            @endif
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Role-specific Content -->
-            @if(Auth::user()->hasRole('OWNER'))
-                @include('dashboard.parts.owner-dashboard')
-            @elseif(Auth::user()->hasRole('LAUNDRY') || Auth::user()->hasRole('FOOD'))
-                @include('dashboard.parts.provider-dashboard')
-            @else
-                <!-- Quick Actions for Regular Users - Updated colors -->
-                <div class="mb-8">
-                    <h3 class="text-xl font-semibold text-[#174455] mb-4">Quick Actions</h3>
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        <!-- Find Properties -->
-                        <div class="bg-white border border-[#286b7f] border-opacity-20 rounded-xl p-6 hover:shadow-md transition-shadow">
-                            <div class="flex items-center mb-4">
-                                <div class="h-12 w-12 rounded-lg bg-[#174455] bg-opacity-10 flex items-center justify-center">
-                                    <i class="fas fa-search text-[#174455] text-xl"></i>
-                                </div>
-                                <div class="ml-4">
-                                    <h4 class="text-lg font-medium text-[#174455]">Find Properties</h4>
-                                    <p class="text-sm text-gray-500">Browse hostels & apartments</p>
-                                </div>
-                            </div>
-                            <a href="{{ route('properties.search') }}" 
-                               class="inline-flex items-center text-[#174455] hover:text-[#286b7f] font-medium">
-                                Start Searching <i class="fas fa-arrow-right ml-2"></i>
-                            </a>
-                        </div>
-
-                        <!-- Order Food -->
-                        <div class="bg-white border border-[#286b7f] border-opacity-20 rounded-xl p-6 hover:shadow-md transition-shadow">
-                            <div class="flex items-center mb-4">
-                                <div class="h-12 w-12 rounded-lg bg-[#1f556b] bg-opacity-10 flex items-center justify-center">
-                                    <i class="fas fa-utensils text-[#1f556b] text-xl"></i>
-                                </div>
-                                <div class="ml-4">
-                                    <h4 class="text-lg font-medium text-[#174455]">Order Food</h4>
-                                    <p class="text-sm text-gray-500">Subscribe or order meals</p>
-                                </div>
-                            </div>
-                            <a href="{{ route('food.index') }}" 
-                               class="inline-flex items-center text-[#1f556b] hover:text-[#286b7f] font-medium">
-                                View Restaurants <i class="fas fa-arrow-right ml-2"></i>
-                            </a>
-                        </div>
-
-                        <!-- Laundry Service -->
-                        <div class="bg-white border border-[#286b7f] border-opacity-20 rounded-xl p-6 hover:shadow-md transition-shadow">
-                            <div class="flex items-center mb-4">
-                                <div class="h-12 w-12 rounded-lg bg-[#286b7f] bg-opacity-10 flex items-center justify-center">
-                                    <i class="fas fa-tshirt text-[#286b7f] text-xl"></i>
-                                </div>
-                                <div class="ml-4">
-                                    <h4 class="text-lg font-medium text-[#174455]">Laundry Service</h4>
-                                    <p class="text-sm text-gray-500">Schedule pickup & delivery</p>
-                                </div>
-                            </div>
-                            <a href="{{ route('laundry.index') }}" 
-                               class="inline-flex items-center text-[#286b7f] hover:text-[#174455] font-medium">
-                                Find Services <i class="fas fa-arrow-right ml-2"></i>
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            @endif
-
-            <!-- Recent Activity & Quick Stats -->
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <!-- Recent Activity -->
-                <div>
-                    <div class="flex items-center justify-between mb-4">
-                        <h3 class="text-xl font-semibold text-[#174455]">Recent Activity</h3>
-                        <a href="#" class="text-sm text-[#286b7f] hover:text-[#174455]">
-                            View all
-                        </a>
-                    </div>
-                    <div class="bg-white border border-[#286b7f] border-opacity-20 rounded-xl overflow-hidden">
-                        <div class="divide-y divide-gray-100">
-                            @forelse($recentActivities ?? [] as $activity)
-                                <div class="p-4 hover:bg-gray-50">
-                                    <div class="flex">
-                                        <div class="flex-shrink-0">
-                                            @php
-                                                $iconConfig = [
-                                                    'BOOKING' => ['icon' => 'fa-home', 'color' => 'text-[#174455]', 'bg' => 'bg-[#174455] bg-opacity-10'],
-                                                    'ORDER' => ['icon' => 'fa-shopping-bag', 'color' => 'text-[#1f556b]', 'bg' => 'bg-[#1f556b] bg-opacity-10'],
-                                                    'PAYMENT' => ['icon' => 'fa-wallet', 'color' => 'text-[#286b7f]', 'bg' => 'bg-[#286b7f] bg-opacity-10'],
-                                                    'FOOD' => ['icon' => 'fa-utensils', 'color' => 'text-[#1f556b]', 'bg' => 'bg-[#1f556b] bg-opacity-10'],
-                                                    'LAUNDRY' => ['icon' => 'fa-tshirt', 'color' => 'text-[#286b7f]', 'bg' => 'bg-[#286b7f] bg-opacity-10'],
-                                                    'MESSAGE' => ['icon' => 'fa-comment', 'color' => 'text-[#174455]', 'bg' => 'bg-[#174455] bg-opacity-10'],
-                                                    'default' => ['icon' => 'fa-bell', 'color' => 'text-gray-500', 'bg' => 'bg-gray-50']
-                                                ];
-                                                $config = $iconConfig[$activity->type] ?? $iconConfig['default'];
-                                            @endphp
-                                            <div class="h-10 w-10 rounded-lg {{ $config['bg'] }} flex items-center justify-center">
-                                                <i class="fas {{ $config['icon'] }} {{ $config['color'] }}"></i>
-                                            </div>
-                                        </div>
-                                        <div class="ml-4 flex-1">
-                                            <div class="flex items-center justify-between">
-                                                <p class="text-sm font-medium text-gray-900">{{ $activity->title }}</p>
-                                                <span class="text-xs text-gray-500">{{ $activity->created_at->diffForHumans() }}</span>
-                                            </div>
-                                            <p class="text-sm text-gray-500 mt-1">{{ $activity->message }}</p>
-                                            @if($activity->related_entity_type && $activity->related_entity_id)
-                                                <div class="mt-2">
-                                                    <a href="#" class="text-xs text-[#286b7f] hover:text-[#174455]">
-                                                        View Details
-                                                    </a>
-                                                </div>
-                                            @endif
-                                        </div>
-                                    </div>
-                                </div>
-                            @empty
-                                <div class="p-8 text-center">
-                                    <i class="fas fa-bell text-gray-300 text-4xl mb-3"></i>
-                                    <p class="text-gray-500">No recent activity</p>
-                                </div>
-                            @endforelse
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Upcoming Bookings/Orders -->
-                <div>
-                    <div class="flex items-center justify-between mb-4">
-                        <h3 class="text-xl font-semibold text-[#174455]">
-                            @if(Auth::user()->hasRole('USER'))
-                                Upcoming Bookings
-                            @elseif(Auth::user()->hasRole('OWNER'))
-                                Recent Bookings
-                            @else
-                                Recent Orders
-                            @endif
-                        </h3>
-                        @if(Auth::user()->hasRole('USER'))
-                            <a href="{{ route('bookings.my-bookings') }}" class="text-sm text-[#286b7f] hover:text-[#174455]">
-                                View all
-                            </a>
-                        @endif
-                    </div>
-                    <div class="bg-white border border-[#286b7f] border-opacity-20 rounded-xl overflow-hidden">
-                        @if(Auth::user()->hasRole('USER'))
-                             @forelse($upcomingBookings ?? [] as $booking)
-                                <div class="p-4 hover:bg-gray-50 border-b border-gray-100 last:border-b-0">
-                                    <div class="flex items-center justify-between">
-                                        <div>
-                                            <h4 class="text-sm font-medium text-gray-900">{{ $booking->property->name }}</h4>
-                                            <p class="text-sm text-gray-500">
-                                                @if($booking->room)
-                                                    {{ $booking->room->room_number }}
-                                                @else
-                                                    Apartment
-                                                @endif
-                                            </p>
-                                            <p class="text-xs text-gray-400 mt-1">
-                                                {{ \Carbon\Carbon::parse($booking->check_in)->format('M d') }} - 
-                                                {{ \Carbon\Carbon::parse($booking->check_out)->format('M d, Y') }}
-                                            </p>
-                                        </div>
-                                        <div class="text-right">
-                                            @php
-                                                $statusColors = [
-                                                    'PENDING' => 'bg-yellow-100 text-yellow-800',
-                                                    'CONFIRMED' => 'bg-green-100 text-green-800',
-                                                    'CHECKED_IN' => 'bg-blue-100 text-blue-800',
-                                                    'CHECKED_OUT' => 'bg-gray-100 text-gray-800',
-                                                    'CANCELLED' => 'bg-red-100 text-red-800'
-                                                ];
-                                            @endphp
-                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium {{ $statusColors[$booking->status] ?? 'bg-gray-100 text-gray-800' }}">
-                                                {{ str_replace('_', ' ', $booking->status) }}
-                                            </span>
-                                            <p class="text-sm font-medium text-gray-900 mt-1">৳ {{ number_format($booking->total_amount) }}</p>
-                                        </div>
-                                    </div>
-                                    <div class="flex space-x-2 mt-3">
-                                        <a href="{{ route('bookings.show', $booking) }}" class="flex-1 text-center px-3 py-2 text-xs font-medium bg-[#174455] bg-opacity-10 text-[#174455] rounded hover:bg-opacity-20">
-                                            <i class="fas fa-eye mr-1"></i> View
-                                        </a>
-                                        @if($booking->status == 'CONFIRMED')
-                                            <a href="{{ route('bookings.reschedule', $booking) }}" class="flex-1 text-center px-3 py-2 text-xs font-medium bg-[#ffdb9f] text-[#174455] rounded hover:bg-[#f8c570]">
-                                                <i class="fas fa-calendar mr-1"></i> Reschedule
-                                            </a>
-                                            <form action="{{ route('bookings.cancel', $booking) }}" method="POST" class="flex-1" onsubmit="return confirm('Are you sure you want to cancel this booking?')">
-                                                @csrf
-                                                @method('DELETE')
-                                                <button type="submit" class="w-full px-3 py-2 text-xs font-medium bg-red-50 text-red-600 rounded hover:bg-red-100">
-                                                    <i class="fas fa-times mr-1"></i> Cancel
-                                                </button>
-                                            </form>
-                                        @endif
-                                    </div>
-                                </div>
-                            @empty
-                                <div class="p-8 text-center">
-                                    <i class="fas fa-calendar text-gray-300 text-4xl mb-3"></i>
-                                    <p class="text-gray-500">No upcoming bookings</p>
-                                    <a href="{{ route('properties.search') }}" class="mt-3 inline-flex items-center text-sm text-[#174455] hover:text-[#286b7f]">
-                                        <i class="fas fa-search mr-1"></i> Find Properties
-                                    </a>
-                                </div>
-                            @endforelse
-                        @elseif(Auth::user()->hasRole('OWNER'))
-                            <!-- Owner specific content -->
-                            @forelse($recentBookings as $booking)
-                                <!-- Similar booking display for owner -->
-                            @empty
-                                <div class="p-8 text-center">
-                                    <i class="fas fa-calendar text-gray-300 text-4xl mb-3"></i>
-                                    <p class="text-gray-500">No recent bookings</p>
-                                </div>
-                            @endforelse
-                        @else
-                            <!-- Service provider orders -->
-                            @forelse($recentOrders as $order)
-                                <!-- Display recent orders for service providers -->
-                            @empty
-                                <div class="p-8 text-center">
-                                    <i class="fas fa-shopping-bag text-gray-300 text-4xl mb-3"></i>
-                                    <p class="text-gray-500">No recent orders</p>
-                                </div>
-                            @endforelse
-                        @endif
-                    </div>
-                </div>
-            </div>
-
-            <!-- Profile Completion - Updated colors -->
-            @php
-                $totalFields = 3;
-                $completedFields = 0;
-                if(Auth::user()->phone) $completedFields++;
-                if(Auth::user()->gender) $completedFields++;
-                if(!empty($userAddresses)) $completedFields++;
-                $percentage = ($completedFields / $totalFields) * 100;
-            @endphp
-            
-            @if($percentage < 100)
-                <div class="mt-8 bg-gradient-to-r from-[#174455] to-[#286b7f] bg-opacity-5 border border-[#286b7f] border-opacity-20 rounded-xl p-6">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <h3 class="text-lg font-semibold text-[#174455] mb-2">Complete Your Profile</h3>
-                            <p class="text-gray-600">Complete your profile to get personalized recommendations</p>
-                            
-                            <div class="mt-4 space-y-3">
-                                @if(!Auth::user()->phone)
-                                    <div class="flex items-center">
-                                        <i class="fas fa-phone text-[#286b7f] mr-3"></i>
-                                        <span class="text-gray-700">Add phone number</span>
-                                    </div>
-                                @endif
-                                
-                                @if(!Auth::user()->gender)
-                                    <div class="flex items-center">
-                                        <i class="fas fa-venus-mars text-[#286b7f] mr-3"></i>
-                                        <span class="text-gray-700">Specify gender</span>
-                                    </div>
-                                @endif
-                                
-                                @if(empty($userAddresses))
-                                    <div class="flex items-center">
-                                        <i class="fas fa-map-marker-alt text-[#286b7f] mr-3"></i>
-                                        <span class="text-gray-700">Add delivery address</span>
-                                    </div>
-                                @endif
-                            </div>
-                        </div>
-                        
-                        <div class="text-center">
-                            <div class="relative w-32 h-32">
-                                <svg class="w-full h-full" viewBox="0 0 36 36">
-                                    <path d="M18 2.0845
-                                            a 15.9155 15.9155 0 0 1 0 31.831
-                                            a 15.9155 15.9155 0 0 1 0 -31.831"
-                                          fill="none" stroke="#E5E7EB" stroke-width="3"/>
-                                    <path d="M18 2.0845
-                                            a 15.9155 15.9155 0 0 1 0 31.831
-                                            a 15.9155 15.9155 0 0 1 0 -31.831"
-                                          fill="none" stroke="#174455" stroke-width="3" stroke-dasharray="{{ $percentage }}, 100"/>
-                                </svg>
-                                <div class="absolute inset-0 flex items-center justify-center">
-                                    <span class="text-2xl font-bold text-[#174455]">{{ round($percentage) }}%</span>
-                                </div>
-                            </div>
-                            <a href="{{ route('profile.edit') }}" 
-                               class="mt-4 inline-flex items-center px-4 py-2 bg-[#174455] text-white rounded-lg hover:bg-[#286b7f] transition">
-                                <i class="fas fa-user-edit mr-2"></i> Complete Now
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            @endif
-        </div>
-
-        <!-- Chat Tab -->
-        <div class="tab-pane hidden" id="chat" role="tabpanel" aria-labelledby="chat-tab">
-            <div class="bg-white rounded-xl shadow-lg overflow-hidden" style="height: calc(100vh - 250px);">
-                <div class="flex h-full">
-                    <!-- Conversations List -->
-                    <div class="w-1/3 border-r border-gray-200 bg-gray-50">
-                        <div class="p-4 border-b border-gray-200">
-                            <h3 class="text-lg font-semibold text-[#174455]">Messages</h3>
-                            <div class="mt-2">
-                                <input type="text" 
-                                       placeholder="Search conversations..." 
-                                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#174455] focus:border-transparent"
-                                       id="chat-search">
-                            </div>
-                        </div>
-                        <div class="overflow-y-auto" style="height: calc(100% - 85px);" id="conversations-list">
-                            @include('chat.partials.conversation-list')
-                        </div>
-                    </div>
-
-                    <!-- Active Chat -->
-                    <div class="w-2/3 flex flex-col" id="active-chat-container">
-                        @if(isset($activeConversation))
-                            @include('chat.partials.chat-window', ['conversation' => $activeConversation])
-                        @else
-                            <div class="flex-1 flex items-center justify-center bg-gray-50">
-                                <div class="text-center">
-                                    <div class="h-24 w-24 rounded-full bg-[#174455] bg-opacity-10 flex items-center justify-center mx-auto mb-4">
-                                        <i class="fas fa-comments text-4xl text-[#174455]"></i>
-                                    </div>
-                                    <h4 class="text-lg font-medium text-[#174455] mb-2">Your Messages</h4>
-                                    <p class="text-gray-500 mb-4">Select a conversation to start chatting</p>
-                                    <a href="{{ route('properties.search') }}" class="inline-flex items-center px-4 py-2 bg-[#174455] text-white rounded-lg hover:bg-[#286b7f] transition">
-                                        <i class="fas fa-search mr-2"></i> Browse Properties
-                                    </a>
-                                </div>
-                            </div>
-                        @endif
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Properties Tab (for Owners) -->
-        @if(Auth::user()->hasRole('OWNER'))
-        <div class="tab-pane hidden" id="properties" role="tabpanel" aria-labelledby="properties-tab">
-            @include('dashboard.parts.owner-properties')
-        </div>
-        @endif
-
-        <!-- Services Tab (for Providers) -->
-        @if(Auth::user()->hasRole('FOOD') || Auth::user()->hasRole('LAUNDRY'))
-        <div class="tab-pane hidden" id="services" role="tabpanel" aria-labelledby="services-tab">
-            @include('dashboard.parts.provider-services')
-        </div>
-        @endif
-    </div>
-</div>
-
-@push('scripts')
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Tab functionality
-    const tabs = document.querySelectorAll('[role="tab"]');
-    const tabPanes = document.querySelectorAll('[role="tabpanel"]');
-
-    function switchTab(oldTab, newTab) {
-        newTab.focus();
-        // Make the active tab
-        tabs.forEach(tab => {
-            tab.setAttribute('aria-selected', 'false');
-            tab.classList.remove('border-b-2', 'border-[#174455]', 'text-[#174455]');
-            tab.classList.add('border-transparent', 'text-gray-500');
-        });
-        newTab.classList.remove('border-transparent', 'text-gray-500');
-        newTab.classList.add('border-b-2', 'border-[#174455]', 'text-[#174455]');
+    <style>
+        [x-cloak] { display: none !important; }
         
-        // Show the active panel
-        const activeId = newTab.getAttribute('data-tabs-target').substring(1);
-        tabPanes.forEach(panel => {
-            if (panel.id === activeId) {
-                panel.classList.remove('hidden');
-            } else {
-                panel.classList.add('hidden');
+        /* Super smooth transitions */
+        .sidebar-transition {
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        /* Page transition */
+        .page-enter {
+            animation: pageFadeIn 0.3s ease-out;
+        }
+        
+        @keyframes pageFadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(8px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        /* Sidebar styling - with green/teal accents */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+            width: 5rem;
+            background: linear-gradient(180deg, #0f1f28 0%, #174455 100%);
+            color: white;
+            border-right: 1px solid #286b7f;
+            z-index: 40;
+            overflow-y: auto;
+            overflow-x: hidden;
+            transform: translateX(-5rem);
+        }
+        
+        .sidebar-open {
+            transform: translateX(0);
+        }
+        
+        .sidebar:hover {
+            width: 16rem !important;
+        }
+        
+        .sidebar:hover .sidebar-text,
+        .sidebar:hover .user-name,
+        .sidebar:hover .user-email,
+        .sidebar:hover .user-role,
+        .sidebar:hover .logo-text {
+            opacity: 1;
+            max-width: 200px;
+        }
+        
+        .sidebar:hover .logo-full {
+            display: flex;
+        }
+        
+        .sidebar:hover .logo-icon {
+            display: none;
+        }
+        
+        .sidebar-text,
+        .user-name,
+        .user-email,
+        .user-role,
+        .logo-text {
+            opacity: 0;
+            max-width: 0;
+            overflow: hidden;
+            white-space: nowrap;
+            transition: all 0.25s ease;
+        }
+        
+        .logo-icon {
+            display: flex;
+        }
+        
+        .logo-full {
+            display: none;
+        }
+        
+        .main-content {
+            margin-left: 0;
+            transition: margin-left 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .main-content-sidebar-open {
+            margin-left: 5rem;
+        }
+        
+        .sidebar-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 30;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.25s ease;
+        }
+        
+        .sidebar-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        @media (max-width: 1023px) {
+            .sidebar {
+                width: 16rem;
+                transform: translateX(-16rem);
+            }
+            
+            .sidebar-open {
+                transform: translateX(0);
+            }
+            
+            .sidebar:hover {
+                width: 16rem !important;
+            }
+            
+            .main-content-sidebar-open {
+                margin-left: 0;
+            }
+            
+            .sidebar-text,
+            .user-name,
+            .user-email,
+            .user-role,
+            .logo-text {
+                opacity: 1;
+                max-width: 200px;
+            }
+            
+            .logo-icon {
+                display: none;
+            }
+            
+            .logo-full {
+                display: flex;
+            }
+        }
+        
+        a {
+            transition: all 0.2s ease;
+        }
+        
+        .loading-spinner {
+            animation: spin 0.8s linear infinite;
+        }
+        
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        
+        .nested-menu {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+        }
+        
+        .nested-menu.open {
+            max-height: 500px;
+        }
+        
+        /* Green/teal accent colors */
+        .bg-primary {
+            background-color: #174455;
+        }
+        .bg-primary-light {
+            background-color: #286b7f;
+        }
+        .bg-accent {
+            background-color: #ffdb9f;
+        }
+        .text-primary {
+            color: #174455;
+        }
+        .text-primary-light {
+            color: #286b7f;
+        }
+        .text-accent {
+            color: #ffdb9f;
+        }
+        .border-primary {
+            border-color: #286b7f;
+        }
+        .hover\:bg-primary:hover {
+            background-color: #1f556b;
+        }
+        .hover\:text-primary:hover {
+            color: #174455;
+        }
+    </style>
+</head>
+<body class="font-sans antialiased bg-gray-100">
+    <div x-data="{
+        sidebarOpen: false,
+        isPageLoading: false,
+        currentPage: 'dashboard',
+        ordersMenuOpen: false,
+        
+        init() {
+            if (window.innerWidth >= 1024) {
+                this.sidebarOpen = true;
+            }
+            
+            this.setCurrentPage();
+            
+            window.addEventListener('popstate', () => {
+                this.setCurrentPage();
+            });
+        },
+        
+        setCurrentPage() {
+            const path = window.location.pathname;
+            if (path.includes('dashboard')) this.currentPage = 'dashboard';
+            else if (path.includes('profile')) this.currentPage = 'profile';
+            else if (path.includes('owner')) this.currentPage = 'owner';
+            else if (path.includes('food')) this.currentPage = 'food';
+            else if (path.includes('laundry')) this.currentPage = 'laundry';
+            else if (path.includes('rental') && !path.includes('properties')) this.currentPage = 'rental';
+            else if (path.includes('properties/search')) this.currentPage = 'properties';
+            else if (path.includes('role.apply')) this.currentPage = 'role';
+            else this.currentPage = 'dashboard';
+        },
+        
+        navigate(url) {
+            this.isPageLoading = true;
+            
+            const content = document.querySelector('.page-content');
+            if (content) {
+                content.classList.remove('page-enter');
+                void content.offsetWidth;
+                content.classList.add('page-enter');
+            }
+            
+            setTimeout(() => {
+                window.location.href = url;
+            }, 150);
+        },
+        
+        toggleSidebar() {
+            this.sidebarOpen = !this.sidebarOpen;
+        }
+    }">
+        
+        <!-- Mobile Overlay -->
+        <div x-show="sidebarOpen && window.innerWidth < 1024" 
+             @click="sidebarOpen = false"
+             class="sidebar-overlay"
+             :class="{ 'active': sidebarOpen && window.innerWidth < 1024 }"
+             x-cloak>
+        </div>
+
+        <!-- Loading Overlay -->
+        <div x-show="isPageLoading" 
+             class="fixed inset-0 bg-white bg-opacity-80 z-50 flex items-center justify-center"
+             x-cloak>
+            <div class="flex flex-col items-center">
+                <div class="loading-spinner rounded-full h-12 w-12 border-t-2 border-b-2 border-[#174455] mb-3"></div>
+                <p class="text-gray-600">Loading...</p>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <aside :class="{ 'sidebar-open': sidebarOpen }"
+               class="sidebar sidebar-transition"
+               x-cloak>
+            
+            <!-- Sidebar Header -->
+            <div class="flex items-center justify-between h-16 px-4 border-b border-[#286b7f]">
+                <!-- Icon-only logo -->
+                <div class="logo-icon">
+                    <div class="h-8 w-8 rounded-lg bg-[#ffdb9f] flex items-center justify-center">
+                        <i class="fas fa-home text-[#174455]"></i>
+                    </div>
+                </div>
+                
+                <!-- Full logo (shown on hover/expand) -->
+                <div class="logo-full items-center">
+                    <div class="h-8 w-8 rounded-lg bg-[#ffdb9f] flex items-center justify-center">
+                        <i class="fas fa-home text-[#174455]"></i>
+                    </div>
+                    <div class="ml-3">
+                        <h1 class="text-lg font-bold logo-text">RMS System</h1>
+                        <p class="text-xs text-[#ffdb9f]">Dashboard</p>
+                    </div>
+                </div>
+                
+                <!-- Close button for mobile -->
+                <button @click="sidebarOpen = false" 
+                        class="lg:hidden text-[#ffdb9f] hover:text-white">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <!-- User Profile -->
+            <div class="px-4 py-6 border-b border-[#286b7f]">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        @if(Auth::user()->avatar_url)
+                            <img src="{{ Storage::url(Auth::user()->avatar_url) }}" 
+                                 alt="{{ Auth::user()->name }}"
+                                 class="h-10 w-10 rounded-full border-2 border-[#ffdb9f] object-cover">
+                        @else
+                            <div class="h-10 w-10 rounded-full bg-[#286b7f] border-2 border-[#ffdb9f] flex items-center justify-center">
+                                <i class="fas fa-user text-[#ffdb9f]"></i>
+                            </div>
+                        @endif
+                    </div>
+                    <div class="ml-3 overflow-hidden">
+                        <p class="text-sm font-medium truncate user-name text-white">{{ Auth::user()->name }}</p>
+                        <p class="text-xs text-[#ffdb9f] truncate user-email">{{ Auth::user()->email }}</p>
+                        <div class="mt-1">
+                            @foreach(Auth::user()->roles as $role)
+                                <span class="inline-block px-2 py-0.5 rounded text-xs font-medium bg-[#ffdb9f] text-[#174455] truncate user-role">
+                                    {{ ucfirst(strtolower($role->name)) }}
+                                </span>
+                            @endforeach
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Navigation -->
+            <nav class="flex-1 px-3 py-4 space-y-1">
+                <!-- Dashboard -->
+                <a href="{{ route('dashboard') }}" 
+                   @click.prevent="navigate('{{ route('dashboard') }}')"
+                   :class="currentPage === 'dashboard' ? 'bg-[#286b7f] text-white' : 'text-gray-300 hover:bg-[#1f556b] hover:text-white'"
+                   class="group flex items-center px-3 py-3 rounded-md sidebar-transition">
+                    <i class="fas fa-tachometer-alt text-lg w-6 text-center"></i>
+                    <span class="ml-3 truncate sidebar-text">Dashboard</span>
+                </a>
+
+                <!-- Profile -->
+                <a href="{{ route('profile.index') }}" 
+                   @click.prevent="navigate('{{ route('profile.index') }}')"
+                   :class="currentPage === 'profile' ? 'bg-[#286b7f] text-white' : 'text-gray-300 hover:bg-[#1f556b] hover:text-white'"
+                   class="group flex items-center px-3 py-3 rounded-md sidebar-transition">
+                    <i class="fas fa-user text-lg w-6 text-center"></i>
+                    <span class="ml-3 truncate sidebar-text">Profile</span>
+                </a>
+
+                <!-- Properties (for Owners) -->
+                @if(auth()->user()->isOwner())
+                    <a href="{{ route('owner.properties.index') }}" 
+                       @click.prevent="navigate('{{ route('owner.properties.index') }}')"
+                       :class="currentPage === 'owner' ? 'bg-[#286b7f] text-white' : 'text-gray-300 hover:bg-[#1f556b] hover:text-white'"
+                       class="group flex items-center px-3 py-3 rounded-md sidebar-transition">
+                        <i class="fas fa-home text-lg w-6 text-center"></i>
+                        <span class="ml-3 truncate sidebar-text">Properties</span>
+                    </a>
+                @endif
+
+                <!-- Food Orders (for Food Providers) -->
+                @if(auth()->user()->isFoodProvider())
+                    <a href="{{ route('food.orders') }}" 
+                       @click.prevent="navigate('{{ route('food.orders') }}')"
+                       :class="currentPage === 'food' ? 'bg-[#286b7f] text-white' : 'text-gray-300 hover:bg-[#1f556b] hover:text-white'"
+                       class="group flex items-center px-3 py-3 rounded-md sidebar-transition">
+                        <i class="fas fa-utensils text-lg w-6 text-center"></i>
+                        <span class="ml-3 truncate sidebar-text">Food Orders</span>
+                    </a>
+                @endif
+
+                <!-- Laundry Orders (for Laundry Providers) -->
+                @if(auth()->user()->isLaundryProvider())
+                    <a href="{{ route('laundry.orders') }}" 
+                       @click.prevent="navigate('{{ route('laundry.orders') }}')"
+                       :class="currentPage === 'laundry' ? 'bg-[#286b7f] text-white' : 'text-gray-300 hover:bg-[#1f556b] hover:text-white'"
+                       class="group flex items-center px-3 py-3 rounded-md sidebar-transition">
+                        <i class="fas fa-tshirt text-lg w-6 text-center"></i>
+                        <span class="ml-3 truncate sidebar-text">Laundry Orders</span>
+                    </a>
+                @endif
+
+                <!-- Find Properties -->
+                <a href="{{ route('properties.search') }}" 
+                   @click.prevent="navigate('{{ route('properties.search') }}')"
+                   :class="currentPage === 'properties' ? 'bg-[#286b7f] text-white' : 'text-gray-300 hover:bg-[#1f556b] hover:text-white'"
+                   class="group flex items-center px-3 py-3 rounded-md sidebar-transition">
+                    <i class="fas fa-search text-lg w-6 text-center"></i>
+                    <span class="ml-3 truncate sidebar-text">Find Properties</span>
+                </a>
+                <!-- My Hostels -->
+                <a href="{{ route('rental.index') }}" 
+                   @click.prevent="navigate('{{ route('rental.index') }}')"
+                   :class="currentPage === 'rental' ? 'bg-[#286b7f] text-white' : 'text-gray-300 hover:bg-[#1f556b] hover:text-white'"
+                   class="group flex items-center px-3 py-3 rounded-md sidebar-transition">
+                    <i class="fas fa-calendar-alt text-lg w-6 text-center"></i>
+                    <span class="ml-3 truncate sidebar-text">My Bookings</span>
+                </a>
+
+                <!-- Food Services -->
+                <a href="{{ route('food.index') }}" 
+                   @click.prevent="navigate('{{ route('food.index') }}')"
+                   class="text-gray-300 hover:bg-[#1f556b] hover:text-white group flex items-center px-3 py-3 rounded-md sidebar-transition">
+                    <i class="fas fa-utensils text-lg w-6 text-center"></i>
+                    <span class="ml-3 truncate sidebar-text">Food Services</span>
+                </a>
+
+                <!-- Laundry Services -->
+                <a href="{{ route('laundry.index') }}" 
+                   @click.prevent="navigate('{{ route('laundry.index') }}')"
+                   class="text-gray-300 hover:bg-[#1f556b] hover:text-white group flex items-center px-3 py-3 rounded-md sidebar-transition">
+                    <i class="fas fa-tshirt text-lg w-6 text-center"></i>
+                    <span class="ml-3 truncate sidebar-text">Laundry Services</span>
+                </a>
+
+                <!-- Notifications Link -->
+                <a href="{{ route('notifications.index') }}" 
+                @click.prevent="navigate('{{ route('notifications.index') }}')"
+                class="text-gray-300 hover:bg-[#1f556b] hover:text-white group flex items-center px-3 py-3 rounded-md sidebar-transition relative">
+                    <i class="fas fa-bell text-lg w-6 text-center"></i>
+                    <span class="ml-3 truncate sidebar-text">Notifications</span>
+                    
+                    <!-- Notification Badge -->
+                    <span id="sidebar-notification-badge" 
+                        class="ml-auto inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-[#ffdb9f] text-[#174455] hidden">
+                        0
+                    </span>
+                </a>
+
+                <!-- Role Application (for regular users) -->
+                @if(auth()->user()->hasRole('USER') && !auth()->user()->isOwner() && !auth()->user()->isFoodProvider() && !auth()->user()->isLaundryProvider())
+                    <a href="{{ route('role.apply.index') }}" 
+                       @click.prevent="navigate('{{ route('role.apply.index') }}')"
+                       :class="currentPage === 'role' ? 'bg-[#286b7f] text-white' : 'text-gray-300 hover:bg-[#1f556b] hover:text-white'"
+                       class="group flex items-center px-3 py-3 rounded-md sidebar-transition">
+                        <i class="fas fa-user-plus text-lg w-6 text-center"></i>
+                        <span class="ml-3 truncate sidebar-text">Apply for Role</span>
+                    </a>
+                @endif
+            </nav>
+
+            <!-- Sidebar Footer -->
+            <div class="border-t border-[#286b7f] mt-auto">
+                <form method="POST" action="{{ route('logout') }}" id="logout-form">
+                    @csrf
+                    <button type="submit" 
+                            class="w-full text-left text-gray-300 hover:bg-[#1f556b] hover:text-white group flex items-center px-4 py-3 sidebar-transition">
+                        <i class="fas fa-sign-out-alt text-lg w-6 text-center"></i>
+                        <span class="ml-3 truncate sidebar-text">Logout</span>
+                    </button>
+                </form>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <div :class="{ 'main-content-sidebar-open': sidebarOpen && window.innerWidth >= 1024 }" 
+             class="main-content min-h-screen">
+            
+            <!-- Top Navigation -->
+            <header class="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-30">
+                <div class="flex items-center justify-between px-4 py-3">
+                    <div class="flex items-center">
+                        <!-- Mobile menu button -->
+                        <button @click="toggleSidebar()" 
+                                class="lg:hidden text-gray-500 hover:text-[#174455] focus:outline-none">
+                            <i class="fas fa-bars text-xl"></i>
+                        </button>
+                        
+                        <!-- Desktop menu button -->
+                        <button @click="toggleSidebar()" 
+                                class="hidden lg:flex items-center text-gray-500 hover:text-[#174455] focus:outline-none">
+                            <i class="fas fa-bars text-xl"></i>
+                        </button>
+                        
+                        <!-- Breadcrumb -->
+                        <nav class="ml-4 flex" aria-label="Breadcrumb">
+                            <ol class="flex items-center space-x-2">
+                                <li>
+                                    <div>
+                                        <a href="{{ route('dashboard') }}" 
+                                           @click.prevent="navigate('{{ route('dashboard') }}')"
+                                           class="text-gray-400 hover:text-[#174455]">
+                                            <i class="fas fa-home"></i>
+                                        </a>
+                                    </div>
+                                </li>
+                                @if(isset($breadcrumbs))
+                                    @foreach($breadcrumbs as $crumb)
+                                        <li>
+                                            <div class="flex items-center">
+                                                <i class="fas fa-chevron-right text-gray-400 mx-2"></i>
+                                                @if($loop->last)
+                                                    <span class="text-sm font-medium text-gray-500">{{ $crumb['title'] }}</span>
+                                                @else
+                                                    <a href="{{ $crumb['url'] }}" 
+                                                       @click.prevent="navigate('{{ $crumb['url'] }}')"
+                                                       class="text-sm font-medium text-gray-500 hover:text-[#174455]">
+                                                        {{ $crumb['title'] }}
+                                                    </a>
+                                                @endif
+                                            </div>
+                                        </li>
+                                    @endforeach
+                                @endif
+                            </ol>
+                        </nav>
+                    </div>
+
+                    <!-- Right Side -->
+                    <div class="flex items-center space-x-4">
+                        <!-- Search -->
+                        <div class="hidden md:block relative">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <i class="fas fa-search text-gray-400"></i>
+                            </div>
+                            <input type="text" 
+                                   placeholder="Search..." 
+                                   class="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-[#174455] focus:border-[#174455] w-64">
+                        </div>
+
+                        <!-- User Menu -->
+                        <div class="relative" x-data="{ userMenuOpen: false }">
+                            <button @click="userMenuOpen = !userMenuOpen" 
+                                    class="flex items-center space-x-2 focus:outline-none">
+                                @if(Auth::user()->avatar_url)
+                                    <img src="{{ Storage::url(Auth::user()->avatar_url) }}" 
+                                         alt="{{ Auth::user()->name }}"
+                                         class="h-8 w-8 rounded-full border-2 border-[#174455]">
+                                @else
+                                    <div class="h-8 w-8 rounded-full bg-[#174455] flex items-center justify-center">
+                                        <i class="fas fa-user text-white"></i>
+                                    </div>
+                                @endif
+                                <span class="hidden md:block text-sm font-medium text-gray-700 truncate max-w-[120px]">
+                                    {{ Auth::user()->name }}
+                                </span>
+                                <i class="fas fa-chevron-down text-gray-400"></i>
+                            </button>
+                            
+                            <!-- User Dropdown -->
+                            <div x-show="userMenuOpen" 
+                                 @click.away="userMenuOpen = false"
+                                 x-transition:enter="transition ease-out duration-100"
+                                 x-transition:enter-start="transform opacity-0 scale-95"
+                                 x-transition:enter-end="transform opacity-100 scale-100"
+                                 x-transition:leave="transition ease-in duration-75"
+                                 x-transition:leave-start="transform opacity-100 scale-100"
+                                 x-transition:leave-end="transform opacity-0 scale-95"
+                                 class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-50"
+                                 style="display: none;">
+                                <div class="py-1">
+                                    <a href="{{ route('profile.index') }}" 
+                                       @click.prevent="navigate('{{ route('profile.index') }}')"
+                                       class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                        <i class="fas fa-user mr-2"></i> Profile
+                                    </a>
+                                    <a href="{{ route('rental.index') }}" 
+                                       @click.prevent="navigate('{{ route('rental.index') }}')"
+                                       class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                        <i class="fas fa-calendar-alt mr-2"></i> My Bookings
+                                    </a>
+                                    <div class="border-t border-gray-100"></div>
+                                    <form method="POST" action="{{ route('logout') }}" id="logout-form-top">
+                                        @csrf
+                                        <button type="submit" 
+                                                class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                            <i class="fas fa-sign-out-alt mr-2"></i> Logout
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Main Content Area -->
+            <main class="bg-gray-50 min-h-[calc(100vh-64px)] page-content page-enter">
+                <div class="p-6">
+                    <!-- Page Header -->
+                    <div class="mb-6">
+                        <h1 class="text-2xl font-bold text-[#174455]">@yield('title', 'Dashboard')</h1>
+                        <p class="mt-2 text-gray-600">@yield('subtitle', 'Welcome to your dashboard')</p>
+                    </div>
+
+                    <!-- Flash Messages -->
+                    @if(session('success'))
+                        <div class="mb-6 bg-green-50 border-l-4 border-[#174455] p-4 rounded">
+                            <div class="flex">
+                                <div class="flex-shrink-0">
+                                    <i class="fas fa-check-circle text-[#174455]"></i>
+                                </div>
+                                <div class="ml-3">
+                                    <p class="text-sm text-[#174455]">{{ session('success') }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    @endif
+
+                    @if(session('error'))
+                        <div class="mb-6 bg-red-50 border-l-4 border-red-400 p-4 rounded">
+                            <div class="flex">
+                                <div class="flex-shrink-0">
+                                    <i class="fas fa-exclamation-circle text-red-400"></i>
+                                </div>
+                                <div class="ml-3">
+                                    <p class="text-sm text-red-700">{{ session('error') }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    @endif
+
+                    <!-- Page Content -->
+                    <div class="bg-white rounded-lg shadow-sm border border-gray-200">
+                        @yield('content')
+                    </div>
+                </div>
+            </main>
+
+            <!-- Footer -->
+            <footer class="bg-white border-t border-gray-200 py-4 px-6">
+                <div class="flex flex-col md:flex-row justify-between items-center">
+                    <div class="text-sm text-gray-600">
+                        &copy; {{ date('Y') }} RMS System. All rights reserved.
+                    </div>
+                    <div class="mt-2 md:mt-0">
+                        <span class="text-sm text-gray-600">Version 1.0.0</span>
+                    </div>
+                </div>
+            </footer>
+        </div>
+    </div>
+
+    <script>
+        // Handle page transitions
+        document.addEventListener('DOMContentLoaded', function() {
+            // Add page enter animation
+            const content = document.querySelector('.page-content');
+            if (content) {
+                content.classList.add('page-enter');
+            }
+            
+            // Handle all navigation links
+            document.addEventListener('click', function(e) {
+                const link = e.target.closest('a');
+                if (link && link.href && !link.href.includes('javascript:') && 
+                    link.href !== '#' && !link.hasAttribute('target')) {
+                    
+                    // Check if it's an internal link
+                    const isInternal = link.href.includes(window.location.hostname) || 
+                                      link.href.startsWith('/');
+                    
+                    if (isInternal && !link.href.includes('logout')) {
+                        e.preventDefault();
+                        
+                        // Trigger loading state
+                        const app = document.querySelector('[x-data]').__x;
+                        if (app && app.$data) {
+                            app.$data.isPageLoading = true;
+                        }
+                        
+                        // Navigate after short delay for smooth transition
+                        setTimeout(() => {
+                            window.location.href = link.href;
+                        }, 200);
+                    }
+                }
+            });
+            
+            // Handle form submissions
+            document.querySelectorAll('form').forEach(form => {
+                form.addEventListener('submit', function(e) {
+                    if (this.id.includes('logout')) {
+                        const app = document.querySelector('[x-data]').__x;
+                        if (app && app.$data) {
+                            app.$data.isPageLoading = true;
+                        }
+                    }
+                });
+            });
+            
+            // Initialize collapse for nested menus
+            Alpine.directive('collapse', (el) => {
+                let duration = 300;
+                
+                el._x_isShown = () => !el.classList.contains('hidden');
+                
+                el._x_toggle = () => {
+                    if (el._x_isShown()) {
+                        el._x_hide();
+                    } else {
+                        el._x_show();
+                    }
+                };
+                
+                el._x_show = () => {
+                    if (el._x_isShown()) return;
+                    
+                    el.style.display = '';
+                    el.style.overflow = 'hidden';
+                    el.style.height = 0;
+                    
+                    requestAnimationFrame(() => {
+                        el.style.height = el.scrollHeight + 'px';
+                    });
+                    
+                    setTimeout(() => {
+                        el.style.height = 'auto';
+                        el.style.overflow = '';
+                    }, duration);
+                };
+                
+                el._x_hide = () => {
+                    if (!el._x_isShown()) return;
+                    
+                    el.style.overflow = 'hidden';
+                    el.style.height = el.scrollHeight + 'px';
+                    
+                    requestAnimationFrame(() => {
+                        el.style.height = 0;
+                    });
+                    
+                    setTimeout(() => {
+                        el.style.display = 'none';
+                        el.style.overflow = '';
+                        el.style.height = '';
+                    }, duration);
+                };
+                
+                // Set initial state
+                if (!el._x_isShown()) {
+                    el.style.display = 'none';
+                }
+            });
+        });
+        
+        // Remove loading state when page is fully loaded
+        window.addEventListener('load', function() {
+            const app = document.querySelector('[x-data]').__x;
+            if (app && app.$data) {
+                setTimeout(() => {
+                    app.$data.isPageLoading = false;
+                }, 300);
             }
         });
-    }
-
-    tabs.forEach(tab => {
-        tab.addEventListener('click', function() {
-            switchTab(document.querySelector('[aria-selected="true"]'), this);
-        });
-    });
-
-    // Chat search functionality
-    const chatSearch = document.getElementById('chat-search');
-    if (chatSearch) {
-        chatSearch.addEventListener('input', function(e) {
-            const searchTerm = e.target.value.toLowerCase();
-            const conversations = document.querySelectorAll('.conversation-item');
-            
-            conversations.forEach(conv => {
-                const name = conv.dataset.userName?.toLowerCase() || '';
-                const property = conv.dataset.propertyName?.toLowerCase() || '';
-                const lastMessage = conv.dataset.lastMessage?.toLowerCase() || '';
-                
-                if (name.includes(searchTerm) || property.includes(searchTerm) || lastMessage.includes(searchTerm)) {
-                    conv.style.display = 'block';
-                } else {
-                    conv.style.display = 'none';
-                }
-            });
-        });
-    }
-
-    // Update unread count periodically
-    function updateUnreadCounts() {
-        fetch('{{ route("chat.unread-count") }}')
-            .then(response => response.json())
-            .then(data => {
-                const headerBadge = document.getElementById('chat-unread-badge-header');
-                const tabBadge = document.getElementById('chat-unread-badge-tab');
-                
-                if (data.unread_count > 0) {
-                    if (headerBadge) {
-                        headerBadge.textContent = data.unread_count;
-                        headerBadge.style.display = 'inline';
-                    }
-                    if (tabBadge) {
-                        tabBadge.textContent = data.unread_count;
-                        tabBadge.style.display = 'inline';
-                    }
-                } else {
-                    if (headerBadge) headerBadge.style.display = 'none';
-                    if (tabBadge) tabBadge.style.display = 'none';
-                }
-            });
-    }
-
-    // Update every 30 seconds
-    setInterval(updateUnreadCounts, 30000);
-    
-    // Check URL hash for tab selection
-    if (window.location.hash) {
-        const tabId = window.location.hash.substring(1) + '-tab';
-        const tab = document.getElementById(tabId);
-        if (tab) {
-            tab.click();
-        }
-    }
-});
-
-// Function to load conversation
-function loadConversation(conversationId) {
-    fetch(`/chat/${conversationId}/messages`)
-        .then(response => response.text())
-        .then(html => {
-            document.getElementById('active-chat-container').innerHTML = html;
-            // Update URL hash without reloading
-            window.location.hash = 'chat';
-            
-            // Mark messages as read
-            fetch(`/chat/${conversationId}/mark-read`, {
-                method: 'POST',
-                headers: {
-                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                }
-            });
-        });
-}
-
-// Function to send message
-function sendMessage(conversationId) {
-    const input = document.getElementById('message-input');
-    const message = input.value.trim();
-    
-    if (!message) return;
-    
-    fetch('{{ route("chat.store") }}', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': '{{ csrf_token() }}'
-        },
-        body: JSON.stringify({
-            conversation_id: conversationId,
-            message: message
-        })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            input.value = '';
-            // Append message to chat
-            appendMessage(data.message);
-        }
-    });
-}
-
-function appendMessage(message) {
-    const container = document.getElementById('chat-messages');
-    const isSender = message.sender_id == {{ Auth::id() }};
-    
-    const messageHtml = `
-        <div class="mb-4 ${isSender ? 'text-right' : 'text-left'}">
-            <div class="inline-block max-w-xs lg:max-w-md">
-                <div class="rounded-lg px-4 py-2 ${isSender ? 'bg-[#174455] text-white' : 'bg-gray-100 text-gray-800'}">
-                    <p class="whitespace-pre-wrap">${message.message}</p>
-                </div>
-                <span class="text-xs text-gray-500 mt-1 block">
-                    ${new Date(message.created_at).toLocaleTimeString()}
-                </span>
-            </div>
-        </div>
-    `;
-    
-    container.insertAdjacentHTML('beforeend', messageHtml);
-    container.scrollTop = container.scrollHeight;
-}
-</script>
-@endpush
-
-@push('styles')
-<style>
-/* Chat styles */
-.conversation-item:hover {
-    background-color: #f9fafb;
-}
-
-.conversation-item.active {
-    background-color: #eef2f6;
-    border-left: 3px solid #174455;
-}
-
-#chat-messages {
-    scroll-behavior: smooth;
-}
-
-/* Hide scrollbar for chat but keep functionality */
-#chat-messages::-webkit-scrollbar {
-    width: 6px;
-}
-
-#chat-messages::-webkit-scrollbar-track {
-    background: #f1f1f1;
-}
-
-#chat-messages::-webkit-scrollbar-thumb {
-    background: #cbd5e0;
-    border-radius: 3px;
-}
-
-#chat-messages::-webkit-scrollbar-thumb:hover {
-    background: #a0aec0;
-}
-
-/* Tab styles */
-[role="tab"]:focus {
-    outline: none;
-}
-
-[role="tab"][aria-selected="true"] {
-    border-bottom-width: 2px;
-    border-color: #174455;
-    color: #174455;
-}
-</style>
-@endpush
-@endsection
+    </script>
+</body>
+</html>

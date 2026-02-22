@@ -1,5 +1,4 @@
-@extends('dashboard')
-
+@extends('owner.layout.owner-layout')
 @section('title', 'Owner Dashboard')
 @section('subtitle', 'Welcome back, ' . Auth::user()->name . '!')
 

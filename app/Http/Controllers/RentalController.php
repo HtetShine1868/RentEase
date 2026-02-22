@@ -207,6 +207,19 @@ class RentalController extends Controller
         
         return view('rental.property-details', compact('property', 'relatedProperties', 'averageRating'));
     }
+    private function addUnreadCountsToBookings($bookings, $userId)
+{
+    foreach ($bookings as $booking) {
+        $booking->unread_chat_count = ChatMessage::whereHas('conversation', function($q) use ($booking) {
+                $q->where('booking_id', $booking->id);
+            })
+            ->where('receiver_id', $userId)
+            ->where('is_read', false)
+            ->count();
+    }
+    
+    return $bookings;
+}
     /**
  * Show individual room details
  */

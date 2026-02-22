@@ -18,6 +18,7 @@ use App\Http\Controllers\UserDashboardController;
 use App\Http\Controllers\FoodProvider\MenuItemController;
 use App\Http\Controllers\FoodProvider\ReviewController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
+use App\Http\Controllers\RentalChatController;
 use App\Http\Controllers\Auth\ResetPasswordController;
 use App\Http\Controllers\NotificationController;
 use Illuminate\Support\Facades\Route;
@@ -119,31 +120,19 @@ Route::middleware('auth')->group(function () {
                 Route::get('/my-orders', [App\Http\Controllers\LaundryController::class, 'myOrders'])->name('my-orders');
             });
         });
-
+        // Rental Chat Routes
+        Route::middleware(['auth'])->prefix('rental')->name('rental.')->group(function () {
+            Route::get('/chats', [RentalChatController::class, 'index'])->name('chats');
+            Route::get('/chat/{booking}', [RentalChatController::class, 'show'])->name('chat.show'); // Changed from 'chat' to 'chat.show'
+            Route::post('/chat/{booking}/send', [RentalChatController::class, 'sendMessage'])->name('chat.send');
+            Route::get('/chat/{booking}/new', [RentalChatController::class, 'getNewMessages'])->name('chat.new');
+            Route::get('/unread-count', [RentalChatController::class, 'getUnreadCount'])->name('unread-count');
+        });
         // Payments
         Route::prefix('payments')->name('payments.')->group(function () {
             Route::get('/', function () { return view('payments.index'); })->name('index');
             Route::get('/history', function () { return view('payments.history'); })->name('history');
         });
-
-
-// Add this route for user dashboard
-Route::middleware(['auth'])->group(function () {
-    Route::get('/dashboard/user', [UserDashboardController::class, 'index'])->name('dashboard.user');
-    
-    // Chat routes
-    Route::get('/chat', [ChatController::class, 'index'])->name('chat.index');
-    Route::get('/chat/{conversation}', [ChatController::class, 'show'])->name('chat.show');
-    Route::post('/chat', [ChatController::class, 'store'])->name('chat.store');
-    Route::post('/chat/start/{property}', [ChatController::class, 'startConversation'])->name('chat.start');
-    Route::post('/chat/{conversation}/mark-read', [ChatController::class, 'markAsRead'])->name('chat.mark-read');
-    Route::get('/chat/unread/count', [ChatController::class, 'getUnreadCount'])->name('chat.unread-count');
-    
-    // Add this route for loading conversation messages
-    Route::get('/chat/{conversation}/messages', [ChatController::class, 'getMessages'])->name('chat.messages');
-    Route::get('/chat/{conversation}/messages/new/{lastId}', [ChatController::class, 'getNewMessages']);
-});
-        
         // Notifications
         Route::get('/notifications', [App\Http\Controllers\NotificationController::class, 'index'])->name('notifications.index');
         Route::get('/notifications/unread-count', [App\Http\Controllers\NotificationController::class, 'getUnreadCount'])->name('notifications.unread-count');
@@ -187,7 +176,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/bookings/{booking}/manage', [BookingController::class, 'manage'])->name('bookings.manage');
         Route::get('/rental/booking/{booking}', [RentalController::class, 'showBooking'])->name('rental.booking-details');
         Route::post('/reviews', [RentalController::class, 'submitReview'])->name('property-ratings.store');
-        
+
         Route::prefix('complaints')->name('complaints.')->group(function () {
             Route::get('/', [RentalController::class, 'complaints'])->name('index');
             Route::post('/', [RentalController::class, 'submitComplaint'])->name('store');

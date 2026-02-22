@@ -273,6 +273,20 @@
                                     </div>
                                 </div>
 
+                                <!-- Add this inside your booking card, before the View Details button -->
+                                <div class="mb-3">
+                                    <a href="{{ route('rental.chat.show', $booking) }}" 
+                                    class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 transition duration-150 w-full justify-center">
+                                        <svg class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                                        </svg>
+                                        Chat with Owner
+                                        @if(isset($booking->unread_chat_count) && $booking->unread_chat_count > 0)
+                                            <span class="ml-2 bg-red-500 text-white text-xs px-2 py-1 rounded-full">{{ $booking->unread_chat_count }}</span>
+                                        @endif
+                                    </a>
+                                </div>
+
                                 <!-- Action Button -->
                                 <div class="mt-4">
                                     <a href="{{ route('rental.booking-details', $booking) }}" 
