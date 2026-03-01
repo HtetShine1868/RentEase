@@ -51,7 +51,7 @@
                 ],
                 [
                     'title' => 'Today\'s Revenue',
-                    'value' => '₹' . number_format($stats['revenue_today'] ?? 0, 2),
+                    'value' => '$' . number_format($stats['revenue_today'] ?? 0, 2),
                     'change' => $stats['revenue_today'] > 0 ? '+' . number_format($stats['revenue_today'] / 100, 0) . '%' : '0%',
                     'icon' => 'fas fa-rupee-sign',
                     'color' => 'purple'
@@ -173,16 +173,7 @@
                     </p>
                 </div>
                 <div class="mt-4 sm:mt-0 flex flex-wrap gap-2">
-                    <button type="button" onclick="window.print()"
-                            class="inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                        <i class="fas fa-print mr-2"></i>
-                        Print Orders
-                    </button>
-                    <a href="{{ route('food-provider.orders.export') }}?{{ http_build_query(request()->except('page')) }}"
-                       class="inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                        <i class="fas fa-download mr-2"></i>
-                        Export Orders
-                    </a>
+                   
                     <a href="{{ route('food-provider.menu.items.create') }}"
                        class="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
                         <i class="fas fa-plus mr-2"></i>
@@ -319,9 +310,9 @@
                                 </span>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="text-sm font-medium text-gray-900">₹{{ number_format($order->total_amount, 2) }}</div>
+                                <div class="text-sm font-medium text-gray-900">${{ number_format($order->total_amount, 2) }}</div>
                                 <div class="text-xs text-gray-500">
-                                    You get: ₹{{ number_format($order->total_amount - $order->commission_amount, 2) }}
+                                    You get: MMK {{ number_format($order->total_amount - $order->commission_amount, 2) }}
                                 </div>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
@@ -397,13 +388,7 @@
                                             </button>
                                         </form>
                                     @endif
-                                    
-                                    <a href="{{ route('food-provider.orders.print', $order->id) }}" 
-                                       target="_blank"
-                                       class="text-gray-600 hover:text-gray-900"
-                                       title="Print Invoice">
-                                        <i class="fas fa-print"></i>
-                                    </a>
+                           
                                 </div>
                             </td>
                         </tr>

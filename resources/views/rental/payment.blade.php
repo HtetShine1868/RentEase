@@ -1,4 +1,4 @@
-@extends('dashboard')
+@extends('layouts.apps')
 
 @section('title', 'Make Payment - ' . $booking->booking_reference)
 

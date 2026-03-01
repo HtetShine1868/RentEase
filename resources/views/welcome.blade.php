@@ -218,20 +218,7 @@
                     @endauth
                 </div>
                 <!-- Quick Stats -->
-                <div class="flex items-center justify-center gap-8">
-                    <div class="flex items-center gap-2">
-                        <i class="fas fa-home" style="color: var(--accent-gold);"></i>
-                        <span class="text-sm font-medium" style="color: var(--text-muted);">500+ Properties</span>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <i class="fas fa-utensils" style="color: var(--accent-gold);"></i>
-                        <span class="text-sm font-medium" style="color: var(--text-muted);">100+ Providers</span>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <i class="fas fa-users" style="color: var(--accent-gold);"></i>
-                        <span class="text-sm font-medium" style="color: var(--text-muted);">2k+ Tenants</span>
-                    </div>
-                </div>
+         
             </div>
         </div>
     </section>

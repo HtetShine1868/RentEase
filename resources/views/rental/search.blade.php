@@ -151,7 +151,7 @@
                         @endif
                         @if(request('min_price'))
                             <span class="inline-flex items-center px-2 py-1 rounded-full text-xs bg-yellow-100 text-yellow-800">
-                                Min: ${{ number_format(request('min_price')) }}
+                                Min: MMK{{ number_format(request('min_price')) }}
                                 <a href="{{ request()->fullUrlWithQuery(['min_price' => null]) }}" class="ml-1 text-yellow-600">
                                     &times;
                                 </a>
@@ -196,7 +196,7 @@
                                     <!-- Price Badge -->
                                     <div class="absolute top-3 right-3">
                                         <span class="px-2 py-1 bg-white rounded-lg shadow text-sm font-semibold">
-                                            ${{ number_format($property->base_price) }}/month
+                                            MMK{{ number_format($property->base_price) }}/month
                                         </span>
                                     </div>
                                     

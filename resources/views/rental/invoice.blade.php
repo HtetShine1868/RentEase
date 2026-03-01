@@ -14,13 +14,7 @@
                     <p class="mt-2 text-gray-600">Invoice for booking #{{ $booking->booking_reference }}</p>
                 </div>
                 <div class="flex space-x-3">
-                    <button onclick="window.print()" 
-                           class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
-                        <svg class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-                        </svg>
-                        Print Invoice
-                    </button>
+                    
                     <a href="{{ route('bookings.show', $booking) }}" 
                        class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
                         <svg class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -128,10 +122,10 @@
                                         {{ $booking->duration_days }} days
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                        ৳{{ number_format($booking->room_price_per_day, 2) }}
+                                        MMK{{ number_format($booking->room_price_per_day, 2) }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                        ৳{{ number_format($booking->room_price_per_day * $booking->duration_days, 2) }}
+                                        MMK{{ number_format($booking->room_price_per_day * $booking->duration_days, 2) }}
                                     </td>
                                 </tr>
                             </tbody>
@@ -146,22 +140,22 @@
                         <div class="space-y-3">
                             <div class="flex justify-between">
                                 <span class="text-gray-600">Room Charges:</span>
-                                <span class="font-medium">৳{{ number_format($booking->room_price_per_day * $booking->duration_days, 2) }}</span>
+                                <span class="font-medium">MMK{{ number_format($booking->room_price_per_day * $booking->duration_days, 2) }}</span>
                             </div>
                             <div class="flex justify-between">
                                 <span class="text-gray-600">Commission ({{ $booking->property->commission_rate }}%):</span>
-                                <span class="font-medium">৳{{ number_format($booking->commission_amount, 2) }}</span>
+                                <span class="font-medium">MMK{{ number_format($booking->commission_amount, 2) }}</span>
                             </div>
                             @if($booking->payments->where('status', 'COMPLETED')->sum('amount') > $booking->total_amount)
                                 <div class="flex justify-between">
                                     <span class="text-gray-600">Previous Payments:</span>
-                                    <span class="font-medium">-৳{{ number_format($booking->payments->where('status', 'COMPLETED')->sum('amount'), 2) }}</span>
+                                    <span class="font-medium">-MMK{{ number_format($booking->payments->where('status', 'COMPLETED')->sum('amount'), 2) }}</span>
                                 </div>
                             @endif
                             <div class="border-t pt-3 mt-3">
                                 <div class="flex justify-between text-lg font-bold">
                                     <span>Total Amount:</span>
-                                    <span class="text-indigo-600">৳{{ number_format($booking->total_amount, 2) }}</span>
+                                    <span class="text-indigo-600">MMK{{ number_format($booking->total_amount, 2) }}</span>
                                 </div>
                             </div>
                         </div>
@@ -196,7 +190,7 @@
                                                 {{ $payment->payment_method }}
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                                ৳{{ number_format($payment->amount, 2) }}
+                                                MMK{{ number_format($payment->amount, 2) }}
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap">
                                                 <span class="px-2 py-1 text-xs font-semibold rounded-full

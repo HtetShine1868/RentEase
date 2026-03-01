@@ -1,4 +1,4 @@
-@extends('dashboard')
+@extends('layouts.apps')
 
 @section('title', 'Laundry Services')
 @section('subtitle', 'Find laundry services near you')
@@ -196,7 +196,7 @@
                                         Open Now
                                     </span>
                                     <span class="text-sm font-semibold text-[#174455]">
-                                        From ৳{{ $provider->laundryItems->min('base_price') ?? 0 }}
+                                        From MMK {{ $provider->laundryItems->min('base_price') ?? 0 }}
                                     </span>
                                 </div>
                             </div>
@@ -291,7 +291,7 @@
                                     </div>
                                     <div>
                                         <p class="text-gray-500">Total</p>
-                                        <p class="font-bold text-[#174455]">৳{{ number_format($order->total_amount, 2) }}</p>
+                                        <p class="font-bold text-[#174455]">MMK {{ number_format($order->total_amount, 2) }}</p>
                                     </div>
                                     <div>
                                         <p class="text-gray-500">Progress</p>

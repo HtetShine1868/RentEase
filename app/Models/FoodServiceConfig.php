@@ -30,4 +30,11 @@ class FoodServiceConfig extends Model
     {
         return $this->belongsTo(ServiceProvider::class);
     }
+        /**
+     * Get the meal types for this food service
+     */
+    public function mealTypes()
+    {
+        return $this->belongsToMany(MealType::class, 'food_service_meal_types', 'service_provider_id', 'meal_type_id');
+    }
 }

@@ -3,6 +3,7 @@
 @section('title', 'Add New Property - RentEase')
 @section('page-title', 'Add New Property')
 @section('page-subtitle', 'Create a new hostel or apartment listing')
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
 
 @section('content')
 <div class="space-y-6">
@@ -461,7 +462,7 @@
                                         <!-- Base Price -->
                                         <div class="md:col-span-2">
                                             <label class="block text-sm font-medium text-gray-700 mb-2">
-                                                Monthly Price (৳) <span class="text-red-500">*</span>
+                                                Monthly Price ($) <span class="text-red-500">*</span>
                                             </label>
                                             <div class="relative">
                                                 <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -505,7 +506,7 @@
                             </div>
                             <div class="flex justify-between items-center">
                                 <span class="text-gray-700">Total Monthly Revenue (all rooms):</span>
-                                <span id="totalMonthlyRevenue" class="font-medium text-green-600">৳0.00</span>
+                                <span id="totalMonthlyRevenue" class="font-medium text-green-600">$0.00</span>
                             </div>
                             <div class="pt-3 border-t border-green-200">
                                 <div class="flex justify-between items-center">
@@ -535,48 +536,51 @@
                         <!-- Monthly Price -->
                         <div>
                             <label for="base_price" class="block text-sm font-medium text-gray-700 mb-2">
-                                Monthly Price (৳) <span class="text-red-500">*</span>
+                                Monthly Price ($) <span class="text-red-500">*</span>
                             </label>
                             <div class="relative">
                                 <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                     <span class="text-gray-500">৳</span>
                                 </div>
                                 <input type="number" 
-                                       id="base_price"
-                                       name="base_price"
-                                       value="{{ old('base_price') }}"
-                                       step="0.01"
-                                       min="0"
-                                       class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors"
-                                       placeholder="0.00"
-                                       required>
+                                    id="base_price"
+                                    name="base_price"
+                                    value="{{ old('base_price') }}"
+                                    step="0.01"
+                                    min="0"
+                                    class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors"
+                                    placeholder="0.00"
+                                    required>
                             </div>
                             @error('base_price')
                                 <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                             @enderror
                         </div>
 
-                        <!-- Commission Rate -->
+                        <!-- Commission Rate (Non-editable) -->
                         <div>
                             <label for="commission_rate" class="block text-sm font-medium text-gray-700 mb-2">
                                 Commission Rate (%)
                             </label>
                             <div class="relative">
                                 <input type="number" 
-                                       id="commission_rate"
-                                       name="commission_rate"
-                                       value="{{ old('commission_rate') }}"
-                                       step="0.01"
-                                       min="0"
-                                       max="100"
-                                       readonly
-                                       class="w-full px-4 py-3 border border-gray-300 bg-gray-50 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors"
-                                       placeholder="Auto-filled">
+                                    id="commission_rate"
+                                    name="commission_rate"
+                                    value="{{ old('commission_rate') }}"
+                                    step="0.01"
+                                    min="0"
+                                    max="100"
+                                    readonly
+                                    class="w-full px-4 py-3 border border-gray-300 bg-gray-100 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors cursor-not-allowed"
+                                    placeholder="Auto-filled">
                                 <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
                                     <span class="text-gray-500">%</span>
                                 </div>
                             </div>
-                            <p class="text-xs text-gray-500 mt-1">Based on property type</p>
+                            <p class="text-xs text-gray-500 mt-1 flex items-center">
+                                <i class="fas fa-lock text-gray-400 mr-1"></i> 
+                                Set by admin based on property type
+                            </p>
                             @error('commission_rate')
                                 <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                             @enderror
@@ -592,6 +596,7 @@
                                 <div class="text-right">
                                     <p class="text-sm text-gray-600">Commission Rate</p>
                                     <p id="apartmentCommissionRateDisplay" class="text-xl font-bold text-purple-700">3%</p>
+                                    <p class="text-xs text-gray-500">(Admin configured)</p>
                                 </div>
                             </div>
                             
@@ -626,6 +631,7 @@
                             <div class="text-right">
                                 <p class="text-sm text-gray-600">Commission Rate</p>
                                 <p id="hostelCommissionRateDisplay" class="text-xl font-bold text-purple-700">5%</p>
+                                <p class="text-xs text-gray-500">(Admin configured)</p>
                             </div>
                         </div>
                         
@@ -636,16 +642,16 @@
                             </div>
                             <div class="flex justify-between items-center">
                                 <span class="text-gray-700">Total Monthly Revenue (all rooms)</span>
-                                <span id="hostelTotalRevenueFinal" class="font-medium text-green-600">৳0.00</span>
+                                <span id="hostelTotalRevenueFinal" class="font-medium text-green-600">$0.00</span>
                             </div>
                             <div class="flex justify-between items-center">
                                 <span class="text-gray-700">Commission Amount (5%)</span>
-                                <span id="hostelCommissionFinal" class="font-medium text-red-600">৳0.00</span>
+                                <span id="hostelCommissionFinal" class="font-medium text-red-600">$0.00</span>
                             </div>
                             <div class="pt-3 border-t border-purple-200">
                                 <div class="flex justify-between items-center">
                                     <span class="text-lg font-semibold text-gray-900">Total With Commission</span>
-                                    <span id="hostelTotalWithCommissionFinal" class="text-2xl font-bold text-green-600">৳0.00</span>
+                                    <span id="hostelTotalWithCommissionFinal" class="text-2xl font-bold text-green-600">$0.00</span>
                                 </div>
                             </div>
                         </div>
@@ -1657,6 +1663,18 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         
         return isValid;
+    }
+    // Get commission rate from server (API endpoint)
+    async function fetchCommissionRate(type) {
+        try {
+            const response = await fetch(`/api/commission-rate/${type}`);
+            const data = await response.json();
+            return data.rate || (type === 'HOSTEL' ? 5.00 : 3.00);
+        } catch (error) {
+            console.error('Error fetching commission rate:', error);
+            // Fallback to default rates if API fails
+            return type === 'HOSTEL' ? 5.00 : 3.00;
+        }
     }
     
     // Initialize first step

@@ -43,13 +43,13 @@
                                             <span class="text-gray-600">
                                                 <span x-text="item.quantity"></span>x <span x-text="item.name"></span>
                                             </span>
-                                            <span class="text-gray-900" x-text="'৳' + (item.total_price * item.quantity).toFixed(2)"></span>
+                                            <span class="text-gray-900" x-text="'MMK' + (item.total_price * item.quantity).toFixed(2)"></span>
                                         </div>
                                     </template>
                                     <div class="border-t border-gray-200 pt-2 mt-2">
                                         <div class="flex justify-between font-medium">
                                             <span>Daily Total</span>
-                                            <span class="text-indigo-600" x-text="'৳' + cartTotal.toFixed(2)"></span>
+                                            <span class="text-indigo-600" x-text="'MMK' + cartTotal.toFixed(2)"></span>
                                         </div>
                                     </div>
                                 </div>

@@ -1,4 +1,4 @@
-@extends('dashboard')
+@extends('layouts.apps')
 
 @section('title', 'Rent ' . $property->name)
 
@@ -27,6 +27,42 @@
     </nav>
 
     <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Debug Info - Remove in production -->
+        @php
+            $routeExists = app('router')->has('bookings.apartment.store');
+            $routeUrl = $routeExists ? route('bookings.apartment.store', $property) : 'Route not found';
+        @endphp
+
+        @if(!$routeExists)
+            <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg mb-6">
+                <strong>Error:</strong> Route 'bookings.apartment.store' does not exist! 
+                Please check your routes file.
+            </div>
+        @endif
+
+        @if($errors->any())
+            <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg mb-6">
+                <strong>Validation Error:</strong> Please check the form for errors.
+                <ul class="mt-2 list-disc list-inside">
+                    @foreach($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
+
+        @if(session('error'))
+            <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg mb-6">
+                {{ session('error') }}
+            </div>
+        @endif
+
+        @if(session('success'))
+            <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-lg mb-6">
+                {{ session('success') }}
+            </div>
+        @endif
+
         <!-- Progress Steps -->
         <div class="bg-white rounded-lg shadow p-6 mb-6">
             <div class="flex items-center justify-center">
@@ -40,7 +76,9 @@
                     </div>
                     
                     <!-- Arrow -->
-                    <div class="h-1 w-12 bg-gray-300"></div>
+                    <svg class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                    </svg>
                     
                     <!-- Step 2 -->
                     <div class="flex items-center">
@@ -51,7 +89,9 @@
                     </div>
                     
                     <!-- Arrow -->
-                    <div class="h-1 w-12 bg-gray-300"></div>
+                    <svg class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                    </svg>
                     
                     <!-- Step 3 -->
                     <div class="flex items-center">
@@ -71,8 +111,7 @@
                 <p class="text-gray-600 mt-1">Please fill in your rental details for {{ $property->name }}</p>
             </div>
             
-            <!-- FORM FIX: Changed action to the correct POST route -->
-            <form method="POST" action="{{ route('bookings.apartment.store', $property) }}" class="p-6">
+            <form method="POST" action="{{ $routeExists ? route('bookings.apartment.store', $property) : '#' }}" class="p-6" id="rentalForm">
                 @csrf
                 
                 <!-- Property Summary -->
@@ -94,7 +133,7 @@
                             </div>
                         </div>
                         <div class="mt-4 md:mt-0">
-                            <div class="text-2xl font-bold text-gray-900">${{ number_format($property->total_price) }}</div>
+                            <div class="text-2xl font-bold text-gray-900">MMK{{ number_format($property->total_price) }}</div>
                             <div class="text-sm text-gray-500">per month</div>
                         </div>
                     </div>
@@ -143,7 +182,7 @@
                                     <input type="number" 
                                            name="custom_duration"
                                            id="custom_duration"
-                                           value="{{ old('custom_duration') }}"
+                                           value="{{ old('custom_duration', $property->min_stay_months) }}"
                                            min="{{ $property->min_stay_months }}"
                                            max="36"
                                            class="block w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 pr-12 @error('custom_duration') border-red-500 @enderror">
@@ -183,8 +222,8 @@
                         <p class="mt-1 text-sm text-gray-500">Maximum capacity: {{ $property->bedrooms * 2 }} persons</p>
                     </div>
 
-                                        <!-- Contact Information -->
-               
+                    <!-- Contact Information -->
+                    <div class="space-y-4">
                         <!-- Phone Number -->
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">
@@ -195,7 +234,7 @@
                                     <select name="phone_country_code" 
                                             id="phone_country_code"
                                             class="rounded-l-lg border-r-0 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 h-full py-2 px-3 bg-gray-50">
-                                        <option value="+95" {{ old('phone_country_code', '+95') == '+95' ? 'selected' : '' }}>+95 (Myanmar)</option>
+                                        <option value="+880" {{ old('phone_country_code', '+880') == '+880' ? 'selected' : '' }}>+880 (Bangladesh)</option>
                                         <option value="+1" {{ old('phone_country_code') == '+1' ? 'selected' : '' }}>+1 (USA)</option>
                                         <option value="+44" {{ old('phone_country_code') == '+44' ? 'selected' : '' }}>+44 (UK)</option>
                                         <option value="+65" {{ old('phone_country_code') == '+65' ? 'selected' : '' }}>+65 (Singapore)</option>
@@ -231,13 +270,19 @@
                             @enderror
                         </div>
 
-                        <!-- Emergency Contact -->
+                        <!-- Emergency Contact (Optional) -->
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">
-                    
-                            </div>
+                                Emergency Contact (Optional)
+                            </label>
+                            <input type="tel" 
+                                   name="emergency_contact"
+                                   id="emergency_contact"
+                                   value="{{ old('emergency_contact') }}"
+                                   class="block w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring-indigo-500"
+                                   placeholder="Emergency contact number">
                         </div>
-                
+                    </div>
 
                     <!-- Special Requirements -->
                     <div>
@@ -307,6 +352,7 @@
                         Back to Property
                     </a>
                     <button type="submit" 
+                            id="submitBtn"
                             class="inline-flex items-center px-6 py-3 border border-transparent shadow-sm text-base font-medium rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                         Proceed to Payment
                         <svg class="h-5 w-5 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -321,42 +367,119 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('rentalForm');
+    const submitBtn = document.getElementById('submitBtn');
     const durationSelect = document.getElementById('duration_months');
     const customDurationContainer = document.getElementById('custom_duration_container');
     const customDurationInput = document.getElementById('custom_duration');
+    const moveInDate = document.getElementById('move_in_date');
     
     // Show/hide custom duration field
-    durationSelect.addEventListener('change', function() {
-        if (this.value === 'custom') {
-            customDurationContainer.classList.remove('hidden');
-            if (customDurationInput) {
-                customDurationInput.value = '{{ $property->min_stay_months }}';
-                customDurationInput.required = true;
+    if (durationSelect) {
+        durationSelect.addEventListener('change', function() {
+            if (this.value === 'custom') {
+                customDurationContainer.classList.remove('hidden');
+                if (customDurationInput) {
+                    customDurationInput.value = '{{ $property->min_stay_months }}';
+                    customDurationInput.required = true;
+                }
+            } else {
+                customDurationContainer.classList.add('hidden');
+                if (customDurationInput) {
+                    customDurationInput.required = false;
+                }
             }
-        } else {
-            customDurationContainer.classList.add('hidden');
-            if (customDurationInput) {
-                customDurationInput.required = false;
-            }
-        }
-    });
+        });
+    }
     
     // Set minimum date to tomorrow
-    const today = new Date();
-    const tomorrow = new Date(today);
-    tomorrow.setDate(today.getDate() + 1);
-    
-    const dd = String(tomorrow.getDate()).padStart(2, '0');
-    const mm = String(tomorrow.getMonth() + 1).padStart(2, '0');
-    const yyyy = tomorrow.getFullYear();
-    
-    const minDate = yyyy + '-' + mm + '-' + dd;
-    document.getElementById('move_in_date').min = minDate;
+    if (moveInDate) {
+        const today = new Date();
+        const tomorrow = new Date(today);
+        tomorrow.setDate(today.getDate() + 1);
+        
+        const dd = String(tomorrow.getDate()).padStart(2, '0');
+        const mm = String(tomorrow.getMonth() + 1).padStart(2, '0');
+        const yyyy = tomorrow.getFullYear();
+        
+        moveInDate.min = yyyy + '-' + mm + '-' + dd;
+        
+        // Also set a default value if empty
+        if (!moveInDate.value) {
+            moveInDate.value = yyyy + '-' + mm + '-' + dd;
+        }
+    }
     
     // Trigger change event on page load if custom is selected
-    if (durationSelect.value === 'custom') {
+    if (durationSelect && durationSelect.value === 'custom') {
         durationSelect.dispatchEvent(new Event('change'));
     }
+    
+    // Form submission handling
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            console.log('Form submitting...');
+            
+            // Check if terms checkbox is checked
+            const termsCheckbox = document.getElementById('agree_terms');
+            if (termsCheckbox && !termsCheckbox.checked) {
+                e.preventDefault();
+                alert('You must agree to the terms and conditions');
+                return false;
+            }
+            
+            // Validate custom duration if selected
+            if (durationSelect.value === 'custom') {
+                const customVal = parseInt(customDurationInput.value);
+                const minStay = {{ $property->min_stay_months }};
+                if (customVal < minStay) {
+                    e.preventDefault();
+                    alert('Custom duration cannot be less than ' + minStay + ' months');
+                    return false;
+                }
+                if (customVal > 36) {
+                    e.preventDefault();
+                    alert('Custom duration cannot exceed 36 months');
+                    return false;
+                }
+            }
+            
+            // Disable submit button to prevent double submission
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = 'Processing... <svg class="animate-spin h-5 w-5 ml-2 inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>';
+            }
+            
+            // Log form data for debugging
+            const formData = new FormData(form);
+            console.log('Form data:');
+            for (let pair of formData.entries()) {
+                console.log(pair[0] + ': ' + pair[1]);
+            }
+            
+            return true;
+        });
+    }
+    
+    // Log any errors from Laravel
+    @if($errors->any())
+        console.log('Validation errors:', @json($errors->all()));
+    @endif
+    
+    // Check if route exists
+    @if(!$routeExists)
+        console.error('Route bookings.apartment.store does not exist!');
+    @endif
 });
 </script>
+
+<style>
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+.animate-spin {
+    animation: spin 1s linear infinite;
+}
+</style>
 @endsection

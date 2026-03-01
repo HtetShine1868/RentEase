@@ -156,23 +156,23 @@
                 <dl class="space-y-3">
                     <div class="flex justify-between text-sm">
                         <dt class="text-gray-500">Base Amount:</dt>
-                        <dd class="font-medium text-gray-900">₹{{ number_format($order->base_amount, 2) }}</dd>
+                        <dd class="font-medium text-gray-900">MMK{{ number_format($order->base_amount, 2) }}</dd>
                     </div>
                     <div class="flex justify-between text-sm">
                         <dt class="text-gray-500">Delivery Fee:</dt>
-                        <dd class="font-medium text-gray-900">₹{{ number_format($order->delivery_fee, 2) }}</dd>
+                        <dd class="font-medium text-gray-900">MMK{{ number_format($order->delivery_fee, 2) }}</dd>
                     </div>
                     <div class="flex justify-between text-sm border-t border-gray-200 pt-2">
                         <dt class="text-gray-700 font-medium">Total Amount:</dt>
-                        <dd class="font-bold text-gray-900">₹{{ number_format($order->total_amount, 2) }}</dd>
+                        <dd class="font-bold text-gray-900">MMK{{ number_format($order->total_amount, 2) }}</dd>
                     </div>
                     <div class="flex justify-between text-sm">
                         <dt class="text-gray-500">Commission ({{ number_format($order->commission_amount / $order->total_amount * 100, 1) ?? 8 }}%):</dt>
-                        <dd class="font-medium text-gray-900">₹{{ number_format($order->commission_amount, 2) }}</dd>
+                        <dd class="font-medium text-gray-900">MMK{{ number_format($order->commission_amount, 2) }}</dd>
                     </div>
                     <div class="flex justify-between text-sm bg-green-50 p-2 rounded">
                         <dt class="text-green-700 font-medium">Your Earnings:</dt>
-                        <dd class="font-bold text-green-700">₹{{ number_format($order->total_amount - $order->commission_amount, 2) }}</dd>
+                        <dd class="font-bold text-green-700">MMK{{ number_format($order->total_amount - $order->commission_amount, 2) }}</dd>
                     </div>
                 </dl>
             </div>
@@ -209,8 +209,8 @@
                             @endif
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $item->quantity }}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">₹{{ number_format($item->unit_price, 2) }}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">₹{{ number_format($item->total_price, 2) }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">MMK {{ number_format($item->unit_price, 2) }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">MMK {{ number_format($item->total_price, 2) }}</td>
                         <td class="px-6 py-4 text-sm text-gray-500 max-w-xs">
                             {{ $item->special_instructions ?? '-' }}
                         </td>
@@ -220,7 +220,7 @@
                 <tfoot class="bg-gray-50">
                     <tr>
                         <td colspan="3" class="px-6 py-4 text-right font-medium text-gray-500">Subtotal:</td>
-                        <td class="px-6 py-4 text-sm font-medium text-gray-900">₹{{ number_format($order->items->sum('total_price'), 2) }}</td>
+                        <td class="px-6 py-4 text-sm font-medium text-gray-900">MMK {{ number_format($order->items->sum('total_price'), 2) }}</td>
                         <td></td>
                     </tr>
                 </tfoot>

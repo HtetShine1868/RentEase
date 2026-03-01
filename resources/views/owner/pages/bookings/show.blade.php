@@ -240,15 +240,7 @@
             <div class="info-card">
                 <h2 class="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h2>
                 <div class="space-y-3">
-                    <button onclick="sendMessage()" 
-                            class="w-full px-4 py-2.5 border border-gray-300 rounded-lg font-medium hover:bg-gray-50 flex items-center justify-center">
-                        <i class="fas fa-envelope mr-2"></i> Send Message
-                    </button>
-                    
-                    <button onclick="printInvoice()" 
-                            class="w-full px-4 py-2.5 border border-gray-300 rounded-lg font-medium hover:bg-gray-50 flex items-center justify-center">
-                        <i class="fas fa-print mr-2"></i> Print Invoice
-                    </button>
+            
                     
                     @if($booking->status !== 'CANCELLED' && $booking->status !== 'CHECKED_OUT')
                     <button onclick="cancelBooking()" 

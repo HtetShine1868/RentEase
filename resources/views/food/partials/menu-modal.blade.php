@@ -153,24 +153,24 @@
                         <div class="space-y-2 text-sm">
                             <div class="flex justify-between">
                                 <span class="text-gray-600">Breakfast:</span>
-                                <span class="font-medium">৳150</span>
+                                <span class="font-medium">MMK 150</span>
                             </div>
                             <div class="flex justify-between">
                                 <span class="text-gray-600">Lunch:</span>
-                                <span class="font-medium">৳250</span>
+                                <span class="font-medium">MMK 250</span>
                             </div>
                             <div class="flex justify-between">
                                 <span class="text-gray-600">Dinner:</span>
-                                <span class="font-medium">৳250</span>
+                                <span class="font-medium">MMK 250</span>
                             </div>
                             <div class="border-t pt-2 mt-2">
                                 <div class="flex justify-between font-bold">
                                     <span>Daily Total:</span>
-                                    <span>৳650</span>
+                                    <span>MMK 650</span>
                                 </div>
                                 <div class="flex justify-between text-sm text-green-600">
                                     <span>After 10% discount:</span>
-                                    <span>৳585</span>
+                                    <span>MMK 585</span>
                                 </div>
                             </div>
                         </div>
@@ -193,11 +193,11 @@
                         <div class="space-y-2 text-sm">
                             <div class="flex justify-between">
                                 <span class="text-gray-600">5 days/week:</span>
-                                <span class="font-medium">৳2,925</span>
+                                <span class="font-medium">MMK 2,925</span>
                             </div>
                             <div class="flex justify-between">
                                 <span class="text-gray-600">7 days/week:</span>
-                                <span class="font-medium">৳4,095</span>
+                                <span class="font-medium">MMK 4,095</span>
                             </div>
                             <div class="border-t pt-2 mt-2">
                                 <div class="flex justify-between font-bold">
@@ -379,7 +379,7 @@
                         <div class="border-t pt-2 mt-2">
                             <div class="flex justify-between font-bold">
                                 <span>Monthly Total:</span>
-                                <span class="text-green-600">৳<span x-text="subscriptionPlan === 'daily' ? '17,550' : '12,675'"></span></span>
+                                <span class="text-green-600">MMK <span x-text="subscriptionPlan === 'daily' ? '17,550' : '12,675'"></span></span>
                             </div>
                             <p class="text-xs text-gray-500 mt-1">You save 10% on every meal</p>
                         </div>

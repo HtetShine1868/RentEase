@@ -71,7 +71,7 @@
             
             <div class="ml-2 flex-shrink-0">
                 <span class="text-sm font-bold text-gray-900">
-                    ₹{{ $item['price'] }}
+                    MMK{{ $item['price'] }}
                 </span>
             </div>
         </div>
@@ -144,7 +144,7 @@
             <div class="flex justify-between text-xs text-gray-500">
                 <span>Your earnings:</span>
                 <span class="font-medium text-green-600">
-                    ₹{{ number_format($item['price'] * 0.88, 2) }}
+                    MMK{{ number_format($item['price'] * 0.88, 2) }}
                 </span>
             </div>
         </div>

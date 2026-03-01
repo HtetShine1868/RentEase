@@ -158,7 +158,7 @@
                                         </div>
                                         <div class="mt-2 md:mt-0 text-right">
                                             <div class="text-2xl font-semibold text-gray-900">
-                                                ৳{{ number_format($rooms->first()->total_price) }}/month
+                                                MMK {{ number_format($rooms->first()->total_price) }}/month
                                             </div>
                                             <div class="text-sm text-green-600">
                                                 {{ $rooms->count() }} available
@@ -251,7 +251,7 @@
                         <div class="border-t border-gray-200 pt-2">
                             <div class="flex justify-between">
                                 <span class="text-lg font-medium text-gray-900">Total Price</span>
-                                <span class="text-2xl font-bold text-indigo-600">${{ number_format($property->total_price) }}</span>
+                                <span class="text-2xl font-bold text-indigo-600">MMK {{ number_format($property->total_price) }}</span>
                             </div>
                             <p class="text-sm text-gray-500 mt-1">per month</p>
                         </div>

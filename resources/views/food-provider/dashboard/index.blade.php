@@ -104,13 +104,10 @@
                 </div>
                 <div class="mt-4 grid grid-cols-2 gap-4">
                     <div class="text-center">
-                        <div class="text-2xl font-bold text-gray-900">₹15,240</div>
+                        <div class="text-2xl font-bold text-gray-900">MMK 15,240</div>
                         <div class="text-sm text-gray-500">This Month</div>
                     </div>
-                    <div class="text-center">
-                        <div class="text-2xl font-bold text-green-600">+18%</div>
-                        <div class="text-sm text-gray-500">Growth</div>
-                    </div>
+             
                 </div>
             </div>
         </div>
@@ -219,7 +216,7 @@
                                     </span>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                    ₹250
+                                    MMK 250
                                 </td>
                             </tr>
                             <!-- Order 2 -->
@@ -241,7 +238,7 @@
                                     </span>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                    ₹320
+                                    MMK 320
                                 </td>
                             </tr>
                             <!-- Order 3 -->
@@ -263,7 +260,7 @@
                                     </span>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                    ₹450
+                                    MMK 50
                                 </td>
                             </tr>
                             <!-- Order 4 -->
@@ -285,7 +282,7 @@
                                     </span>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                    ₹280
+                                    MMK 280
                                 </td>
                             </tr>
                         </tbody>

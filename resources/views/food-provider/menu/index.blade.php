@@ -98,7 +98,7 @@
                             Avg. Price
                         </dt>
                         <dd class="text-lg font-medium text-gray-900">
-                            ₹{{ number_format($averagePrice ?? 0, 2) }}
+                            MMK{{ number_format($averagePrice ?? 0, 2) }}
                         </dd>
                     </div>
                 </div>
@@ -245,7 +245,7 @@
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <div class="text-sm font-medium text-gray-900">₹{{ number_format($item->base_price, 2) }}</div>
                                 <div class="text-xs text-gray-500">
-                                    You get: ₹{{ number_format($item->base_price - ($item->base_price * ($item->commission_rate / 100)), 2) }}
+                                    You get: ${{ number_format($item->base_price - ($item->base_price * ($item->commission_rate / 100)), 2) }}
                                 </div>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">

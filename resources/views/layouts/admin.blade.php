@@ -487,25 +487,8 @@
                     <!-- Right Side -->
                     <div class="flex items-center space-x-4">
                         <!-- Search -->
-                        <div class="hidden md:block relative">
-                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <i class="fas fa-search text-gray-400"></i>
-                            </div>
-                            <input type="text" 
-                                   placeholder="Search..." 
-                                   class="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 w-64">
-                        </div>
+                   
 
-                        <!-- Notifications -->
-                        <button class="relative text-gray-400 hover:text-gray-500 focus:outline-none">
-                            <i class="fas fa-bell text-xl"></i>
-                            @php $unreadCount = \App\Models\Notification::where('user_id', Auth::id())->where('is_read', false)->count(); @endphp
-                            @if($unreadCount > 0)
-                                <span class="absolute -top-1 -right-1 h-4 w-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
-                                    {{ $unreadCount > 9 ? '9+' : $unreadCount }}
-                                </span>
-                            @endif
-                        </button>
 
                         <!-- User Menu -->
                         <div class="relative" x-data="{ userMenuOpen: false }">

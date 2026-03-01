@@ -122,15 +122,15 @@
                     </div>
                     <div>
                         <dt class="text-sm font-medium text-gray-500">Daily Price</dt>
-                        <dd class="mt-1 text-sm text-gray-900">₹{{ number_format($subscription->daily_price, 2) }}</dd>
+                        <dd class="mt-1 text-sm text-gray-900">MMK {{ number_format($subscription->daily_price, 2) }}</dd>
                     </div>
                     <div>
                         <dt class="text-sm font-medium text-gray-500">Total Price</dt>
-                        <dd class="mt-1 text-sm text-gray-900">₹{{ number_format($subscription->total_price, 2) }}</dd>
+                        <dd class="mt-1 text-sm text-gray-900">MMK {{ number_format($subscription->total_price, 2) }}</dd>
                     </div>
                     <div>
                         <dt class="text-sm font-medium text-gray-500">Discount</dt>
-                        <dd class="mt-1 text-sm text-gray-900">₹{{ number_format($subscription->discount_amount, 2) }}</dd>
+                        <dd class="mt-1 text-sm text-gray-900">MMK {{ number_format($subscription->discount_amount, 2) }}</dd>
                     </div>
                     <div>
                         <dt class="text-sm font-medium text-gray-500">Duration</dt>

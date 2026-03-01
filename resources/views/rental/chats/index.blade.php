@@ -4,6 +4,7 @@
 
 @section('content')
 <div class="min-h-screen bg-gray-50">
+    <!-- Header -->
     <div class="bg-white shadow">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
             <div class="flex items-center">
@@ -39,17 +40,35 @@
                 <div class="divide-y divide-gray-200">
                     @foreach($conversations as $conversation)
                         @php
-                            $otherUser = $conversation->user_id === Auth::id() ? $conversation->owner : $conversation->user;
+                            // Get the other participant safely
+                            $otherUser = null;
+                            $participants = $conversation->participants ?? collect();
+                            
+                            foreach ($participants as $participant) {
+                                if ($participant->user_id != Auth::id()) {
+                                    $otherUser = $participant->user;
+                                    break;
+                                }
+                            }
+                            
                             $lastMessage = $conversation->messages->first();
-                            $unreadCount = $conversation->messages()
-                                ->where('sender_id', '!=', Auth::id())
-                                ->where('is_read', false)
-                                ->count();
+                            $unreadCount = 0;
+                            
+                            // Calculate unread count safely
+                            if ($conversation->messages) {
+                                $unreadCount = $conversation->messages
+                                    ->where('sender_id', '!=', Auth::id())
+                                    ->where('is_read', false)
+                                    ->count();
+                            }
                         @endphp
-                        <a href="{{ route('rental.chat.show', $conversation->booking) }}" 
+                        
+                        @if($otherUser)
+                        <a href="{{ $conversation->booking ? route('rental.chat.show', $conversation->booking) : '#' }}" 
                            class="block hover:bg-gray-50 transition duration-150 {{ $unreadCount > 0 ? 'bg-blue-50' : '' }}">
                             <div class="px-6 py-4">
                                 <div class="flex items-center">
+                                    <!-- Avatar -->
                                     <div class="h-14 w-14 rounded-full bg-gradient-to-r from-indigo-500 to-blue-600 flex items-center justify-center text-white font-bold text-lg flex-shrink-0">
                                         @if($otherUser->avatar_url)
                                             <img src="{{ $otherUser->avatar_url }}" class="h-14 w-14 rounded-full object-cover">
@@ -69,9 +88,18 @@
                                                         </span>
                                                     @endif
                                                 </h3>
-                                                <p class="text-sm text-gray-600">
-                                                    {{ $conversation->property->name ?? 'Property' }} • {{ $conversation->property->city ?? '' }}
-                                                </p>
+                                                @if($conversation->property)
+                                                    <p class="text-sm text-gray-600">
+                                                        <i class="fas fa-home mr-1 text-indigo-500"></i>{{ $conversation->property->name ?? 'Property' }}
+                                                    </p>
+                                                @endif
+                                                @if($conversation->booking)
+                                                    <p class="text-xs text-gray-500 mt-1">
+                                                        <i class="far fa-calendar mr-1"></i>
+                                                        {{ \Carbon\Carbon::parse($conversation->booking->check_in)->format('M d') }} - 
+                                                        {{ \Carbon\Carbon::parse($conversation->booking->check_out)->format('M d, Y') }}
+                                                    </p>
+                                                @endif
                                             </div>
                                             @if($lastMessage)
                                                 <span class="text-xs text-gray-500">
@@ -87,11 +115,19 @@
                                                 @endif
                                                 {{ \Str::limit($lastMessage->message, 60) }}
                                             </p>
+                                        @else
+                                            <p class="text-sm text-gray-400 mt-1">No messages yet</p>
                                         @endif
+                                    </div>
+                                    
+                                    <!-- Arrow -->
+                                    <div class="ml-4">
+                                        <i class="fas fa-chevron-right text-gray-400"></i>
                                     </div>
                                 </div>
                             </div>
                         </a>
+                        @endif
                     @endforeach
                 </div>
             @endif

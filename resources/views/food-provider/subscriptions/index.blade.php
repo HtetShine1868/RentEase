@@ -87,7 +87,7 @@
                             </dt>
                             <dd class="flex items-baseline">
                                 <div class="text-2xl font-semibold text-gray-900">
-                                    ₹{{ number_format($monthlyRevenue, 2) }}
+                                    MMK {{ number_format($monthlyRevenue, 2) }}
                                 </div>
                             </dd>
                         </dl>
@@ -110,7 +110,7 @@
                             </dt>
                             <dd class="flex items-baseline">
                                 <div class="text-2xl font-semibold text-gray-900">
-                                    ₹{{ $activeCount > 0 ? number_format($monthlyRevenue / $activeCount, 2) : '0.00' }}
+                                    MMK {{ $activeCount > 0 ? number_format($monthlyRevenue / $activeCount, 2) : '0.00' }}
                                 </div>
                             </dd>
                         </dl>
@@ -305,10 +305,10 @@
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <div class="text-sm font-medium text-gray-900">
-                                    ₹{{ number_format($subscription->daily_price, 2) }}/day
+                                    MMK {{ number_format($subscription->daily_price, 2) }}/day
                                 </div>
                                 <div class="text-xs text-gray-500">
-                                    Total: ₹{{ number_format($subscription->total_price, 2) }}
+                                    Total: MMK {{ number_format($subscription->total_price, 2) }}
                                 </div>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">

@@ -96,7 +96,7 @@
                         <!-- Price Input -->
                         <div>
                             <label for="base_price" class="block text-sm font-medium text-gray-700">
-                                Price (₹) *
+                                Price (MMK) *
                             </label>
                             <div class="mt-1 relative rounded-md shadow-sm">
                                 <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -159,21 +159,21 @@
                             <div class="space-y-2">
                                 <div class="flex justify-between text-sm">
                                     <span class="text-gray-600">Customer Pays:</span>
-                                    <span class="font-medium" x-text="`₹${totalPrice.toFixed(2)}`"></span>
+                                    <span class="font-medium" x-text="`MMK{totalPrice.toFixed(2)}`"></span>
                                 </div>
                                 <div class="flex justify-between text-sm">
                                     <span class="text-gray-600">Platform Commission (<span x-text="`${commissionRate}%`"></span>):</span>
-                                    <span class="text-red-600" x-text="`-₹${commissionAmount.toFixed(2)}`"></span>
+                                    <span class="text-red-600" x-text="`-MMK{commissionAmount.toFixed(2)}`"></span>
                                 </div>
                                 <div class="border-t pt-2 flex justify-between font-medium">
                                     <span class="text-gray-900">You'll Receive:</span>
-                                    <span class="text-green-600" x-text="`₹${providerEarnings.toFixed(2)}`"></span>
+                                    <span class="text-green-600" x-text="`MMK{providerEarnings.toFixed(2)}`"></span>
                                 </div>
                             </div>
                             <div class="mt-3 pt-3 border-t border-gray-200">
                                 <div class="text-xs text-gray-500">
                                     <i class="fas fa-info-circle mr-1"></i>
-                                    Example: If price is ₹70 with 8% commission, you receive ₹64.40
+                                    Example: If price is MMK with 8% commission, you receive ₹64.40
                                 </div>
                             </div>
                         </div>

@@ -380,19 +380,19 @@
                             </div>
                             <div>
                                 <div class="text-xs text-gray-500">Base Price</div>
-                                <div class="text-lg font-semibold text-gray-900">৳{{ number_format($foodItem->base_price, 2) }}</div>
+                                <div class="text-lg font-semibold text-gray-900">MMK {{ number_format($foodItem->base_price, 2) }}</div>
                             </div>
                             <div>
                                 <div class="text-xs text-gray-500">Total Price</div>
-                                <div class="text-lg font-semibold text-gray-900">৳{{ number_format($foodItem->total_price, 2) }}</div>
+                                <div class="text-lg font-semibold text-gray-900">MMK{{ number_format($foodItem->total_price, 2) }}</div>
                             </div>
                             <div>
                                 <div class="text-xs text-gray-500">Your Earnings</div>
                                 <div class="text-lg font-semibold text-green-600">
-                                    ৳{{ number_format($foodItem->base_price * ($foodItem->sold_today ?? 0), 2) }}
+                                    MMK{{ number_format($foodItem->base_price * ($foodItem->sold_today ?? 0), 2) }}
                                 </div>
                             </div>
-                        </div>
+                        </div> 
                         
                         <!-- Recent Popularity -->
                         @if($foodItem->daily_quantity && $foodItem->daily_quantity > 0)

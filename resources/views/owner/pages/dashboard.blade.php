@@ -13,69 +13,7 @@
 
 @section('content')
 <div class="p-6">
-    <!-- Stats Cards - Using real data from controller -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <!-- Total Properties -->
-        <div class="bg-gradient-to-r from-[#174455] to-[#286b7f] rounded-xl shadow-lg text-white p-6">
-            <div class="flex items-center justify-between">
-                <div>
-                    <p class="text-sm opacity-90">Total Properties</p>
-                    <p class="text-3xl font-bold mt-2">{{ $totalProperties ?? 0 }}</p>
-                    <div class="flex space-x-2 mt-1 text-xs">
-                        <span class="bg-green-400 bg-opacity-20 px-2 py-0.5 rounded">Active: {{ $activeProperties ?? 0 }}</span>
-                        <span class="bg-yellow-400 bg-opacity-20 px-2 py-0.5 rounded">Pending: {{ $pendingProperties ?? 0 }}</span>
-                    </div>
-                </div>
-                <div class="h-12 w-12 rounded-full bg-[#ffdb9f] bg-opacity-20 flex items-center justify-center">
-                    <i class="fas fa-building text-xl" style="color: #ffdb9f;"></i>
-                </div>
-            </div>
-            <a href="{{ route('owner.properties.index') }}" class="text-sm opacity-90 hover:opacity-100 inline-flex items-center mt-4">
-                Manage Properties <i class="fas fa-arrow-right ml-1"></i>
-            </a>
-        </div>
 
-        <!-- Active Bookings -->
-        <div class="bg-gradient-to-r from-[#1f556b] to-[#2d7a94] rounded-xl shadow-lg text-white p-6">
-            <div class="flex items-center justify-between">
-                <div>
-                    <p class="text-sm opacity-90">Active Bookings</p>
-                    <p class="text-3xl font-bold mt-2">{{ $activeBookings ?? 0 }}</p>
-                    <div class="flex space-x-2 mt-1 text-xs">
-                        <span class="bg-blue-400 bg-opacity-20 px-2 py-0.5 rounded">Today: {{ $todayBookings ?? 0 }}</span>
-                        <span class="bg-purple-400 bg-opacity-20 px-2 py-0.5 rounded">Month: {{ $monthBookings ?? 0 }}</span>
-                    </div>
-                </div>
-                <div class="h-12 w-12 rounded-full bg-[#ffdb9f] bg-opacity-20 flex items-center justify-center">
-                    <i class="fas fa-calendar-check text-xl" style="color: #ffdb9f;"></i>
-                </div>
-            </div>
-            <a href="{{ route('owner.bookings.index') }}" class="text-sm opacity-90 hover:opacity-100 inline-flex items-center mt-4">
-                View All Bookings <i class="fas fa-arrow-right ml-1"></i>
-            </a>
-        </div>
-
-        <!-- Occupancy Rate -->
-        <div class="bg-gradient-to-r from-[#286b7f] to-[#3a8da6] rounded-xl shadow-lg text-white p-6">
-            <div class="flex items-center justify-between">
-                <div>
-                    <p class="text-sm opacity-90">Occupancy Rate</p>
-                    <p class="text-3xl font-bold mt-2">{{ $occupancyRate ?? 0 }}%</p>
-                    <div class="flex space-x-2 mt-1 text-xs">
-                        <span class="bg-green-400 bg-opacity-20 px-2 py-0.5 rounded">Booking Success: {{ $bookingSuccessRate ?? 0 }}%</span>
-                    </div>
-                </div>
-                <div class="h-12 w-12 rounded-full bg-[#ffdb9f] bg-opacity-20 flex items-center justify-center">
-                    <i class="fas fa-door-open text-xl" style="color: #ffdb9f;"></i>
-                </div>
-            </div>
-            <!-- FIXED: Changed to properties.index since rooms are managed within properties -->
-            <a href="{{ route('owner.properties.index') }}" class="text-sm opacity-90 hover:opacity-100 inline-flex items-center mt-4">
-                Manage Rooms <i class="fas fa-arrow-right ml-1"></i>
-            </a>
-        </div>
-
-    </div>
 
     <!-- Welcome Banner -->
     <div class="bg-gradient-to-r from-[#174455] to-[#286b7f] rounded-xl shadow-lg text-white p-8 mb-8">
@@ -148,7 +86,7 @@
                     </div>
                     <div class="ml-4">
                         <h4 class="text-lg font-medium text-[#174455]">Manage Bookings</h4>
-                        <p class="text-sm text-gray-500">{{ $pendingBookings ?? 0 }} pending bookings</p>
+                       
                     </div>
                 </div>
                 <span class="inline-flex items-center text-[#1f556b] hover:text-[#286b7f] font-medium">
@@ -164,7 +102,7 @@
                     </div>
                     <div class="ml-4">
                         <h4 class="text-lg font-medium text-[#174455]">Manage Rooms</h4>
-                        <p class="text-sm text-gray-500">{{ $occupancyRate ?? 0 }}% occupied</p>
+                     
                     </div>
                 </div>
                 <span class="inline-flex items-center text-[#286b7f] hover:text-[#174455] font-medium">
@@ -172,20 +110,7 @@
                 </span>
             </a>
 
-            <div class="bg-white border border-[#286b7f] border-opacity-20 rounded-xl p-6 hover:shadow-md transition-shadow">
-                <div class="flex items-center mb-4">
-                    <div class="h-12 w-12 rounded-lg bg-[#ffdb9f] bg-opacity-30 flex items-center justify-center">
-                        <i class="fas fa-star text-[#174455] text-xl"></i>
-                    </div>
-                    <div class="ml-4">
-                        <h4 class="text-lg font-medium text-[#174455]">Performance</h4>
-                        <p class="text-sm text-gray-500">{{ $averageRating ?? 0 }} avg rating ({{ $totalRatings ?? 0 }} reviews)</p>
-                    </div>
-                </div>
-                <span class="inline-flex items-center text-[#174455] hover:text-[#286b7f] font-medium">
-                    View Reports <i class="fas fa-arrow-right ml-2"></i>
-                </span>
-            </div>
+
         </div>
     </div>
 
@@ -337,27 +262,27 @@
         <div class="mt-8 bg-gradient-to-r from-[#174455] to-[#286b7f] bg-opacity-5 border border-[#286b7f] border-opacity-20 rounded-xl p-6">
             <div class="flex items-center justify-between">
                 <div>
-                    <h3 class="text-lg font-semibold text-[#174455] mb-2">Complete Your Profile</h3>
-                    <p class="text-gray-600">Complete your profile to build trust with potential guests</p>
+                    <h3 class="ttext-[#ffdb9f] mb-4">Complete Your Profile</h3>
+                    <p class="text-[#ffdb9f] mb-4">Complete your profile to build trust with potential guests</p>
                     
                     <div class="mt-4 space-y-3">
                         @if(!$user->phone)
                             <div class="flex items-center">
                                 <i class="fas fa-phone text-[#286b7f] mr-3"></i>
-                                <span class="text-gray-700">Add phone number</span>
+                                <span class="text-[#ffdb9f] mb-4">Add phone number</span>
                             </div>
                         @endif
                         
                         @if(!$user->gender)
                             <div class="flex items-center">
                                 <i class="fas fa-venus-mars text-[#286b7f] mr-3"></i>
-                                <span class="text-gray-700">Specify gender</span>
+                                <span class="text-[#ffdb9f] mb-4">Specify gender</span>
                             </div>
                         @endif
                         
                         <div class="flex items-center">
                             <i class="fas fa-map-marker-alt text-[#286b7f] mr-3"></i>
-                            <span class="text-gray-700">Add business address</span>
+                            <span class="text-[#ffdb9f] mb-4">Add business address</span>
                         </div>
                     </div>
                 </div>

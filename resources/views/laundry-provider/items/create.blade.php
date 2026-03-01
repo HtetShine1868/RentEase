@@ -1,145 +1,2071 @@
-@extends('laundry-provider.layouts.provider')
+@extends('owner.layout.owner-layout')
 
-@section('title', 'Add New Item')
-@section('subtitle', 'Create a new laundry item')
+@section('title', 'Add New Property - RentEase')
+@section('page-title', 'Add New Property')
+@section('page-subtitle', 'Create a new hostel or apartment listing')
+
+@push('styles')
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+<style>
+/* Form step transitions */
+.form-step {
+    transition: all 0.3s ease;
+}
+
+/* Custom checkbox styles */
+input[type="checkbox"]:checked {
+    background-color: #7c3aed;
+    border-color: #7c3aed;
+}
+
+/* Image upload hover effect */
+.border-dashed:hover {
+    border-color: #7c3aed;
+    background-color: #faf5ff;
+}
+
+/* Step indicator animation */
+.step-completed {
+    animation: stepComplete 0.5s ease;
+}
+
+@keyframes stepComplete {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+}
+
+/* Map styles */
+#location-map { 
+    height: 400px; 
+    width: 100%; 
+    border-radius: 0.5rem; 
+    z-index: 1; 
+}
+.leaflet-container { 
+    z-index: 1; 
+}
+.map-modal { 
+    z-index: 9999; 
+}
+.leaflet-control-attribution {
+    font-size: 8px;
+    background: rgba(255,255,255,0.8);
+    padding: 2px 5px;
+    border-radius: 3px;
+}
+.loading-spinner {
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid #7c3aed;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    animation: spin 1s linear infinite;
+    margin: 0 auto;
+}
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+</style>
+@endpush
 
 @section('content')
-<div class="max-w-2xl mx-auto">
-    <div class="bg-white rounded-lg shadow-sm p-6">
-        <form action="{{ route('laundry-provider.items.store') }}" method="POST">
+<div class="space-y-6">
+    <!-- Progress Steps -->
+    <div class="bg-white rounded-xl border border-gray-200 p-6">
+        <div class="mb-8">
+            <h2 class="text-xl font-bold text-gray-900 mb-2">Create New Property</h2>
+            <p class="text-gray-600">Fill in all required details to list your property</p>
+        </div>
+        
+        <!-- Step Indicator -->
+        <div class="mb-10">
+            <div class="flex items-center justify-between">
+                <div class="flex-1">
+                    <div class="flex items-center">
+                        <!-- Step 1 -->
+                        <div class="flex flex-col items-center">
+                            <div class="w-10 h-10 rounded-full bg-purple-600 text-white flex items-center justify-center font-bold">
+                                1
+                            </div>
+                            <span class="text-sm font-medium text-purple-600 mt-2">Basic Info</span>
+                        </div>
+                        <div class="flex-1 h-1 bg-purple-200 mx-4"></div>
+                        
+                        <!-- Step 2 -->
+                        <div class="flex flex-col items-center">
+                            <div class="w-10 h-10 rounded-full bg-purple-600 text-white flex items-center justify-center font-bold">
+                                2
+                            </div>
+                            <span class="text-sm font-medium text-purple-600 mt-2">Location</span>
+                        </div>
+                        <div class="flex-1 h-1 bg-purple-200 mx-4"></div>
+                        
+                        <!-- Step 3: ROOMS -->
+                        <div class="flex flex-col items-center">
+                            <div class="w-10 h-10 rounded-full bg-gray-200 text-gray-400 flex items-center justify-center font-bold">
+                                3
+                            </div>
+                            <span class="text-sm font-medium text-gray-500 mt-2">Rooms</span>
+                        </div>
+                        <div class="flex-1 h-1 bg-gray-200 mx-4"></div>
+                        
+                        <!-- Step 4: PRICING -->
+                        <div class="flex flex-col items-center">
+                            <div class="w-10 h-10 rounded-full bg-gray-200 text-gray-400 flex items-center justify-center font-bold">
+                                4
+                            </div>
+                            <span class="text-sm font-medium text-gray-500 mt-2">Pricing</span>
+                        </div>
+                        <div class="flex-1 h-1 bg-gray-200 mx-4"></div>
+                        
+                        <!-- Step 5 -->
+                        <div class="flex flex-col items-center">
+                            <div class="w-10 h-10 rounded-full bg-gray-200 text-gray-400 flex items-center justify-center font-bold">
+                                5
+                            </div>
+                            <span class="text-sm font-medium text-gray-500 mt-2">Amenities</span>
+                        </div>
+                        <div class="flex-1 h-1 bg-gray-200 mx-4"></div>
+                        
+                        <!-- Step 6 -->
+                        <div class="flex flex-col items-center">
+                            <div class="w-10 h-10 rounded-full bg-gray-200 text-gray-400 flex items-center justify-center font-bold">
+                                6
+                            </div>
+                            <span class="text-sm font-medium text-gray-500 mt-2">Images</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Form -->
+        <form id="propertyForm" action="{{ route('owner.properties.store') }}" method="POST" enctype="multipart/form-data">
             @csrf
             
-            <div class="space-y-6">
-                {{-- Item Name --}}
-                <div>
-                    <label for="item_name" class="block text-sm font-medium text-gray-700 mb-1">
-                        Item Name <span class="text-red-500">*</span>
-                    </label>
-                    <input type="text" name="item_name" id="item_name" value="{{ old('item_name') }}" required
-                           class="w-full rounded-lg border-gray-300 shadow-sm focus:border-[#174455] focus:ring-[#174455] @error('item_name') border-red-500 @enderror"
-                           placeholder="e.g., T-Shirt, Jeans, Bedsheet">
-                    @error('item_name')
-                        <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
-                    @enderror
-                </div>
+            <!-- Hidden field for property type to track step 4 content -->
+            <input type="hidden" id="propertyTypeHidden" name="type" value="{{ old('type', 'HOSTEL') }}">
+            
+            <!-- Step 1: Basic Information -->
+            <div class="mb-10" id="step1">
+                <h3 class="text-lg font-semibold text-gray-900 mb-6 pb-4 border-b border-gray-200">Basic Information</h3>
                 
-                {{-- Item Type --}}
-                <div>
-                    <label for="item_type" class="block text-sm font-medium text-gray-700 mb-1">
-                        Item Type <span class="text-red-500">*</span>
-                    </label>
-                    <select name="item_type" id="item_type" required
-                            class="w-full rounded-lg border-gray-300 shadow-sm focus:border-[#174455] focus:ring-[#174455] @error('item_type') border-red-500 @enderror">
-                        <option value="">Select Type</option>
-                        @foreach($itemTypes as $value => $label)
-                            <option value="{{ $value }}" {{ old('item_type') == $value ? 'selected' : '' }}>{{ $label }}</option>
-                        @endforeach
-                    </select>
-                    @error('item_type')
-                        <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
-                    @enderror
-                </div>
-                
-                {{-- Description --}}
-                <div>
-                    <label for="description" class="block text-sm font-medium text-gray-700 mb-1">
-                        Description
-                    </label>
-                    <textarea name="description" id="description" rows="3"
-                              class="w-full rounded-lg border-gray-300 shadow-sm focus:border-[#174455] focus:ring-[#174455] @error('description') border-red-500 @enderror"
-                              placeholder="Optional description or notes">{{ old('description') }}</textarea>
-                    @error('description')
-                        <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
-                    @enderror
-                </div>
-                
-                {{-- Pricing --}}
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Property Type -->
                     <div>
-                        <label for="base_price" class="block text-sm font-medium text-gray-700 mb-1">
-                            Base Price ($) <span class="text-red-500">*</span>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            Property Type <span class="text-red-500">*</span>
                         </label>
-                        <div class="relative">
-                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <span class="text-gray-500">$</span>
-                            </div>
-                            <input type="number" name="base_price" id="base_price" value="{{ old('base_price') }}" required
-                                   step="0.01" min="0"
-                                   class="pl-8 w-full rounded-lg border-gray-300 shadow-sm focus:border-[#174455] focus:ring-[#174455] @error('base_price') border-red-500 @enderror"
-                                   placeholder="0.00">
+                        <div class="grid grid-cols-2 gap-4">
+                            <label class="relative cursor-pointer">
+                                <input type="radio" name="type" value="HOSTEL" class="sr-only peer property-type" 
+                                       data-type="hostel" required {{ old('type') == 'HOSTEL' ? 'checked' : 'checked' }}>
+                                <div class="p-4 border-2 border-gray-200 rounded-lg peer-checked:border-purple-500 peer-checked:bg-purple-50 transition-all">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center">
+                                            <i class="fas fa-bed text-purple-600"></i>
+                                        </div>
+                                        <div>
+                                            <p class="font-medium text-gray-900">Hostel</p>
+                                            <p class="text-xs text-gray-500">Room-based rental</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </label>
+                            <label class="relative cursor-pointer">
+                                <input type="radio" name="type" value="APARTMENT" class="sr-only peer property-type" 
+                                       data-type="apartment" required {{ old('type') == 'APARTMENT' ? 'selected' : '' }}>
+                                <div class="p-4 border-2 border-gray-200 rounded-lg peer-checked:border-purple-500 peer-checked:bg-purple-50 transition-all">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
+                                            <i class="fas fa-building text-blue-600"></i>
+                                        </div>
+                                        <div>
+                                            <p class="font-medium text-gray-900">Apartment</p>
+                                            <p class="text-xs text-gray-500">Whole unit rental</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </label>
                         </div>
-                        @error('base_price')
-                            <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                        @error('type')
+                            <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                         @enderror
+                    </div>
+
+                    <!-- Property Name -->
+                    <div>
+                        <label for="name" class="block text-sm font-medium text-gray-700 mb-2">
+                            Property Name <span class="text-red-500">*</span>
+                        </label>
+                        <input type="text" 
+                               id="name"
+                               name="name"
+                               value="{{ old('name') }}"
+                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors"
+                               placeholder="e.g., Sunshine Apartments"
+                               required>
+                        @error('name')
+                            <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <!-- Description -->
+                    <div class="md:col-span-2">
+                        <label for="description" class="block text-sm font-medium text-gray-700 mb-2">
+                            Description <span class="text-red-500">*</span>
+                        </label>
+                        <textarea id="description"
+                                  name="description"
+                                  rows="4" 
+                                  class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors"
+                                  placeholder="Describe your property, features, and what makes it special..."
+                                  required>{{ old('description') }}</textarea>
+                        @error('description')
+                            <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <!-- Bedrooms & Bathrooms -->
+                    <div>
+                        <label for="bedrooms" class="block text-sm font-medium text-gray-700 mb-2">
+                            Number of Bedrooms <span class="text-red-500">*</span>
+                        </label>
+                        <select id="bedrooms" name="bedrooms" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors" required>
+                            <option value="">Select</option>
+                            @for($i = 1; $i <= 10; $i++)
+                                <option value="{{ $i }}" {{ old('bedrooms') == $i ? 'selected' : '' }}>
+                                    {{ $i }} {{ $i == 1 ? 'Bedroom' : 'Bedrooms' }}
+                                </option>
+                            @endfor
+                            <option value="11" {{ old('bedrooms') == 11 ? 'selected' : '' }}>11+ Bedrooms</option>
+                        </select>
+                        @error('bedrooms')
+                            <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <div>
+                        <label for="bathrooms" class="block text-sm font-medium text-gray-700 mb-2">
+                            Number of Bathrooms <span class="text-red-500">*</span>
+                        </label>
+                        <select id="bathrooms" name="bathrooms" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors" required>
+                            <option value="">Select</option>
+                            @for($i = 1; $i <= 10; $i++)
+                                <option value="{{ $i }}" {{ old('bathrooms') == $i ? 'selected' : '' }}>
+                                    {{ $i }} {{ $i == 1 ? 'Bathroom' : 'Bathrooms' }}
+                                </option>
+                            @endfor
+                            <option value="11" {{ old('bathrooms') == 11 ? 'selected' : '' }}>11+ Bathrooms</option>
+                        </select>
+                        @error('bathrooms')
+                            <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <!-- Gender Policy -->
+                    <div>
+                        <label for="gender_policy" class="block text-sm font-medium text-gray-700 mb-2">
+                            Gender Policy <span class="text-red-500">*</span>
+                        </label>
+                        <select id="gender_policy" name="gender_policy" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors" required>
+                            <option value="">Select</option>
+                            <option value="MALE_ONLY" {{ old('gender_policy') == 'MALE_ONLY' ? 'selected' : '' }}>Male Only</option>
+                            <option value="FEMALE_ONLY" {{ old('gender_policy') == 'FEMALE_ONLY' ? 'selected' : '' }}>Female Only</option>
+                            <option value="MIXED" {{ old('gender_policy') == 'MIXED' ? 'selected' : '' }}>Mixed</option>
+                        </select>
+                        @error('gender_policy')
+                            <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <!-- Unit Size (Apartment only) -->
+                    <div id="unitSizeContainer" class="{{ old('type') == 'APARTMENT' ? '' : 'hidden' }}">
+                        <label for="unit_size" class="block text-sm font-medium text-gray-700 mb-2">
+                            Unit Size (sqft) <span id="unitSizeRequired" class="text-red-500 hidden">*</span>
+                        </label>
+                        <input type="number" 
+                               id="unit_size"
+                               name="unit_size"
+                               value="{{ old('unit_size') }}"
+                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors"
+                               placeholder="e.g., 1200"
+                               min="1">
+                        @error('unit_size')
+                            <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <!-- Furnishing Status -->
+                    <div>
+                        <label for="furnishing_status" class="block text-sm font-medium text-gray-700 mb-2">
+                            Furnishing Status
+                        </label>
+                        <select id="furnishing_status" name="furnishing_status" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors">
+                            <option value="">Select</option>
+                            <option value="FURNISHED" {{ old('furnishing_status') == 'FURNISHED' ? 'selected' : '' }}>Furnished</option>
+                            <option value="SEMI_FURNISHED" {{ old('furnishing_status') == 'SEMI_FURNISHED' ? 'selected' : '' }}>Semi-Furnished</option>
+                            <option value="UNFURNISHED" {{ old('furnishing_status') == 'UNFURNISHED' ? 'selected' : '' }}>Unfurnished</option>
+                        </select>
+                        @error('furnishing_status')
+                            <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                        @enderror
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 2: Location with Map Picker (EXACTLY LIKE LAUNDRY) -->
+            <div class="mb-10 hidden" id="step2">
+                <h3 class="text-lg font-semibold text-gray-900 mb-6 pb-4 border-b border-gray-200">Location Details</h3>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Address -->
+                    <div class="md:col-span-2">
+                        <label for="address" class="block text-sm font-medium text-gray-700 mb-2">
+                            Full Address <span class="text-red-500">*</span>
+                        </label>
+                        <input type="text" 
+                            id="address"
+                            name="address"
+                            value="{{ old('address') }}"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors"
+                            placeholder="Street address, apartment, suite, etc."
+                            required>
+                        @error('address')
+                            <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <!-- City & Area -->
+                    <div>
+                        <label for="city" class="block text-sm font-medium text-gray-700 mb-2">
+                            City <span class="text-red-500">*</span>
+                        </label>
+                        <input type="text" 
+                            id="city"
+                            name="city"
+                            value="{{ old('city') }}"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors"
+                            placeholder="e.g., Dhaka"
+                            required>
+                        @error('city')
+                            <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <div>
+                        <label for="area" class="block text-sm font-medium text-gray-700 mb-2">
+                            Area/Neighborhood <span class="text-red-500">*</span>
+                        </label>
+                        <input type="text" 
+                            id="area"
+                            name="area"
+                            value="{{ old('area') }}"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors"
+                            placeholder="e.g., Dhanmondi"
+                            required>
+                        @error('area')
+                            <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <!-- Map Location Picker - EXACTLY LIKE LAUNDRY -->
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            Property Location on Map <span class="text-red-500">*</span>
+                        </label>
+                        <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                            <div class="flex items-center justify-between mb-3">
+                                <div class="flex items-center space-x-4">
+                                    <div>
+                                        <span class="text-xs text-gray-500">Latitude</span>
+                                        <p class="font-medium" id="latitude-display">{{ old('latitude', '23.810331') }}</p>
+                                    </div>
+                                    <div>
+                                        <span class="text-xs text-gray-500">Longitude</span>
+                                        <p class="font-medium" id="longitude-display">{{ old('longitude', '90.412521') }}</p>
+                                    </div>
+                                </div>
+                                <button type="button" 
+                                        id="openMapBtn"
+                                        class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500">
+                                    <i class="fas fa-map-marker-alt mr-2"></i>
+                                    Choose on Map
+                                </button>
+                            </div>
+                            
+                            <!-- Hidden fields for coordinates -->
+                            <input type="hidden" name="latitude" id="latitude" value="{{ old('latitude', '23.810331') }}">
+                            <input type="hidden" name="longitude" id="longitude" value="{{ old('longitude', '90.412521') }}">
+                            
+                            <!-- Mini Map Preview -->
+                            <div id="mini-map" class="h-40 w-full rounded-lg border border-gray-300 mt-2"></div>
+                            <p class="mt-2 text-xs text-gray-500">
+                                <i class="fas fa-info-circle mr-1"></i>
+                                Click "Choose on Map" to set your property location precisely. Drag the marker to adjust.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 3: Rooms Configuration -->
+            <div class="mb-10 hidden" id="step3">
+                <h3 class="text-lg font-semibold text-gray-900 mb-6 pb-4 border-b border-gray-200">Room Configuration</h3>
+                
+                <!-- Apartment Message -->
+                <div id="apartmentMessage" class="hidden bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
+                    <div class="flex items-start">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-info-circle text-blue-500 text-xl"></i>
+                        </div>
+                        <div class="ml-3">
+                            <h4 class="font-medium text-blue-900">Apartment Property</h4>
+                            <p class="text-blue-700 mt-1">
+                                For apartments, the property is rented as a whole unit. No room configuration is needed.
+                                The pricing set in the next step applies to the entire apartment.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Hostel Rooms Configuration -->
+                <div id="hostelRoomsSection" class="hidden">
+                    <div class="flex justify-between items-center mb-6">
+                        <h4 class="font-medium text-gray-900">Room Types & Pricing</h4>
+                        <button type="button" id="addRoomBtn" class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors">
+                            <i class="fas fa-plus mr-2"></i> Add Room Type
+                        </button>
+                    </div>
+
+                    <!-- Rooms Container -->
+                    <div id="roomsContainer" class="space-y-6">
+                        @if(old('rooms'))
+                            @foreach(old('rooms') as $index => $room)
+                                <div class="border border-gray-200 rounded-lg p-6 bg-white room-item">
+                                    <div class="flex justify-between items-start mb-4">
+                                        <h5 class="font-medium text-gray-900">Room Type <span class="room-index">{{ $index + 1 }}</span></h5>
+                                        <button type="button" class="text-red-500 hover:text-red-700 remove-room-btn">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
+                                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                                        <!-- Room Number -->
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                                Room Number <span class="text-red-500">*</span>
+                                            </label>
+                                            <input type="text" 
+                                                   name="rooms[{{ $index }}][room_number]"
+                                                   value="{{ $room['room_number'] ?? '' }}"
+                                                   class="room-number-input w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors"
+                                                   placeholder="101"
+                                                   required>
+                                        </div>
+
+                                        <!-- Room Type -->
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                                Room Type <span class="text-red-500">*</span>
+                                            </label>
+                                            <select name="rooms[{{ $index }}][room_type]" class="room-type-select w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors" required>
+                                                <option value="">Select</option>
+                                                <option value="SINGLE" {{ ($room['room_type'] ?? '') == 'SINGLE' ? 'selected' : '' }}>Single</option>
+                                                <option value="DOUBLE" {{ ($room['room_type'] ?? '') == 'DOUBLE' ? 'selected' : '' }}>Double</option>
+                                                <option value="TRIPLE" {{ ($room['room_type'] ?? '') == 'TRIPLE' ? 'selected' : '' }}>Triple</option>
+                                                <option value="QUAD" {{ ($room['room_type'] ?? '') == 'QUAD' ? 'selected' : '' }}>Quad</option>
+                                                <option value="DORM" {{ ($room['room_type'] ?? '') == 'DORM' ? 'selected' : '' }}>Dorm</option>
+                                            </select>
+                                        </div>
+
+                                        <!-- Floor Number -->
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                                Floor Number
+                                            </label>
+                                            <input type="number" 
+                                                   name="rooms[{{ $index }}][floor_number]"
+                                                   value="{{ $room['floor_number'] ?? '' }}"
+                                                   min="0"
+                                                   class="floor-number-input w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors"
+                                                   placeholder="1">
+                                        </div>
+
+                                        <!-- Capacity -->
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                                Capacity <span class="text-red-500">*</span>
+                                            </label>
+                                            <input type="number" 
+                                                   name="rooms[{{ $index }}][capacity]"
+                                                   value="{{ $room['capacity'] ?? '' }}"
+                                                   min="1"
+                                                   class="capacity-input w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors"
+                                                   placeholder="2"
+                                                   required>
+                                        </div>
+
+                                        <!-- Base Price -->
+                                        <div class="md:col-span-2">
+                                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                                Monthly Price ($) <span class="text-red-500">*</span>
+                                            </label>
+                                            <div class="relative">
+                                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                                    <span class="text-gray-500">$</span>
+                                                </div>
+                                                <input type="number" 
+                                                       name="rooms[{{ $index }}][base_price]"
+                                                       value="{{ $room['base_price'] ?? '' }}"
+                                                       step="0.01"
+                                                       min="0"
+                                                       class="room-price-input w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors"
+                                                       placeholder="0.00"
+                                                       required>
+                                            </div>
+                                        </div>
+
+                                        <!-- Room Status -->
+                                        <div class="md:col-span-2">
+                                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                                Room Status
+                                            </label>
+                                            <select name="rooms[{{ $index }}][status]" class="room-status-select w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors">
+                                                <option value="AVAILABLE" {{ ($room['status'] ?? 'AVAILABLE') == 'AVAILABLE' ? 'selected' : '' }}>Available</option>
+                                                <option value="MAINTENANCE" {{ ($room['status'] ?? '') == 'MAINTENANCE' ? 'selected' : '' }}>Maintenance</option>
+                                                <option value="RESERVED" {{ ($room['status'] ?? '') == 'RESERVED' ? 'selected' : '' }}>Reserved</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                            @endforeach
+                        @endif
+                    </div>
+
+                    <!-- Hostel Total Price Display -->
+                    <div id="hostelTotalPriceContainer" class="hidden mt-8 bg-green-50 border border-green-200 rounded-lg p-6">
+                        <h4 class="font-medium text-green-900 mb-4">Hostel Room Summary</h4>
+                        <div class="space-y-2">
+                            <div class="flex justify-between items-center">
+                                <span class="text-gray-700">Total Rooms Added:</span>
+                                <span id="totalRoomsCount" class="font-medium">0</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-gray-700">Total Monthly Revenue (all rooms):</span>
+                                <span id="totalMonthlyRevenue" class="font-medium text-green-600">৳0.00</span>
+                            </div>
+                            <div class="pt-3 border-t border-green-200">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-lg font-semibold text-gray-900">Proceed to Pricing to see commission details</span>
+                                    <span class="text-purple-600 font-medium">Next Step →</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- No rooms message -->
+                    <div id="noRoomsMessage" class="{{ old('rooms') ? 'hidden' : 'block' }} text-center py-8 border-2 border-dashed border-gray-300 rounded-lg">
+                        <i class="fas fa-bed text-gray-400 text-4xl mb-3"></i>
+                        <p class="text-gray-600 font-medium">No rooms added yet</p>
+                        <p class="text-gray-500">Click "Add Room Type" to start adding rooms</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 4: Pricing with Non-editable Commission -->
+            <div class="mb-10 hidden" id="step4">
+                <h3 class="text-lg font-semibold text-gray-900 mb-6 pb-4 border-b border-gray-200">Pricing & Commission</h3>
+                
+                <!-- Apartment Pricing Section -->
+                <div id="apartmentPricingSection" class="hidden">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Monthly Price -->
+                        <div>
+                            <label for="base_price" class="block text-sm font-medium text-gray-700 mb-2">
+                                Monthly Price ($) <span class="text-red-500">*</span>
+                            </label>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <span class="text-gray-500">$</span>
+                                </div>
+                                <input type="number" 
+                                       id="base_price"
+                                       name="base_price"
+                                       value="{{ old('base_price') }}"
+                                       step="0.01"
+                                       min="0"
+                                       class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors"
+                                       placeholder="0.00"
+                                       required>
+                            </div>
+                            @error('base_price')
+                                <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <!-- Commission Rate (Non-editable) -->
+                        <div>
+                            <label for="commission_rate" class="block text-sm font-medium text-gray-700 mb-2">
+                                Commission Rate (%)
+                            </label>
+                            <div class="relative">
+                                <input type="number" 
+                                       id="commission_rate"
+                                       name="commission_rate"
+                                       value="{{ old('commission_rate') }}"
+                                       step="0.01"
+                                       min="0"
+                                       max="100"
+                                       readonly
+                                       class="w-full px-4 py-3 border border-gray-300 bg-gray-100 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors cursor-not-allowed"
+                                       placeholder="Auto-filled">
+                                <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                                    <span class="text-gray-500">%</span>
+                                </div>
+                            </div>
+                            <p class="text-xs text-gray-500 mt-1 flex items-center">
+                                <i class="fas fa-lock text-gray-400 mr-1"></i> 
+                                Set by admin based on property type
+                            </p>
+                            @error('commission_rate')
+                                <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <!-- Commission Display -->
+                        <div class="md:col-span-2 bg-purple-50 border border-purple-200 rounded-lg p-6">
+                            <div class="flex items-center justify-between mb-4">
+                                <div>
+                                    <h4 class="font-medium text-purple-900">Apartment Commission Breakdown</h4>
+                                    <p class="text-sm text-purple-600">Based on your property type</p>
+                                </div>
+                                <div class="text-right">
+                                    <p class="text-sm text-gray-600">Commission Rate</p>
+                                    <p id="apartmentCommissionRateDisplay" class="text-xl font-bold text-purple-700">3%</p>
+                                    <p class="text-xs text-gray-500">(Admin configured)</p>
+                                </div>
+                            </div>
+                            
+                            <div class="space-y-3">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-gray-700">Monthly Price</span>
+                                    <span id="apartmentMonthlyPriceDisplay" class="font-medium">৳0.00</span>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-gray-700">Commission Amount</span>
+                                    <span id="apartmentCommissionAmountDisplay" class="font-medium text-red-600">৳0.00</span>
+                                </div>
+                                <div class="pt-3 border-t border-purple-200">
+                                    <div class="flex justify-between items-center">
+                                        <span class="text-lg font-semibold text-gray-900">Total Price (with commission)</span>
+                                        <span id="apartmentTotalPriceDisplay" class="text-2xl font-bold text-green-600">৳0.00</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Hostel Pricing Section -->
+                <div id="hostelPricingSection" class="hidden">
+                    <div class="bg-purple-50 border border-purple-200 rounded-lg p-6 mb-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <div>
+                                <h4 class="font-medium text-purple-900">Hostel Room Summary</h4>
+                                <p class="text-sm text-purple-600">Based on rooms added in previous step</p>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-sm text-gray-600">Commission Rate</p>
+                                <p id="hostelCommissionRateDisplay" class="text-xl font-bold text-purple-700">5%</p>
+                                <p class="text-xs text-gray-500">(Admin configured)</p>
+                            </div>
+                        </div>
+                        
+                        <div class="space-y-3">
+                            <div class="flex justify-between items-center">
+                                <span class="text-gray-700">Total Rooms</span>
+                                <span id="hostelTotalRoomsFinal" class="font-medium">0</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-gray-700">Total Monthly Revenue (all rooms)</span>
+                                <span id="hostelTotalRevenueFinal" class="font-medium text-green-600">৳0.00</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-gray-700">Commission Amount (5%)</span>
+                                <span id="hostelCommissionFinal" class="font-medium text-red-600">৳0.00</span>
+                            </div>
+                            <div class="pt-3 border-t border-purple-200">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-lg font-semibold text-gray-900">Total With Commission</span>
+                                    <span id="hostelTotalWithCommissionFinal" class="text-2xl font-bold text-green-600">৳0.00</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Hidden field for hostel total price -->
+                    <input type="hidden" id="hostel_total_revenue" name="hostel_total_revenue" value="0">
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                    <!-- Minimum Stay (Apartment only) -->
+                    <div id="minStayContainer" class="hidden">
+                        <label for="min_stay_months" class="block text-sm font-medium text-gray-700 mb-2">
+                            Minimum Stay (Months)
+                        </label>
+                        <select id="min_stay_months" name="min_stay_months" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors">
+                            <option value="1" {{ old('min_stay_months', 1) == 1 ? 'selected' : '' }}>1 Month</option>
+                            <option value="3" {{ old('min_stay_months', 1) == 3 ? 'selected' : '' }}>3 Months</option>
+                            <option value="6" {{ old('min_stay_months', 1) == 6 ? 'selected' : '' }}>6 Months</option>
+                            <option value="12" {{ old('min_stay_months', 1) == 12 ? 'selected' : '' }}>12 Months</option>
+                        </select>
+                        @error('min_stay_months')
+                            <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <!-- Deposit Months -->
+                    <div>
+                        <label for="deposit_months" class="block text-sm font-medium text-gray-700 mb-2">
+                            Security Deposit (Months)
+                        </label>
+                        <select id="deposit_months" name="deposit_months" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors">
+                            <option value="0" {{ old('deposit_months', 1) == 0 ? 'selected' : '' }}>No Deposit</option>
+                            <option value="1" {{ old('deposit_months', 1) == 1 ? 'selected' : '' }}>1 Month</option>
+                            <option value="2" {{ old('deposit_months', 1) == 2 ? 'selected' : '' }}>2 Months</option>
+                            <option value="3" {{ old('deposit_months', 1) == 3 ? 'selected' : '' }}>3 Months</option>
+                        </select>
+                        @error('deposit_months')
+                            <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <!-- Status -->
+                    <div class="md:col-span-2">
+                        <label for="status" class="block text-sm font-medium text-gray-700 mb-2">
+                            Property Status
+                        </label>
+                        <select id="status" name="status" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors">
+                            <option value="DRAFT" {{ old('status', 'DRAFT') == 'DRAFT' ? 'selected' : '' }}>Draft</option>
+                            <option value="PENDING" {{ old('status', 'DRAFT') == 'PENDING' ? 'selected' : '' }}>Submit for Review</option>
+                        </select>
+                        @error('status')
+                            <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                        @enderror
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 5: Amenities -->
+            <div class="mb-10 hidden" id="step5">
+                <h3 class="text-lg font-semibold text-gray-900 mb-6 pb-4 border-b border-gray-200">Property Amenities</h3>
+                
+                <!-- Basic Amenities -->
+                <div class="mb-8">
+                    <h4 class="font-medium text-gray-900 mb-4">Basic Amenities</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        @php
+                            $basicAmenities = [
+                                ['icon' => 'wifi', 'name' => 'Wi-Fi', 'value' => 'Wi-Fi'],
+                                ['icon' => 'snowflake', 'name' => 'Air Conditioning', 'value' => 'Air Conditioning'],
+                                ['icon' => 'fan', 'name' => 'Fan', 'value' => 'Fan'],
+                                ['icon' => 'tv', 'name' => 'TV', 'value' => 'Television'],
+                                ['icon' => 'bed', 'name' => 'Bed', 'value' => 'Bed'],
+                                ['icon' => 'soap', 'name' => 'Attached Bath', 'value' => 'Attached Bathroom'],
+                                ['icon' => 'shower', 'name' => 'Geyser', 'value' => 'Geyser'],
+                                ['icon' => 'chair', 'name' => 'Furniture', 'value' => 'Furniture'],
+                                ['icon' => 'box', 'name' => 'Storage', 'value' => 'Storage Space'],
+                            ];
+                        @endphp
+                        
+                        @foreach($basicAmenities as $amenity)
+                            <label class="flex items-center p-4 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+                                <input type="checkbox" 
+                                       name="amenities[{{ $loop->index }}][name]" 
+                                       value="{{ $amenity['value'] }}" 
+                                       class="amenity-checkbox h-5 w-5 text-purple-600 rounded focus:ring-purple-500 border-gray-300"
+                                       {{ in_array($amenity['value'], old('amenities', [])) ? 'checked' : '' }}>
+                                <div class="ml-3">
+                                    <p class="text-sm font-medium text-gray-900">{{ $amenity['name'] }}</p>
+                                </div>
+                                <input type="hidden" name="amenities[{{ $loop->index }}][type]" value="BASIC">
+                                <input type="hidden" name="amenities[{{ $loop->index }}][description]" value="">
+                            </label>
+                        @endforeach
+                    </div>
+                </div>
+
+                <!-- Security Amenities -->
+                <div class="mb-8">
+                    <h4 class="font-medium text-gray-900 mb-4">Security Amenities</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        @php
+                            $securityAmenities = [
+                                ['icon' => 'shield-alt', 'name' => 'CCTV', 'value' => 'CCTV'],
+                                ['icon' => 'lock', 'name' => 'Secure Entry', 'value' => 'Secure Entry'],
+                                ['icon' => 'user-shield', 'name' => 'Security Guard', 'value' => 'Security Guard'],
+                                ['icon' => 'fire-extinguisher', 'name' => 'Fire Safety', 'value' => 'Fire Safety'],
+                            ];
+                            $basicCount = count($basicAmenities);
+                        @endphp
+                        
+                        @foreach($securityAmenities as $index => $amenity)
+                            <label class="flex items-center p-4 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+                                <input type="checkbox" 
+                                       name="amenities[{{ $basicCount + $index }}][name]" 
+                                       value="{{ $amenity['value'] }}" 
+                                       class="amenity-checkbox h-5 w-5 text-purple-600 rounded focus:ring-purple-500 border-gray-300"
+                                       {{ in_array($amenity['value'], old('amenities', [])) ? 'checked' : '' }}>
+                                <div class="ml-3">
+                                    <p class="text-sm font-medium text-gray-900">{{ $amenity['name'] }}</p>
+                                </div>
+                                <input type="hidden" name="amenities[{{ $basicCount + $index }}][type]" value="SECURITY">
+                                <input type="hidden" name="amenities[{{ $basicCount + $index }}][description]" value="">
+                            </label>
+                        @endforeach
+                    </div>
+                </div>
+
+                <!-- Custom Amenity -->
+                <div>
+                    <h4 class="font-medium text-gray-900 mb-4">Add Custom Amenities</h4>
+                    <div class="space-y-4" id="customAmenitiesContainer">
+                        @if(old('custom_amenities'))
+                            @foreach(old('custom_amenities') as $customAmenity)
+                                <div class="flex gap-4">
+                                    <select name="amenities[{{ count($basicAmenities) + count($securityAmenities) + $loop->index }}][type]" class="w-1/3 px-3 py-2 border border-gray-300 rounded-lg">
+                                        <option value="BASIC" {{ ($customAmenity['type'] ?? '') == 'BASIC' ? 'selected' : '' }}>Basic</option>
+                                        <option value="SECURITY" {{ ($customAmenity['type'] ?? '') == 'SECURITY' ? 'selected' : '' }}>Security</option>
+                                        <option value="UTILITY" {{ ($customAmenity['type'] ?? '') == 'UTILITY' ? 'selected' : '' }}>Utility</option>
+                                        <option value="RECREATION" {{ ($customAmenity['type'] ?? '') == 'RECREATION' ? 'selected' : '' }}>Recreation</option>
+                                    </select>
+                                    <input type="text" 
+                                           name="amenities[{{ count($basicAmenities) + count($securityAmenities) + $loop->index }}][name]" 
+                                           value="{{ $customAmenity['name'] ?? '' }}"
+                                           class="flex-1 px-3 py-2 border border-gray-300 rounded-lg" 
+                                           placeholder="Amenity name">
+                                    <input type="hidden" 
+                                           name="amenities[{{ count($basicAmenities) + count($securityAmenities) + $loop->index }}][description]" 
+                                           value="">
+                                    <button type="button" class="text-red-500 hover:text-red-700 remove-amenity-btn">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                            @endforeach
+                        @endif
+                    </div>
+                    <button type="button" id="addCustomAmenityBtn" class="mt-4 px-4 py-2 border border-dashed border-gray-300 text-gray-600 rounded-lg hover:bg-gray-50">
+                        <i class="fas fa-plus mr-2"></i> Add Custom Amenity
+                    </button>
+                </div>
+            </div>
+
+            <!-- Step 6: Images -->
+            <div class="mb-10 hidden" id="step6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-6 pb-4 border-b border-gray-200">Property Images</h3>
+                
+                <!-- Cover Image -->
+                <div class="mb-8">
+                    <label for="cover_image" class="block text-sm font-medium text-gray-700 mb-2">
+                        Cover Image <span class="text-red-500">*</span>
+                        <span class="text-xs text-gray-500">(Recommended: 1200x800px)</span>
+                    </label>
+                    <div id="coverImageUpload" class="border-2 border-dashed border-gray-300 rounded-lg h-64 flex items-center justify-center bg-gray-50 hover:bg-gray-100 transition-colors cursor-pointer">
+                        <div class="text-center">
+                            <i class="fas fa-cloud-upload-alt text-gray-400 text-4xl mb-3"></i>
+                            <p class="text-gray-600 font-medium">Click to upload cover image</p>
+                            <p class="text-sm text-gray-500 mt-1">or drag and drop</p>
+                            <p class="text-xs text-gray-400 mt-2">PNG, JPG, GIF up to 10MB</p>
+                        </div>
+                    </div>
+                    <input type="file" 
+                           id="cover_image"
+                           name="cover_image"
+                           accept="image/*"
+                           class="hidden"
+                           required>
+                    <div id="coverImagePreview" class="hidden mt-4">
+                        <img src="" alt="Cover preview" class="max-h-64 rounded-lg">
+                        <button type="button" id="removeCoverImage" class="mt-2 text-red-500 hover:text-red-700">
+                            <i class="fas fa-times mr-1"></i> Remove
+                        </button>
+                    </div>
+                    @error('cover_image')
+                        <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <!-- Additional Images -->
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        Additional Images <span class="text-xs text-gray-500">(Up to 10 images)</span>
+                    </label>
+                    <div id="additionalImagesUpload" class="border-2 border-dashed border-gray-300 rounded-lg p-6 bg-gray-50 hover:bg-gray-100 transition-colors cursor-pointer">
+                        <div class="text-center">
+                            <i class="fas fa-images text-gray-400 text-3xl mb-3"></i>
+                            <p class="text-gray-600 font-medium">Click to upload additional images</p>
+                            <p class="text-sm text-gray-500 mt-1">or drag and drop multiple images</p>
+                            <p class="text-xs text-gray-400 mt-2">PNG, JPG, GIF up to 10MB each</p>
+                        </div>
+                    </div>
+                    <input type="file" 
+                           id="additional_images"
+                           name="additional_images[]"
+                           accept="image/*"
+                           multiple
+                           class="hidden">
+                    
+                    <!-- Image Gallery Preview -->
+                    <div id="imageGallery" class="mt-6">
+                        <h4 class="font-medium text-gray-900 mb-4">Image Gallery Preview</h4>
+                        <div id="galleryGrid" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <!-- Images will be added here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Map Picker Modal -->
+            <div id="mapModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden overflow-y-auto h-full w-full z-50 map-modal">
+                <div class="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-lg bg-white">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-bold text-gray-900">Select Property Location</h3>
+                        <button type="button" onclick="closeMapModal()" class="text-gray-400 hover:text-gray-600">
+                            <i class="fas fa-times"></i>
+                        </button>
                     </div>
                     
-                    <div>
-                        <label for="rush_surcharge_percent" class="block text-sm font-medium text-gray-700 mb-1">
-                            Rush Surcharge (%)
-                        </label>
+                    <!-- Search Location -->
+                    <div class="mb-4 relative">
                         <div class="relative">
-                            <input type="number" name="rush_surcharge_percent" id="rush_surcharge_percent" 
-                                   value="{{ old('rush_surcharge_percent', 30) }}"
-                                   step="0.1" min="0" max="100"
-                                   class="w-full rounded-lg border-gray-300 shadow-sm focus:border-[#174455] focus:ring-[#174455] @error('rush_surcharge_percent') border-red-500 @enderror"
-                                   placeholder="30">
-                            <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                                <span class="text-gray-500">%</span>
+                            <input type="text" 
+                                   id="location-search"
+                                   placeholder="Search for an area or address..."
+                                   class="w-full px-4 py-3 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500">
+                            <div class="absolute left-3 top-3">
+                                <i class="fas fa-search text-gray-400"></i>
                             </div>
                         </div>
-                        @error('rush_surcharge_percent')
-                            <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
-                        @enderror
+                        
+                        <!-- Search Results -->
+                        <div id="search-results" class="absolute z-20 w-full mt-1 bg-white rounded-lg shadow-lg border border-gray-200 max-h-60 overflow-y-auto hidden">
+                            <!-- Results will be populated here -->
+                        </div>
+                    </div>
+                    
+                    <!-- Map Container -->
+                    <div id="map-modal" class="w-full h-96 rounded-lg border-2 border-gray-300 mb-4 relative">
+                        <div id="map-loading" class="absolute inset-0 bg-gray-100 bg-opacity-75 flex items-center justify-center rounded-lg z-10 hidden">
+                            <div class="text-center">
+                                <div class="loading-spinner mb-2"></div>
+                                <p class="text-sm text-gray-600">Loading map...</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Map Controls -->
+                    <div class="absolute bottom-28 right-8 space-y-2 z-20">
+                        <!-- Current Location Button -->
+                        <button type="button" 
+                                id="use-current-location"
+                                class="bg-white rounded-full p-3 shadow-lg hover:bg-gray-100 focus:outline-none transition transform hover:scale-110">
+                            <i class="fas fa-location-arrow text-purple-600 text-lg"></i>
+                        </button>
+                        
+                        <!-- Zoom In Button -->
+                        <button type="button" 
+                                id="zoom-in"
+                                class="bg-white rounded-full p-3 shadow-lg hover:bg-gray-100 focus:outline-none transition transform hover:scale-110 block">
+                            <i class="fas fa-plus text-gray-600"></i>
+                        </button>
+                        
+                        <!-- Zoom Out Button -->
+                        <button type="button" 
+                                id="zoom-out"
+                                class="bg-white rounded-full p-3 shadow-lg hover:bg-gray-100 focus:outline-none transition transform hover:scale-110 block">
+                            <i class="fas fa-minus text-gray-600"></i>
+                        </button>
+                    </div>
+                    
+                    <!-- Selected Location Info -->
+                    <div id="selected-location-info" class="bg-purple-50 p-4 rounded-lg border border-purple-200 mb-4">
+                        <div class="flex items-start">
+                            <i class="fas fa-map-marker-alt text-purple-600 text-xl mt-1 mr-3"></i>
+                            <div class="flex-1">
+                                <h4 class="text-sm font-medium text-purple-900">Selected Location</h4>
+                                <p id="selected-address" class="text-sm text-gray-600 mt-1">No location selected</p>
+                                <div class="mt-2 grid grid-cols-2 gap-4 text-sm">
+                                    <div>
+                                        <span class="text-xs text-purple-700">Latitude</span>
+                                        <p id="modal-latitude" class="font-medium text-purple-900"></p>
+                                    </div>
+                                    <div>
+                                        <span class="text-xs text-purple-700">Longitude</span>
+                                        <p id="modal-longitude" class="font-medium text-purple-900"></p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Modal Footer -->
+                    <div class="flex justify-end gap-2">
+                        <button type="button" 
+                                onclick="closeMapModal()"
+                                class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">
+                            Cancel
+                        </button>
+                        <button type="button" 
+                                id="confirm-location"
+                                class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed">
+                            Confirm Location
+                        </button>
                     </div>
                 </div>
-                
-                {{-- Active Status --}}
-                <div class="flex items-center">
-                    <input type="checkbox" name="is_active" id="is_active" value="1" 
-                           {{ old('is_active', true) ? 'checked' : '' }}
-                           class="rounded border-gray-300 text-[#174455] shadow-sm focus:ring-[#174455]">
-                    <label for="is_active" class="ml-2 block text-sm text-gray-700">
-                        Active (item will be available for orders)
-                    </label>
-                </div>
-                
-                {{-- Calculated Total --}}
-                <div class="bg-gray-50 p-4 rounded-lg">
-                    <p class="text-sm text-gray-600 mb-1">Calculated Total Price:</p>
-                    <p class="text-2xl font-bold text-[#174455]" id="total-price-preview">৳0.00</p>
-                    <p class="text-xs text-gray-500 mt-1">Includes base price + commission</p>
-                </div>
-                
-                {{-- Submit Buttons --}}
-                <div class="flex items-center gap-3 pt-4 border-t">
-                    <button type="submit" class="bg-[#174455] text-white px-6 py-2 rounded-lg hover:bg-[#1f556b] transition-colors">
-                        <i class="fas fa-save mr-2"></i> Save Item
+            </div>
+
+            <!-- Form Actions -->
+            <div class="flex justify-between items-center pt-8 border-t border-gray-200">
+                <div>
+                    <button type="button" id="prevBtn" class="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors hidden">
+                        <i class="fas fa-arrow-left mr-2"></i> Previous
                     </button>
-                    <a href="{{ route('laundry-provider.items.index') }}" class="px-6 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors">
-                        Cancel
-                    </a>
+                </div>
+                
+                <div class="flex items-center gap-4">
+                    <button type="button" id="saveDraftBtn" class="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors">
+                        Save as Draft
+                    </button>
+                    <button type="button" id="nextBtn" class="px-6 py-3 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition-colors">
+                        Next Step <i class="fas fa-arrow-right ml-2"></i>
+                    </button>
+                    <button type="submit" id="submitBtn" class="px-6 py-3 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors hidden">
+                        <i class="fas fa-check mr-2"></i> Create Property
+                    </button>
                 </div>
             </div>
         </form>
     </div>
 </div>
 
-@push('scripts')
+<script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
 <script>
-    // Live price calculation preview
-    document.getElementById('base_price').addEventListener('input', updatePricePreview);
-    document.getElementById('rush_surcharge_percent').addEventListener('input', updatePricePreview);
+document.addEventListener('DOMContentLoaded', function() {
+    // ==================== MAP VARIABLES ====================
+    let map, marker, miniMap;
+    let mapInitialized = false;
+    let searchTimeout;
+    let selectedLat = parseFloat(document.getElementById('latitude').value) || 23.810331;
+    let selectedLng = parseFloat(document.getElementById('longitude').value) || 90.412521;
     
-    function updatePricePreview() {
-        const basePrice = parseFloat(document.getElementById('base_price').value) || 0;
-        const commissionRate = 10; // Default commission rate from config
+    // ==================== FORM STEP VARIABLES ====================
+    let currentStep = 1;
+    const totalSteps = 6;
+    let roomCounter = {{ old('rooms') ? count(old('rooms')) : 0 }};
+    let customAmenityCounter = {{ old('custom_amenities') ? count(old('custom_amenities')) : 0 }};
+    let selectedPropertyType = document.querySelector('input[name="type"]:checked')?.value || 'HOSTEL';
+    let hostelTotalRevenue = 0;
+    
+    // ==================== MAP INITIALIZATION ====================
+    function initMiniMap() {
+        const container = document.getElementById('mini-map');
+        if (!container) return;
         
-        const total = basePrice + (basePrice * commissionRate / 100);
+        container.innerHTML = '';
         
-        document.getElementById('total-price-preview').textContent = '৳' + total.toFixed(2);
+        try {
+            miniMap = L.map('mini-map', {
+                center: [selectedLat, selectedLng],
+                zoom: 13,
+                zoomControl: false,
+                dragging: false,
+                touchZoom: false,
+                scrollWheelZoom: false,
+                doubleClickZoom: false,
+                boxZoom: false,
+                keyboard: false,
+                attributionControl: false
+            });
+            
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap'
+            }).addTo(miniMap);
+            
+            L.marker([selectedLat, selectedLng]).addTo(miniMap);
+        } catch (error) {
+            console.error('Error initializing mini map:', error);
+        }
     }
     
-    // Initial calculation
-    updatePricePreview();
+    function initMapModal() {
+        const container = document.getElementById('map-modal');
+        if (!container) return;
+        
+        // Show loading
+        document.getElementById('map-loading').classList.remove('hidden');
+        
+        // Clear container
+        container.innerHTML = '';
+        
+        try {
+            map = L.map('map-modal', {
+                center: [selectedLat, selectedLng],
+                zoom: 15,
+                zoomControl: false
+            });
+            
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors'
+            }).addTo(map);
+            
+            marker = L.marker([selectedLat, selectedLng], {
+                draggable: true
+            }).addTo(map);
+            
+            // Marker drag event
+            marker.on('dragend', function(e) {
+                const pos = e.target.getLatLng();
+                updateModalLocation(pos.lat, pos.lng);
+            });
+            
+            // Map click event
+            map.on('click', function(e) {
+                marker.setLatLng(e.latlng);
+                updateModalLocation(e.latlng.lat, e.latlng.lng);
+            });
+            
+            // Hide loading
+            document.getElementById('map-loading').classList.add('hidden');
+            mapInitialized = true;
+            
+            // Force map resize
+            setTimeout(() => {
+                if (map) {
+                    map.invalidateSize();
+                }
+            }, 100);
+            
+        } catch (error) {
+            console.error('Error initializing map:', error);
+            document.getElementById('map-loading').classList.add('hidden');
+            alert('Error loading map. Please try again.');
+        }
+    }
+    
+    function updateModalLocation(lat, lng) {
+        selectedLat = lat;
+        selectedLng = lng;
+        
+        document.getElementById('modal-latitude').textContent = lat.toFixed(6);
+        document.getElementById('modal-longitude').textContent = lng.toFixed(6);
+        
+        // Reverse geocode to get address
+        reverseGeocode(lat, lng);
+    }
+    
+    function reverseGeocode(lat, lng) {
+        fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.display_name) {
+                    document.getElementById('selected-address').textContent = data.display_name;
+                    
+                    // Auto-fill address fields if they're empty
+                    const addressInput = document.getElementById('address');
+                    if (addressInput && !addressInput.value) {
+                        addressInput.value = data.display_name.split(',')[0];
+                    }
+                    
+                    const cityInput = document.getElementById('city');
+                    if (cityInput && !cityInput.value) {
+                        cityInput.value = data.address?.city || data.address?.town || data.address?.village || '';
+                    }
+                }
+            })
+            .catch(error => console.error('Reverse geocode error:', error));
+    }
+    
+    function searchLocation() {
+        const query = document.getElementById('location-search').value;
+        if (query.length < 3) {
+            document.getElementById('search-results').classList.add('hidden');
+            return;
+        }
+        
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+            fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5`)
+                .then(response => response.json())
+                .then(data => {
+                    const resultsDiv = document.getElementById('search-results');
+                    resultsDiv.innerHTML = '';
+                    
+                    if (data.length === 0) {
+                        resultsDiv.innerHTML = '<div class="px-4 py-3 text-gray-500">No results found</div>';
+                        resultsDiv.classList.remove('hidden');
+                        return;
+                    }
+                    
+                    data.forEach(result => {
+                        const div = document.createElement('div');
+                        div.className = 'px-4 py-3 hover:bg-gray-100 cursor-pointer border-b last:border-b-0';
+                        div.innerHTML = `
+                            <div class="flex items-start">
+                                <i class="fas fa-map-marker-alt text-gray-400 mt-1 mr-3"></i>
+                                <div>
+                                    <div class="font-medium text-gray-900">${result.display_name}</div>
+                                </div>
+                            </div>
+                        `;
+                        div.addEventListener('click', () => {
+                            selectedLat = parseFloat(result.lat);
+                            selectedLng = parseFloat(result.lon);
+                            
+                            if (map) {
+                                map.setView([selectedLat, selectedLng], 16);
+                                marker.setLatLng([selectedLat, selectedLng]);
+                            }
+                            
+                            updateModalLocation(selectedLat, selectedLng);
+                            document.getElementById('location-search').value = '';
+                            resultsDiv.classList.add('hidden');
+                        });
+                        resultsDiv.appendChild(div);
+                    });
+                    
+                    resultsDiv.classList.remove('hidden');
+                })
+                .catch(error => console.error('Search error:', error));
+        }, 500);
+    }
+    
+    function useCurrentLocation() {
+        if (!navigator.geolocation) {
+            alert('Geolocation is not supported by your browser');
+            return;
+        }
+        
+        document.getElementById('map-loading').classList.remove('hidden');
+        
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                selectedLat = position.coords.latitude;
+                selectedLng = position.coords.longitude;
+                
+                if (map) {
+                    map.setView([selectedLat, selectedLng], 16);
+                    marker.setLatLng([selectedLat, selectedLng]);
+                }
+                
+                updateModalLocation(selectedLat, selectedLng);
+                document.getElementById('map-loading').classList.add('hidden');
+            },
+            (error) => {
+                console.error('Geolocation error:', error);
+                alert('Unable to get your current location. Please check your browser permissions.');
+                document.getElementById('map-loading').classList.add('hidden');
+            },
+            {
+                enableHighAccuracy: true,
+                timeout: 10000
+            }
+        );
+    }
+    
+    function openMapModal() {
+        document.getElementById('mapModal').classList.remove('hidden');
+        document.getElementById('map-loading').classList.remove('hidden');
+        
+        setTimeout(() => {
+            initMapModal();
+        }, 300);
+    }
+    
+    function closeMapModal() {
+        document.getElementById('mapModal').classList.add('hidden');
+        if (map) {
+            map.remove();
+            map = null;
+            marker = null;
+        }
+        mapInitialized = false;
+    }
+    
+    function confirmLocation() {
+        // Update hidden inputs
+        document.getElementById('latitude').value = selectedLat;
+        document.getElementById('longitude').value = selectedLng;
+        
+        // Update display
+        document.getElementById('latitude-display').textContent = selectedLat.toFixed(6);
+        document.getElementById('longitude-display').textContent = selectedLng.toFixed(6);
+        
+        // Re-initialize mini map
+        initMiniMap();
+        
+        closeMapModal();
+    }
+    
+    // ==================== EVENT LISTENERS FOR MAP ====================
+    document.getElementById('openMapBtn').addEventListener('click', openMapModal);
+    
+    document.getElementById('location-search').addEventListener('input', searchLocation);
+    
+    document.getElementById('use-current-location').addEventListener('click', useCurrentLocation);
+    
+    document.getElementById('zoom-in').addEventListener('click', () => {
+        if (map) map.zoomIn();
+    });
+    
+    document.getElementById('zoom-out').addEventListener('click', () => {
+        if (map) map.zoomOut();
+    });
+    
+    document.getElementById('confirm-location').addEventListener('click', confirmLocation);
+    
+    // Close modal with Escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            closeMapModal();
+        }
+    });
+    
+    // Close modal when clicking outside
+    window.onclick = function(event) {
+        const modal = document.getElementById('mapModal');
+        if (event.target == modal) {
+            closeMapModal();
+        }
+    }
+    
+    // Initialize mini map on page load
+    initMiniMap();
+    
+    // ==================== FORM STEP FUNCTIONS ====================
+    // Get commission rate from server (API endpoint)
+    async function fetchCommissionRate(type) {
+        try {
+            const response = await fetch(`/api/commission-rate/${type}`);
+            const data = await response.json();
+            return data.rate || (type === 'HOSTEL' ? 5.00 : 3.00);
+        } catch (error) {
+            console.error('Error fetching commission rate:', error);
+            return type === 'HOSTEL' ? 5.00 : 3.00;
+        }
+    }
+    
+    // Update step indicator
+    function updateStepIndicator() {
+        document.querySelectorAll('.flex-col.items-center').forEach((step, index) => {
+            const stepNumber = index + 1;
+            const circle = step.querySelector('.rounded-full');
+            const text = step.querySelector('.text-sm');
+            
+            if (stepNumber < currentStep) {
+                circle.className = 'w-10 h-10 rounded-full bg-purple-600 text-white flex items-center justify-center font-bold step-completed';
+                text.className = 'text-sm font-medium text-purple-600 mt-2';
+            } else if (stepNumber === currentStep) {
+                circle.className = 'w-10 h-10 rounded-full bg-purple-600 text-white flex items-center justify-center font-bold';
+                text.className = 'text-sm font-medium text-purple-600 mt-2';
+            } else {
+                circle.className = 'w-10 h-10 rounded-full bg-gray-200 text-gray-400 flex items-center justify-center font-bold';
+                text.className = 'text-sm font-medium text-gray-500 mt-2';
+            }
+        });
+        
+        document.querySelectorAll('.h-1').forEach((connector, index) => {
+            if (index + 1 < currentStep) {
+                connector.className = 'flex-1 h-1 bg-purple-200 mx-4';
+            } else {
+                connector.className = 'flex-1 h-1 bg-gray-200 mx-4';
+            }
+        });
+    }
+    
+    // Show current step
+    function showStep(step) {
+        // Hide all steps
+        for (let i = 1; i <= totalSteps; i++) {
+            const stepElement = document.getElementById(`step${i}`);
+            if (stepElement) {
+                stepElement.classList.add('hidden');
+            }
+        }
+        
+        // Show current step
+        const currentStepElement = document.getElementById(`step${step}`);
+        if (currentStepElement) {
+            currentStepElement.classList.remove('hidden');
+        }
+        
+        // Update property type specific displays
+        if (step === 3 || step === 4) {
+            updatePropertyTypeSpecificDisplay(step);
+        }
+        
+        // Update buttons
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        const submitBtn = document.getElementById('submitBtn');
+        
+        if (step === 1) {
+            prevBtn.classList.add('hidden');
+        } else {
+            prevBtn.classList.remove('hidden');
+        }
+        
+        if (step === totalSteps) {
+            nextBtn.classList.add('hidden');
+            submitBtn.classList.remove('hidden');
+        } else {
+            nextBtn.classList.remove('hidden');
+            submitBtn.classList.add('hidden');
+        }
+        
+        updateStepIndicator();
+    }
+    
+    // Update property type specific displays
+    function updatePropertyTypeSpecificDisplay(step) {
+        const isApartment = selectedPropertyType === 'APARTMENT';
+        const isHostel = selectedPropertyType === 'HOSTEL';
+        
+        if (step === 3) { // Rooms step
+            const apartmentMessage = document.getElementById('apartmentMessage');
+            const hostelRoomsSection = document.getElementById('hostelRoomsSection');
+            const hostelTotalPriceContainer = document.getElementById('hostelTotalPriceContainer');
+            
+            if (isApartment) {
+                apartmentMessage.classList.remove('hidden');
+                hostelRoomsSection.classList.add('hidden');
+                hostelTotalPriceContainer.classList.add('hidden');
+                // Remove required from room fields for apartments
+                document.querySelectorAll('#roomsContainer [required]').forEach(input => {
+                    input.removeAttribute('required');
+                });
+            } else {
+                apartmentMessage.classList.add('hidden');
+                hostelRoomsSection.classList.remove('hidden');
+                // Calculate hostel total for display
+                calculateHostelTotalRevenue();
+                // Add required back for hostels
+                document.querySelectorAll('#roomsContainer [required]').forEach(input => {
+                    input.setAttribute('required', 'required');
+                });
+            }
+        }
+        
+        if (step === 4) { // Pricing step
+            const apartmentPricingSection = document.getElementById('apartmentPricingSection');
+            const hostelPricingSection = document.getElementById('hostelPricingSection');
+            const minStayContainer = document.getElementById('minStayContainer');
+            
+            if (isApartment) {
+                apartmentPricingSection.classList.remove('hidden');
+                hostelPricingSection.classList.add('hidden');
+                minStayContainer.classList.remove('hidden');
+                // Update apartment commission display
+                updateApartmentCommissionDisplay();
+            } else {
+                apartmentPricingSection.classList.add('hidden');
+                hostelPricingSection.classList.remove('hidden');
+                minStayContainer.classList.add('hidden');
+                // Update hostel commission display
+                updateHostelCommissionDisplay();
+            }
+            
+            // Update commission rate
+            updateCommissionRate();
+        }
+    }
+    
+    // Calculate hostel total revenue from rooms
+    function calculateHostelTotalRevenue() {
+        const rooms = document.querySelectorAll('.room-item');
+        const hostelTotalPriceContainer = document.getElementById('hostelTotalPriceContainer');
+        const totalRoomsCount = document.getElementById('totalRoomsCount');
+        const totalMonthlyRevenue = document.getElementById('totalMonthlyRevenue');
+        
+        hostelTotalRevenue = 0;
+        rooms.forEach(room => {
+            const priceInput = room.querySelector('.room-price-input');
+            if (priceInput && priceInput.value) {
+                hostelTotalRevenue += parseFloat(priceInput.value) || 0;
+            }
+        });
+        
+        if (rooms.length === 0) {
+            hostelTotalPriceContainer.classList.add('hidden');
+            return;
+        }
+        
+        totalRoomsCount.textContent = rooms.length;
+        totalMonthlyRevenue.textContent = '৳' + hostelTotalRevenue.toFixed(2);
+        hostelTotalPriceContainer.classList.remove('hidden');
+        
+        // Store in hidden field for use in pricing step
+        document.getElementById('hostel_total_revenue').value = hostelTotalRevenue;
+    }
+    
+    // Update hostel commission display
+    function updateHostelCommissionDisplay() {
+        const totalRooms = document.querySelectorAll('.room-item').length;
+        const commissionRate = parseFloat(document.getElementById('commission_rate').value) || 5.00;
+        const commissionAmount = hostelTotalRevenue * (commissionRate / 100);
+        const totalWithCommission = hostelTotalRevenue + commissionAmount;
+        
+        document.getElementById('hostelTotalRoomsFinal').textContent = totalRooms;
+        document.getElementById('hostelTotalRevenueFinal').textContent = '৳' + hostelTotalRevenue.toFixed(2);
+        document.getElementById('hostelCommissionFinal').textContent = '৳' + commissionAmount.toFixed(2);
+        document.getElementById('hostelTotalWithCommissionFinal').textContent = '৳' + totalWithCommission.toFixed(2);
+        document.getElementById('hostelCommissionRateDisplay').textContent = commissionRate + '%';
+    }
+    
+    // Update apartment commission display
+    function updateApartmentCommissionDisplay() {
+        const priceInput = document.getElementById('base_price');
+        const commissionRate = parseFloat(document.getElementById('commission_rate').value) || 3.00;
+        const price = parseFloat(priceInput.value) || 0;
+        const commissionAmount = price * (commissionRate / 100);
+        const totalPrice = price + commissionAmount;
+        
+        document.getElementById('apartmentMonthlyPriceDisplay').textContent = '৳' + price.toFixed(2);
+        document.getElementById('apartmentCommissionAmountDisplay').textContent = '৳' + commissionAmount.toFixed(2);
+        document.getElementById('apartmentTotalPriceDisplay').textContent = '৳' + totalPrice.toFixed(2);
+        document.getElementById('apartmentCommissionRateDisplay').textContent = commissionRate + '%';
+    }
+    
+    // Update commission rate from server
+    async function updateCommissionRate() {
+        const commissionRate = await fetchCommissionRate(selectedPropertyType);
+        const commissionRateInput = document.getElementById('commission_rate');
+        
+        if (commissionRateInput) {
+            commissionRateInput.value = commissionRate;
+        }
+        
+        // Update display based on property type
+        if (selectedPropertyType === 'APARTMENT') {
+            document.getElementById('apartmentCommissionRateDisplay').textContent = commissionRate + '%';
+            updateApartmentCommissionDisplay();
+        } else {
+            document.getElementById('hostelCommissionRateDisplay').textContent = commissionRate + '%';
+            updateHostelCommissionDisplay();
+        }
+    }
+    
+    // Calculate apartment commission on price change
+    function calculateApartmentCommission() {
+        if (selectedPropertyType === 'APARTMENT') {
+            updateApartmentCommissionDisplay();
+        }
+    }
+    
+    // Next button click
+    document.getElementById('nextBtn').addEventListener('click', function() {
+        if (validateCurrentStep()) {
+            if (currentStep < totalSteps) {
+                currentStep++;
+                showStep(currentStep);
+            }
+        }
+    });
+    
+    // Previous button click
+    document.getElementById('prevBtn').addEventListener('click', function() {
+        if (currentStep > 1) {
+            currentStep--;
+            showStep(currentStep);
+        }
+    });
+    
+    // Property type change
+    document.querySelectorAll('.property-type').forEach(radio => {
+        radio.addEventListener('change', function() {
+            selectedPropertyType = this.value;
+            document.getElementById('propertyTypeHidden').value = selectedPropertyType;
+            updatePropertyTypeDependencies();
+            
+            // Update displays if we're on relevant steps
+            if (currentStep === 3 || currentStep === 4) {
+                updatePropertyTypeSpecificDisplay(currentStep);
+            }
+        });
+    });
+    
+    function updatePropertyTypeDependencies() {
+        const isApartment = selectedPropertyType === 'APARTMENT';
+        const isHostel = selectedPropertyType === 'HOSTEL';
+        
+        // Show/hide unit size for apartments
+        const unitSizeContainer = document.getElementById('unitSizeContainer');
+        const unitSizeInput = document.getElementById('unit_size');
+        const unitSizeRequired = document.getElementById('unitSizeRequired');
+        
+        if (isApartment) {
+            unitSizeContainer.classList.remove('hidden');
+            unitSizeRequired.classList.remove('hidden');
+            unitSizeInput.required = true;
+        } else {
+            unitSizeContainer.classList.add('hidden');
+            unitSizeRequired.classList.add('hidden');
+            unitSizeInput.required = false;
+        }
+        
+        // Update commission rate
+        updateCommissionRate();
+    }
+    
+    // Add event listeners for apartment price changes
+    const priceInput = document.getElementById('base_price');
+    if (priceInput) {
+        priceInput.addEventListener('input', calculateApartmentCommission);
+    }
+    
+    // Room management
+    document.getElementById('addRoomBtn')?.addEventListener('click', function() {
+        addRoom();
+    });
+    
+    function addRoom() {
+        const container = document.getElementById('roomsContainer');
+        const noRoomsMessage = document.getElementById('noRoomsMessage');
+        
+        if (!container) return;
+        
+        const roomDiv = document.createElement('div');
+        roomDiv.className = 'border border-gray-200 rounded-lg p-6 bg-white room-item';
+        roomDiv.innerHTML = `
+            <div class="flex justify-between items-start mb-4">
+                <h5 class="font-medium text-gray-900">Room Type <span class="room-index">${roomCounter + 1}</span></h5>
+                <button type="button" class="text-red-500 hover:text-red-700 remove-room-btn">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <!-- Room Number -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        Room Number <span class="text-red-500">*</span>
+                    </label>
+                    <input type="text" 
+                           name="rooms[${roomCounter}][room_number]"
+                           class="room-number-input w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors"
+                           placeholder="101"
+                           required>
+                </div>
+
+                <!-- Room Type -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        Room Type <span class="text-red-500">*</span>
+                    </label>
+                    <select name="rooms[${roomCounter}][room_type]" class="room-type-select w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors" required>
+                        <option value="">Select</option>
+                        <option value="SINGLE">Single</option>
+                        <option value="DOUBLE">Double</option>
+                        <option value="TRIPLE">Triple</option>
+                        <option value="QUAD">Quad</option>
+                        <option value="DORM">Dorm</option>
+                    </select>
+                </div>
+
+                <!-- Floor Number -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        Floor Number
+                    </label>
+                    <input type="number" 
+                           name="rooms[${roomCounter}][floor_number]"
+                           min="0"
+                           class="floor-number-input w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors"
+                           placeholder="1">
+                </div>
+
+                <!-- Capacity -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        Capacity <span class="text-red-500">*</span>
+                    </label>
+                    <input type="number" 
+                           name="rooms[${roomCounter}][capacity]"
+                           min="1"
+                           class="capacity-input w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors"
+                           placeholder="2"
+                           required>
+                </div>
+
+                <!-- Base Price -->
+                <div class="md:col-span-2">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        Monthly Price (৳) <span class="text-red-500">*</span>
+                    </label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <span class="text-gray-500">৳</span>
+                        </div>
+                        <input type="number" 
+                               name="rooms[${roomCounter}][base_price]"
+                               step="0.01"
+                               min="0"
+                               class="room-price-input w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors"
+                               placeholder="0.00"
+                               required>
+                    </div>
+                </div>
+
+                <!-- Room Status -->
+                <div class="md:col-span-2">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        Room Status
+                    </label>
+                    <select name="rooms[${roomCounter}][status]" class="room-status-select w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors">
+                        <option value="AVAILABLE">Available</option>
+                        <option value="MAINTENANCE">Maintenance</option>
+                        <option value="RESERVED">Reserved</option>
+                    </select>
+                </div>
+            </div>
+        `;
+        
+        // Add remove functionality
+        const removeBtn = roomDiv.querySelector('.remove-room-btn');
+        removeBtn.addEventListener('click', function() {
+            roomDiv.remove();
+            updateRoomsDisplay();
+            renumberRooms();
+            calculateHostelTotalRevenue();
+            // Update pricing display if we're on that step
+            if (currentStep === 4 && selectedPropertyType === 'HOSTEL') {
+                updateHostelCommissionDisplay();
+            }
+        });
+        
+        // Add price change listener for hostel total calculation
+        const priceInput = roomDiv.querySelector('.room-price-input');
+        priceInput.addEventListener('input', function() {
+            calculateHostelTotalRevenue();
+            // Update pricing display if we're on that step
+            if (currentStep === 4 && selectedPropertyType === 'HOSTEL') {
+                updateHostelCommissionDisplay();
+            }
+        });
+        
+        container.appendChild(roomDiv);
+        roomCounter++;
+        
+        // Update display
+        updateRoomsDisplay();
+        calculateHostelTotalRevenue();
+    }
+    
+    // Add remove functionality to existing rooms (from old input)
+    document.querySelectorAll('.remove-room-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const roomDiv = this.closest('.room-item');
+            if (roomDiv) {
+                roomDiv.remove();
+                updateRoomsDisplay();
+                renumberRooms();
+                calculateHostelTotalRevenue();
+            }
+        });
+    });
+    
+    // Add price change listeners to existing room inputs
+    document.querySelectorAll('.room-price-input').forEach(input => {
+        input.addEventListener('input', function() {
+            calculateHostelTotalRevenue();
+            // Update pricing display if we're on that step
+            if (currentStep === 4 && selectedPropertyType === 'HOSTEL') {
+                updateHostelCommissionDisplay();
+            }
+        });
+    });
+    
+    function updateRoomsDisplay() {
+        const container = document.getElementById('roomsContainer');
+        const noRoomsMessage = document.getElementById('noRoomsMessage');
+        
+        if (!container || !noRoomsMessage) return;
+        
+        const hasRooms = container.querySelectorAll('.room-item').length > 0;
+        noRoomsMessage.classList.toggle('hidden', hasRooms);
+    }
+    
+    function renumberRooms() {
+        document.querySelectorAll('.room-item').forEach((room, index) => {
+            const indexSpan = room.querySelector('.room-index');
+            if (indexSpan) {
+                indexSpan.textContent = index + 1;
+            }
+            
+            // Update input names
+            room.querySelectorAll('input, select').forEach(input => {
+                const name = input.getAttribute('name');
+                if (name && name.includes('rooms[')) {
+                    const newName = name.replace(/rooms\[\d+\]/, `rooms[${index}]`);
+                    input.setAttribute('name', newName);
+                }
+            });
+        });
+        roomCounter = document.querySelectorAll('.room-item').length;
+    }
+    
+    // Custom amenities management
+    document.getElementById('addCustomAmenityBtn')?.addEventListener('click', function() {
+        addCustomAmenity();
+    });
+    
+    function addCustomAmenity() {
+        const container = document.getElementById('customAmenitiesContainer');
+        
+        if (!container) return;
+        
+        const amenityDiv = document.createElement('div');
+        amenityDiv.className = 'flex gap-4';
+        amenityDiv.innerHTML = `
+            <select name="amenities[${customAmenityCounter}][type]" class="w-1/3 px-3 py-2 border border-gray-300 rounded-lg">
+                <option value="BASIC">Basic</option>
+                <option value="SECURITY">Security</option>
+                <option value="UTILITY">Utility</option>
+                <option value="RECREATION">Recreation</option>
+            </select>
+            <input type="text" 
+                   name="amenities[${customAmenityCounter}][name]" 
+                   class="flex-1 px-3 py-2 border border-gray-300 rounded-lg" 
+                   placeholder="Amenity name">
+            <input type="hidden" 
+                   name="amenities[${customAmenityCounter}][description]" 
+                   value="">
+            <button type="button" class="text-red-500 hover:text-red-700 remove-amenity-btn">
+                <i class="fas fa-times"></i>
+            </button>
+        `;
+        
+        // Add remove functionality
+        const removeBtn = amenityDiv.querySelector('.remove-amenity-btn');
+        removeBtn.addEventListener('click', function() {
+            amenityDiv.remove();
+            renumberCustomAmenities();
+        });
+        
+        container.appendChild(amenityDiv);
+        customAmenityCounter++;
+    }
+    
+    // Add remove functionality to existing custom amenities
+    document.querySelectorAll('.remove-amenity-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const amenityDiv = this.parentElement;
+            amenityDiv.remove();
+            renumberCustomAmenities();
+        });
+    });
+    
+    function renumberCustomAmenities() {
+        customAmenityCounter = 0;
+        document.querySelectorAll('#customAmenitiesContainer > div').forEach((amenity, index) => {
+            amenity.querySelectorAll('input, select').forEach(input => {
+                const name = input.getAttribute('name');
+                if (name && name.includes('amenities[')) {
+                    const newName = name.replace(/amenities\[\d+\]/, `amenities[${index}]`);
+                    input.setAttribute('name', newName);
+                }
+            });
+            customAmenityCounter++;
+        });
+    }
+    
+    // Image upload functionality
+    const coverImageUpload = document.getElementById('coverImageUpload');
+    const coverImageInput = document.getElementById('cover_image');
+    const coverImagePreview = document.getElementById('coverImagePreview');
+    const coverImagePreviewImg = coverImagePreview.querySelector('img');
+    
+    if (coverImageUpload && coverImageInput) {
+        coverImageUpload.addEventListener('click', () => coverImageInput.click());
+        
+        coverImageInput.addEventListener('change', function(e) {
+            if (this.files && this.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    coverImagePreviewImg.src = e.target.result;
+                    coverImagePreview.classList.remove('hidden');
+                    coverImageUpload.classList.add('hidden');
+                }
+                reader.readAsDataURL(this.files[0]);
+            }
+        });
+    }
+    
+    document.getElementById('removeCoverImage')?.addEventListener('click', function() {
+        coverImageInput.value = '';
+        coverImagePreview.classList.add('hidden');
+        coverImageUpload.classList.remove('hidden');
+    });
+    
+    // Additional images upload
+    const additionalImagesUpload = document.getElementById('additionalImagesUpload');
+    const additionalImagesInput = document.getElementById('additional_images');
+    const galleryGrid = document.getElementById('galleryGrid');
+    
+    if (additionalImagesUpload && additionalImagesInput) {
+        additionalImagesUpload.addEventListener('click', () => additionalImagesInput.click());
+        
+        additionalImagesInput.addEventListener('change', function(e) {
+            if (this.files) {
+                Array.from(this.files).forEach(file => {
+                    if (file.type.startsWith('image/')) {
+                        addImageToGallery(file);
+                    }
+                });
+            }
+        });
+    }
+    
+    function addImageToGallery(file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const colDiv = document.createElement('div');
+            colDiv.className = 'border border-gray-200 rounded-lg overflow-hidden';
+            
+            colDiv.innerHTML = `
+                <div class="h-48 bg-gray-100 flex items-center justify-center">
+                    <img src="${e.target.result}" alt="Preview" class="h-full w-full object-cover">
+                </div>
+                <div class="p-3 bg-white">
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm text-gray-600 truncate">${file.name}</span>
+                        <button type="button" class="text-red-500 hover:text-red-700 remove-image-btn">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            const removeBtn = colDiv.querySelector('.remove-image-btn');
+            removeBtn.addEventListener('click', function() {
+                colDiv.remove();
+            });
+            
+            galleryGrid.appendChild(colDiv);
+        };
+        reader.readAsDataURL(file);
+    }
+    
+    // Form validation
+    function validateCurrentStep() {
+        const currentStepElement = document.getElementById(`step${currentStep}`);
+        const inputs = currentStepElement.querySelectorAll('[required]');
+        let isValid = true;
+        
+        // Clear previous errors
+        currentStepElement.querySelectorAll('.border-red-500').forEach(el => {
+            el.classList.remove('border-red-500');
+        });
+        currentStepElement.querySelectorAll('.text-red-500.text-sm.mt-1').forEach(el => {
+            if (el.previousElementSibling && el.previousElementSibling.tagName !== 'SELECT') {
+                el.remove();
+            }
+        });
+        
+        // Validate required fields
+        inputs.forEach(input => {
+            if (!input.value.trim() && input.offsetParent !== null) {
+                input.classList.add('border-red-500');
+                isValid = false;
+                
+                // Show error message
+                let errorElement = input.nextElementSibling;
+                if (!errorElement || !errorElement.classList.contains('text-red-500')) {
+                    errorElement = document.createElement('p');
+                    errorElement.className = 'text-red-500 text-sm mt-1';
+                    errorElement.textContent = 'This field is required';
+                    input.parentNode.appendChild(errorElement);
+                }
+            }
+        });
+        
+        // Additional validation for step 3 (hostel rooms)
+        if (currentStep === 3 && selectedPropertyType === 'HOSTEL') {
+            const rooms = document.querySelectorAll('.room-item');
+            if (rooms.length === 0) {
+                alert('Please add at least one room for hostel properties');
+                isValid = false;
+            }
+        }
+        
+        // Additional validation for step 4 (pricing)
+        if (currentStep === 4) {
+            if (selectedPropertyType === 'APARTMENT') {
+                const priceInput = document.getElementById('base_price');
+                if (!priceInput.value || parseFloat(priceInput.value) <= 0) {
+                    alert('Please enter a valid monthly price for the apartment');
+                    priceInput.classList.add('border-red-500');
+                    isValid = false;
+                }
+            } else if (selectedPropertyType === 'HOSTEL') {
+                const rooms = document.querySelectorAll('.room-item');
+                if (rooms.length === 0) {
+                    alert('Please add at least one room before proceeding to pricing');
+                    isValid = false;
+                }
+            }
+        }
+        
+        // Additional validation for step 6 (images)
+        if (currentStep === 6) {
+            const coverImage = document.getElementById('cover_image');
+            if (!coverImage.files || coverImage.files.length === 0) {
+                alert('Cover image is required');
+                isValid = false;
+            }
+        }
+        
+        return isValid;
+    }
+    
+    // Save as draft
+    document.getElementById('saveDraftBtn').addEventListener('click', function() {
+        document.getElementById('status').value = 'DRAFT';
+        // Validate all steps before submitting
+        let allValid = true;
+        for (let i = 1; i <= totalSteps; i++) {
+            if (!validateStep(i)) {
+                allValid = false;
+                currentStep = i;
+                showStep(i);
+                break;
+            }
+        }
+        if (allValid) {
+            document.getElementById('propertyForm').submit();
+        }
+    });
+    
+    // Helper function to validate a specific step
+    function validateStep(step) {
+        const stepElement = document.getElementById(`step${step}`);
+        if (!stepElement) return true;
+        
+        const inputs = stepElement.querySelectorAll('[required]');
+        let isValid = true;
+        
+        inputs.forEach(input => {
+            if (!input.value.trim() && input.offsetParent !== null) {
+                isValid = false;
+            }
+        });
+        
+        return isValid;
+    }
+    
+    // Initialize first step
+    showStep(1);
+    updatePropertyTypeDependencies();
+});
 </script>
-@endpush
+@endsection

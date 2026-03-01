@@ -92,7 +92,7 @@
                             <span class="font-medium">{{ $item->quantity }}x</span> 
                             {{ $item->laundryItem->item_name }}
                         </span>
-                        <span class="font-medium">৳{{ number_format($item->total_price, 2) }}</span>
+                        <span class="font-medium">MMK {{ number_format($item->total_price, 2) }}</span>
                     </div>
                     @endforeach
                 </div>
@@ -102,27 +102,27 @@
             <div class="border-t pt-4 space-y-2">
                 <div class="flex justify-between">
                     <span class="text-gray-600">Subtotal</span>
-                    <span>৳{{ number_format($order->base_amount, 2) }}</span>
+                    <span>MMK {{ number_format($order->base_amount, 2) }}</span>
                 </div>
                 @if($order->rush_surcharge > 0)
                 <div class="flex justify-between">
                     <span class="text-gray-600">Rush Surcharge</span>
-                    <span>৳{{ number_format($order->rush_surcharge, 2) }}</span>
+                    <span>MMK {{ number_format($order->rush_surcharge, 2) }}</span>
                 </div>
                 @endif
                 @if($order->pickup_fee > 0)
                 <div class="flex justify-between">
                     <span class="text-gray-600">Pickup Fee</span>
-                    <span>৳{{ number_format($order->pickup_fee, 2) }}</span>
+                    <span>MMk {{ number_format($order->pickup_fee, 2) }}</span>
                 </div>
                 @endif
                 <div class="flex justify-between">
                     <span class="text-gray-600">Commission</span>
-                    <span>৳{{ number_format($order->commission_amount, 2) }}</span>
+                    <span>MMK {{ number_format($order->commission_amount, 2) }}</span>
                 </div>
                 <div class="flex justify-between font-bold text-lg">
                     <span>Total</span>
-                    <span class="text-[#174455]">৳{{ number_format($order->total_amount, 2) }}</span>
+                    <span class="text-[#174455]">MMK {{ number_format($order->total_amount, 2) }}</span>
                 </div>
             </div>
 

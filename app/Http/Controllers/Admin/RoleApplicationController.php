@@ -146,139 +146,122 @@ public function index(Request $request)
         return view('admin.role-applications.review', compact('application'));
     }
 
-    /**
-     * Approve the application
-     */
-    public function approve(Request $request, $id)
-    {
-        $application = RoleApplication::with('user')->findOrFail($id);
+/**
+ * Approve the application
+ */
+public function approve(Request $request, $id)
+{
+    $application = RoleApplication::with('user')->findOrFail($id);
 
-        if ($application->status !== 'PENDING') {
-            return response()->json([
-                'success' => false,
-                'message' => 'This application has already been processed.'
-            ], 422);
-        }
-
-        $request->validate([
-            'notes' => 'nullable|string|max:500',
-        ]);
-
-        DB::beginTransaction();
-
-        try {
-            // Update application status
-            $application->status = 'APPROVED';
-            $application->reviewed_by = Auth::id();
-            $application->reviewed_at = now();
-            $application->save();
-
-            // Assign role to user
-            $user = $application->user;
-            $role = Role::where('name', $application->role_type)->first();
-            
-            if ($role) {
-                $user->roles()->syncWithoutDetaching([$role->id]);
-            }
-
-            // Create service provider record based on role type
-            if ($application->role_type === 'FOOD' || $application->role_type === 'LAUNDRY') {
-                $this->createServiceProvider($application);
-            }
-
-            // ============ SEND NOTIFICATIONS ============
-            
-            // Notify user about approval
-            $this->createNotification(
-                $application->user_id,
-                'SYSTEM',
-                'Application Approved',
-                "Congratulations! Your application to become a {$this->getRoleDisplayName($application->role_type)} has been approved.",
-                'role_application',
-                $application->id
-            );
-
-            // Send email notification (you can implement this later)
-            // Mail::to($user->email)->send(new ApplicationApproved($application));
-
-            DB::commit();
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Application approved successfully.'
-            ]);
-
-        } catch (\Exception $e) {
-            DB::rollBack();
-            \Log::error('Error approving application: ' . $e->getMessage());
-            
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to approve application. Please try again.'
-            ], 500);
-        }
+    if ($application->status !== 'PENDING') {
+        return redirect()->route('admin.role-applications.show', $application)
+            ->with('error', 'This application has already been processed.');
     }
 
-    /**
-     * Reject the application
-     */
-    public function reject(Request $request, $id)
-    {
-        $application = RoleApplication::with('user')->findOrFail($id);
+    $request->validate([
+        'notes' => 'nullable|string|max:500',
+    ]);
 
-        if ($application->status !== 'PENDING') {
-            return response()->json([
-                'success' => false,
-                'message' => 'This application has already been processed.'
-            ], 422);
+    DB::beginTransaction();
+
+    try {
+        // Update application status
+        $application->status = 'APPROVED';
+        $application->reviewed_by = Auth::id();
+        $application->reviewed_at = now();
+        $application->admin_notes = $request->notes;
+        $application->save();
+
+        // Assign role to user
+        $user = $application->user;
+        $role = Role::where('name', $application->role_type)->first();
+        
+        if ($role) {
+            $user->roles()->syncWithoutDetaching([$role->id]);
         }
 
-        $request->validate([
-            'rejection_reason' => 'required|string|max:1000',
-        ]);
-
-        DB::beginTransaction();
-
-        try {
-            // Update application status
-            $application->status = 'REJECTED';
-            $application->rejection_reason = $request->rejection_reason;
-            $application->reviewed_by = Auth::id();
-            $application->reviewed_at = now();
-            $application->save();
-
-            // ============ SEND NOTIFICATIONS ============
-            
-            // Notify user about rejection
-            $this->createNotification(
-                $application->user_id,
-                'SYSTEM',
-                'Application Rejected',
-                "Your application to become a {$this->getRoleDisplayName($application->role_type)} has been reviewed. Reason: {$request->rejection_reason}",
-                'role_application',
-                $application->id
-            );
-
-            // Send email notification (you can implement this later)
-            // Mail::to($application->user->email)->send(new ApplicationRejected($application, $request->rejection_reason));
-
-            DB::commit();
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Application rejected successfully.'
-            ]);
-
-        } catch (\Exception $e) {
-            DB::rollBack();
-            \Log::error('Error rejecting application: ' . $e->getMessage());
-            
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to reject application. Please try again.'
-            ], 500);
+        // Create service provider record based on role type
+        if ($application->role_type === 'FOOD' || $application->role_type === 'LAUNDRY') {
+            $this->createServiceProvider($application);
         }
+
+        // ============ SEND NOTIFICATIONS ============
+        
+        // Notify user about approval
+        $this->createNotification(
+            $application->user_id,
+            'SYSTEM',
+            'Application Approved',
+            "Congratulations! Your application to become a {$this->getRoleDisplayName($application->role_type)} has been approved.",
+            'role_application',
+            $application->id
+        );
+
+        DB::commit();
+
+        return redirect()->route('admin.role-applications.index')
+            ->with('success', 'Application approved successfully. The user has been notified.');
+
+    } catch (\Exception $e) {
+        DB::rollBack();
+        \Log::error('Error approving application: ' . $e->getMessage());
+        
+        return redirect()->back()
+            ->with('error', 'Failed to approve application. Please try again.');
     }
+}
+
+/**
+ * Reject the application
+ */
+public function reject(Request $request, $id)
+{
+    $application = RoleApplication::with('user')->findOrFail($id);
+
+    if ($application->status !== 'PENDING') {
+        return redirect()->route('admin.role-applications.show', $application)
+            ->with('error', 'This application has already been processed.');
+    }
+
+    $request->validate([
+        'rejection_reason' => 'required|string|max:1000',
+    ]);
+
+    DB::beginTransaction();
+
+    try {
+        // Update application status
+        $application->status = 'REJECTED';
+        $application->rejection_reason = $request->rejection_reason;
+        $application->reviewed_by = Auth::id();
+        $application->reviewed_at = now();
+        $application->save();
+
+        // ============ SEND NOTIFICATIONS ============
+        
+        // Notify user about rejection
+        $this->createNotification(
+            $application->user_id,
+            'SYSTEM',
+            'Application Rejected',
+            "Your application to become a {$this->getRoleDisplayName($application->role_type)} has been reviewed. Reason: {$request->rejection_reason}",
+            'role_application',
+            $application->id
+        );
+
+        DB::commit();
+
+        return redirect()->route('admin.role-applications.index')
+            ->with('success', 'Application rejected successfully. The user has been notified.');
+
+    } catch (\Exception $e) {
+        DB::rollBack();
+        \Log::error('Error rejecting application: ' . $e->getMessage());
+        
+        return redirect()->back()
+            ->with('error', 'Failed to reject application. Please try again.');
+    }
+}
 
     /**
      * Download application document

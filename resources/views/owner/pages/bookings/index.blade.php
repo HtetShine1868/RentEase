@@ -336,9 +336,7 @@
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 Amount
                             </th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Status
-                            </th>
+                      
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 Actions
                             </th>
@@ -390,29 +388,7 @@
                                 <div class="text-sm font-bold text-gray-900">${{ number_format($booking->total_amount, 2) }}</div>
                                 <div class="text-xs text-gray-500">Commission: ${{ number_format($booking->commission_amount, 2) }}</div>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                @php
-                                    $statusClasses = [
-                                        'PENDING' => 'status-pending',
-                                        'CONFIRMED' => 'status-confirmed',
-                                        'CHECKED_IN' => 'status-checked_in',
-                                        'CHECKED_OUT' => 'status-checked_out',
-                                        'CANCELLED' => 'status-cancelled'
-                                    ];
-                                    
-                                    $statusIcons = [
-                                        'PENDING' => 'clock',
-                                        'CONFIRMED' => 'check-circle',
-                                        'CHECKED_IN' => 'sign-in-alt',
-                                        'CHECKED_OUT' => 'sign-out-alt',
-                                        'CANCELLED' => 'times-circle'
-                                    ];
-                                @endphp
-                                <span class="status-badge {{ $statusClasses[$booking->status] ?? 'status-pending' }}">
-                                    <i class="fas fa-{{ $statusIcons[$booking->status] ?? 'clock' }} mr-1"></i> 
-                                    {{ ucfirst(strtolower(str_replace('_', ' ', $booking->status))) }}
-                                </span>
-                            </td>
+                 
                             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                 <div class="flex items-center gap-2">
                                     <!-- View Details Button -->

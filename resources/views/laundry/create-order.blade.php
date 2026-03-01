@@ -1,4 +1,4 @@
-@extends('dashboard')
+@extends('layouts.apps')
 
 @section('title', 'Place Laundry Order')
 @section('subtitle', 'Select items and pickup location')
@@ -280,24 +280,24 @@
                 <div class="space-y-3">
                     <div class="flex justify-between text-sm">
                         <span class="text-gray-600">Subtotal</span>
-                        <span class="font-medium" id="summary-subtotal">৳0.00</span>
+                        <span class="font-medium" id="summary-subtotal">MMK 0.00</span>
                     </div>
                     <div class="flex justify-between text-sm">
                         <span class="text-gray-600">Rush Surcharge</span>
-                        <span class="font-medium" id="summary-surcharge">৳0.00</span>
+                        <span class="font-medium" id="summary-surcharge">MMK 0.00</span>
                     </div>
                     <div class="flex justify-between text-sm">
                         <span class="text-gray-600">Pickup Fee</span>
-                        <span class="font-medium" id="summary-pickup-fee">৳{{ number_format($provider->laundryConfig->pickup_fee ?? 0, 2) }}</span>
+                        <span class="font-medium" id="summary-pickup-fee">MMK {{ number_format($provider->laundryConfig->pickup_fee ?? 0, 2) }}</span>
                     </div>
                     <div class="flex justify-between text-sm">
                         <span class="text-gray-600">Commission</span>
-                        <span class="font-medium" id="summary-commission">৳0.00</span>
+                        <span class="font-medium" id="summary-commission">MMK 0.00</span>
                     </div>
                     <div class="border-t pt-3 mt-3">
                         <div class="flex justify-between font-bold">
                             <span>Total</span>
-                            <span class="text-xl text-[#174455]" id="summary-total">৳0.00</span>
+                            <span class="text-xl text-[#174455]" id="summary-total">MMK 0.00</span>
                         </div>
                     </div>
                 </div>

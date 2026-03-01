@@ -169,7 +169,7 @@
                         <div class="flex items-center gap-4">
                             <div class="text-right">
                                 <p class="text-sm text-gray-500">Base Price</p>
-                                <p class="font-medium">৳{{ number_format($item->base_price, 2) }}</p>
+                                <p class="font-medium">MMK {{ number_format($item->base_price, 2) }}</p>
                             </div>
                             
                             <div class="w-24">
@@ -231,20 +231,20 @@
                 <div class="space-y-3">
                     <div class="flex justify-between">
                         <span class="text-gray-600">Subtotal</span>
-                        <span class="font-medium" id="subtotal">৳0.00</span>
+                        <span class="font-medium" id="subtotal">MMK 0.00</span>
                     </div>
                     <div class="flex justify-between">
                         <span class="text-gray-600">Rush Surcharge</span>
-                        <span class="font-medium" id="surcharge">৳0.00</span>
+                        <span class="font-medium" id="surcharge">MMK 0.00</span>
                     </div>
                     <div class="flex justify-between">
                         <span class="text-gray-600">Pickup Fee</span>
-                        <span class="font-medium" id="pickup_fee">৳{{ number_format($provider->laundryServiceConfig->pickup_fee ?? 0, 2) }}</span>
+                        <span class="font-medium" id="pickup_fee">MMK {{ number_format($provider->laundryServiceConfig->pickup_fee ?? 0, 2) }}</span>
                     </div>
                     <div class="border-t pt-3">
                         <div class="flex justify-between font-bold">
                             <span>Total</span>
-                            <span class="text-xl text-[#174455]" id="total">৳0.00</span>
+                            <span class="text-xl text-[#174455]" id="total">MMK 0.00</span>
                         </div>
                     </div>
                 </div>

@@ -1,403 +1,288 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Owner;
 
+use App\Http\Controllers\Controller;
 use App\Models\Booking;
-use App\Models\Property;
-use App\Models\Room;
 use App\Models\Notification;
+use App\Models\Property;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Str;
+use Illuminate\Support\Facades\DB;
 
 class BookingController extends Controller
 {
     /**
-     * Display a listing of user's bookings
+     * Display pending bookings for owner's properties
      */
-    public function index()
+    public function index(Request $request)
     {
-        $bookings = Booking::where('user_id', Auth::id())
-            ->with(['property', 'room'])
-            ->latest()
-            ->paginate(10);
-            
-        return view('rental.index', compact('bookings'));
-    }
-    
-    /**
-     * Display the specified booking
-     */
-    public function show(Booking $booking)
-    {
-        if ($booking->user_id !== Auth::id()) {
-            abort(403);
+        $ownerId = Auth::id();
+        
+        $query = Booking::with(['user', 'property'])
+            ->whereHas('property', function($q) use ($ownerId) {
+                $q->where('owner_id', $ownerId);
+            });
+
+        // Filter by status
+        if ($request->has('status') && $request->status != 'all') {
+            $query->where('status', $request->status);
         }
-        
-        $booking->load(['property.images', 'room', 'payments']);
-        
-        // Mark notifications as read
-        Notification::where('user_id', Auth::id())
-            ->where('related_entity_type', 'booking')
-            ->where('related_entity_id', $booking->id)
-            ->where('is_read', false)
-            ->update([
-                'is_read' => true,
-                'read_at' => now()
-            ]);
-            
-        return view('rental.booking-details', compact('booking'));
-    }
-    
-    /**
-     * Store a new apartment booking
-     */
-    public function storeApartment(Request $request, Property $property)
-    {
-        if ($property->type !== 'APARTMENT') {
-            abort(404);
+
+        // Filter by property
+        if ($request->has('property_id') && $request->property_id != 'all') {
+            $query->where('property_id', $request->property_id);
         }
-        
-        $request->validate([
-            'move_in_date' => 'required|date|after_or_equal:today',
-            'duration_months' => 'required|integer|min:' . $property->min_stay_months,
-            'occupants' => 'required|integer|min:1|max:' . ($property->bedrooms * 2),
-            'phone' => 'required|string|max:20',
-            'emergency_contact' => 'nullable|string|max:20',
-            'notes' => 'nullable|string|max:500',
-            'agree_terms' => 'required|accepted',
-        ]);
-        
-        // Check availability for apartment
-        $checkOut = date('Y-m-d', strtotime($request->move_in_date . ' + ' . $request->duration_months . ' months'));
-        
-        $conflictingBookings = $property->bookings()
-            ->where(function($query) use ($request, $checkOut) {
-                $query->whereBetween('check_in', [$request->move_in_date, $checkOut])
-                      ->orWhereBetween('check_out', [$request->move_in_date, $checkOut])
-                      ->orWhere(function($q) use ($request, $checkOut) {
-                          $q->where('check_in', '<', $request->move_in_date)
-                            ->where('check_out', '>', $checkOut);
-                      });
+
+        // Search
+        if ($request->has('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('booking_reference', 'like', "%{$search}%")
+                  ->orWhereHas('user', function($userQ) use ($search) {
+                      $userQ->where('name', 'like', "%{$search}%")
+                            ->orWhere('email', 'like', "%{$search}%");
+                  });
+            });
+        }
+
+        $bookings = $query->orderBy('created_at', 'desc')->paginate(15);
+
+        // Get owner's properties for filter dropdown
+        $properties = Property::where('owner_id', $ownerId)->get();
+
+        // Stats
+        $stats = [
+            'pending' => Booking::whereHas('property', fn($q) => $q->where('owner_id', $ownerId))
+                ->where('status', Booking::STATUS_PENDING)->count(),
+            'approved' => Booking::whereHas('property', fn($q) => $q->where('owner_id', $ownerId))
+                ->where('status', Booking::STATUS_APPROVED)->count(),
+            'confirmed' => Booking::whereHas('property', fn($q) => $q->where('owner_id', $ownerId))
+                ->where('status', Booking::STATUS_CONFIRMED)->count(),
+            'rejected' => Booking::whereHas('property', fn($q) => $q->where('owner_id', $ownerId))
+                ->where('status', Booking::STATUS_REJECTED)->count(),
+        ];
+
+        return view('owner.bookings.index', compact('bookings', 'properties', 'stats'));
+    }
+
+    /**
+     * Show booking details for owner
+     */
+    public function show($id)
+    {
+        $booking = Booking::with(['user', 'property', 'room'])
+            ->whereHas('property', fn($q) => $q->where('owner_id', Auth::id()))
+            ->findOrFail($id);
+
+        // Get competing requests for the same property/dates
+        $competingRequests = Booking::where('property_id', $booking->property_id)
+            ->where('id', '!=', $booking->id)
+            ->where('status', Booking::STATUS_PENDING)
+            ->where(function($q) use ($booking) {
+                $q->whereBetween('check_in', [$booking->check_in, $booking->check_out])
+                  ->orWhereBetween('check_out', [$booking->check_in, $booking->check_out])
+                  ->orWhere(function($q2) use ($booking) {
+                      $q2->where('check_in', '<=', $booking->check_in)
+                         ->where('check_out', '>=', $booking->check_out);
+                  });
             })
-            ->whereIn('status', ['CONFIRMED', 'CHECKED_IN'])
-            ->exists();
-        
-        if ($conflictingBookings) {
-            return back()->withErrors(['error' => 'This apartment is already booked for the selected dates.']);
+            ->with('user')
+            ->get();
+
+        return view('owner.bookings.show', compact('booking', 'competingRequests'));
+    }
+
+    /**
+     * Approve a booking request
+     */
+    public function approve(Request $request, $id)
+    {
+        $booking = Booking::with('property')
+            ->whereHas('property', fn($q) => $q->where('owner_id', Auth::id()))
+            ->findOrFail($id);
+
+        if ($booking->status !== Booking::STATUS_PENDING) {
+            return response()->json([
+                'success' => false,
+                'message' => 'This booking request has already been processed.'
+            ], 422);
         }
-        
-        // Calculate prices
-        $totalMonths = $request->duration_months;
-        $roomPricePerMonth = $property->base_price;
-        $commissionRate = $property->commission_rate;
-        $commissionAmount = ($roomPricePerMonth * $commissionRate / 100) * $totalMonths;
-        $totalAmount = ($roomPricePerMonth * $totalMonths) + $commissionAmount;
-        
-        // Create booking
-        $booking = Booking::create([
-            'booking_reference' => 'APT-' . strtoupper(Str::random(8)),
-            'user_id' => Auth::id(),
-            'property_id' => $property->id,
-            'room_id' => null,
-            'check_in' => $request->move_in_date,
-            'check_out' => $checkOut,
-            'room_price_per_day' => $roomPricePerMonth / 30, // Convert to daily rate
-            'commission_amount' => $commissionAmount,
-            'total_amount' => $totalAmount,
-            'status' => 'PENDING',
+
+        $request->validate([
+            'owner_notes' => 'nullable|string|max:500',
         ]);
-        
-        // Send notifications
-        $this->sendBookingNotification(
-            Auth::id(),
-            $booking->booking_reference,
-            'pending',
-            $booking->id
-        );
-        
-        $this->createNotification(
-            $property->owner_id,
-            'BOOKING',
-            'New Booking Received',
-            "New booking request for {$property->name} from " . Auth::user()->name,
-            'booking',
-            $booking->id
-        );
 
-        $this->sendSystemNotification(
-            Auth::id(),
-            'Booking Created Successfully',
-            'Your booking request has been submitted and is pending confirmation.'
-        );
-        
-        return redirect()->route('payments.create', ['booking' => $booking->id])
-            ->with('success', 'Apartment booking request submitted successfully! Please complete payment.');
+        DB::beginTransaction();
+
+        try {
+            // Check if property is still available
+            $hasConfirmedBooking = Booking::where('property_id', $booking->property_id)
+                ->where(function($q) use ($booking) {
+                    $q->whereBetween('check_in', [$booking->check_in, $booking->check_out])
+                      ->orWhereBetween('check_out', [$booking->check_in, $booking->check_out])
+                      ->orWhere(function($q2) use ($booking) {
+                          $q2->where('check_in', '<=', $booking->check_in)
+                             ->where('check_out', '>=', $booking->check_out);
+                      });
+                })
+                ->whereIn('status', [Booking::STATUS_CONFIRMED, Booking::STATUS_CHECKED_IN])
+                ->exists();
+
+            if ($hasConfirmedBooking) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'This property is no longer available for the selected dates.'
+                ], 422);
+            }
+
+            // Update booking status
+            $booking->status = Booking::STATUS_APPROVED;
+            $booking->owner_notes = $request->owner_notes;
+            $booking->approved_at = now();
+            $booking->save();
+
+            // Reject all other pending requests for the same property/dates
+            $this->rejectCompetingRequests($booking);
+
+            // Notify user
+            $this->sendNotification(
+                $booking->user_id,
+                'Booking Approved - Payment Required',
+                "Your booking request for {$booking->property->name} has been approved! Please complete payment within 24 hours to confirm your booking.",
+                'booking',
+                $booking->id
+            );
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Booking approved successfully. The guest has been notified to make payment.'
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to approve booking: ' . $e->getMessage()
+            ], 500);
+        }
     }
-    
+
     /**
-     * Store a new room booking
+     * Reject a booking request
      */
-
-public function storeRoom(Request $request, Property $property, Room $room)
-{
-    if ($property->type !== 'HOSTEL' || $room->property_id !== $property->id) {
-        abort(404);
-    }
-    
-    if ($room->status !== 'AVAILABLE') {
-        return back()->withErrors(['error' => 'This room is no longer available.']);
-    }
-    
-    $request->validate([
-        'move_in_date' => 'required|date|after_or_equal:today',
-        'months' => 'required|integer|min:1|max:12',
-        'phone' => 'required|string|max:20',
-        'emergency_contact' => 'nullable|string|max:20',
-        'notes' => 'nullable|string|max:500',
-        'agree_terms' => 'required|accepted',
-    ]);
-    
-    // Calculate check-out date based on move-in date and months
-    $checkIn = $request->move_in_date;
-    $checkOut = date('Y-m-d', strtotime($checkIn . ' + ' . $request->months . ' months'));
-    
-    // Check room availability for dates
-    $available = $room->isAvailableForDates($checkIn, $checkOut);
-    
-    if (!$available) {
-        return back()->withErrors(['error' => 'This room is not available for the selected period.']);
-    }
-    
-    // Calculate prices
-    $durationDays = date_diff(
-        date_create($checkIn), 
-        date_create($checkOut)
-    )->days;
-    
-    $roomPricePerDay = $room->base_price / 30; // Monthly to daily
-    $commissionRate = $room->commission_rate;
-    $totalRoomPrice = $roomPricePerDay * $durationDays;
-    $commissionAmount = $totalRoomPrice * ($commissionRate / 100);
-    $totalAmount = $totalRoomPrice + $commissionAmount;
-    
-    // Create booking
-    $booking = Booking::create([
-        'booking_reference' => 'HST-' . strtoupper(Str::random(8)),
-        'user_id' => Auth::id(),
-        'property_id' => $property->id,
-        'room_id' => $room->id,
-        'check_in' => $checkIn,
-        'check_out' => $checkOut,
-        'room_price_per_day' => $roomPricePerDay,
-        'commission_amount' => $commissionAmount,
-        'total_amount' => $totalAmount,
-        'status' => 'PENDING',
-    ]);
-
-    // Send notifications
-    $this->sendBookingNotification(
-        Auth::id(),
-        $booking->booking_reference,
-        'pending',
-        $booking->id
-    );
-
-    $this->createNotification(
-        $property->owner_id,
-        'BOOKING',
-        'New Room Booking',
-        "New booking for Room {$room->room_number} at {$property->name} for {$request->months} months",
-        'booking',
-        $booking->id
-    );
-    
-    $this->sendSystemNotification(
-        Auth::id(),
-        'Room Booked Successfully',
-        'Your room booking request has been submitted and is pending confirmation.'
-    );
-    
-    // Update room status to reserved
-    $room->update(['status' => 'RESERVED']);
-    
-    return redirect()->route('payments.create', $booking)
-        ->with('success', 'Room booking request submitted successfully! Please complete payment.');
-}
-    
-    /**
-     * Cancel a booking
-     */
-    public function cancel(Booking $booking)
+    public function reject(Request $request, $id)
     {
-        if ($booking->user_id !== Auth::id()) {
-            abort(403);
+        $booking = Booking::with('property')
+            ->whereHas('property', fn($q) => $q->where('owner_id', Auth::id()))
+            ->findOrFail($id);
+
+        if ($booking->status !== Booking::STATUS_PENDING) {
+            return response()->json([
+                'success' => false,
+                'message' => 'This booking request has already been processed.'
+            ], 422);
         }
-        
-        if (!in_array($booking->status, ['PENDING', 'CONFIRMED'])) {
-            return back()->withErrors(['error' => 'This booking cannot be cancelled.']);
-        }
-        
-        $booking->update([
-            'status' => 'CANCELLED',
-            'cancelled_at' => now(),
-            'cancellation_reason' => 'Cancelled by user'
+
+        $request->validate([
+            'rejection_reason' => 'required|string|max:500',
         ]);
-        
-        // If it's a room booking, make room available again
-        if ($booking->room_id) {
-            $booking->room()->update(['status' => 'AVAILABLE']);
-        }
-        
-        // Send cancellation notifications
-        $this->sendBookingNotification(
-            Auth::id(),
-            $booking->booking_reference,
-            'cancelled',
-            $booking->id
-        );
 
-        $this->createNotification(
-            $booking->property->owner_id,
-            'BOOKING',
-            'Booking Cancelled',
-            "Booking #{$booking->booking_reference} has been cancelled by the user.",
-            'booking',
-            $booking->id
-        );
-        
-        $this->sendSystemNotification(
-            Auth::id(),
-            'Booking Cancelled',
-            'Your booking has been successfully cancelled.'
-        );
-        
-        return redirect()->route('bookings.index')
-            ->with('success', 'Booking cancelled successfully.');
-    }
-    
-    // ==================== NOTIFICATION METHODS ====================
-    
-    /**
-     * Send booking notification to user
-     * 
-     * @param int $userId
-     * @param string $bookingReference
-     * @param string $status
-     * @param int $bookingId
-     * @return void
-     */
-    private function sendBookingNotification($userId, $bookingReference, $status, $bookingId)
-    {
+        DB::beginTransaction();
+
         try {
-            Notification::create([
-                'user_id' => $userId,
-                'type' => 'BOOKING_STATUS',
-                'title' => 'Booking ' . ucfirst($status),
-                'message' => "Your booking #{$bookingReference} is now {$status}.",
-                'related_entity_type' => 'booking',
-                'related_entity_id' => $bookingId,
-                'is_read' => false,
-                'created_at' => now(),
-                'updated_at' => now()
+            $booking->status = Booking::STATUS_REJECTED;
+            $booking->rejection_reason = $request->rejection_reason;
+            $booking->rejected_at = now();
+            $booking->save();
+
+            // Notify user
+            $this->sendNotification(
+                $booking->user_id,
+                'Booking Request Rejected',
+                "Your booking request for {$booking->property->name} has been rejected. Reason: {$request->rejection_reason}",
+                'booking',
+                $booking->id
+            );
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Booking rejected successfully.'
             ]);
+
         } catch (\Exception $e) {
-            // Log error but don't break the main process
-            \Log::error('Failed to send booking notification: ' . $e->getMessage());
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to reject booking: ' . $e->getMessage()
+            ], 500);
         }
     }
-    
+
     /**
-     * Create notification for property owner or other users
-     * 
-     * @param int $userId
-     * @param string $type
-     * @param string $title
-     * @param string $message
-     * @param string $entityType
-     * @param int|null $entityId
-     * @return void
+     * Reject competing booking requests
      */
-    private function createNotification($userId, $type, $title, $message, $entityType, $entityId = null)
+    private function rejectCompetingRequests($approvedBooking)
     {
-        try {
-            Notification::create([
-                'user_id' => $userId,
-                'type' => $type,
-                'title' => $title,
-                'message' => $message,
-                'related_entity_type' => $entityType,
-                'related_entity_id' => $entityId,
-                'is_read' => false,
-                'created_at' => now(),
-                'updated_at' => now()
-            ]);
-        } catch (\Exception $e) {
-            \Log::error('Failed to create notification: ' . $e->getMessage());
+        $competingRequests = Booking::where('property_id', $approvedBooking->property_id)
+            ->where('id', '!=', $approvedBooking->id)
+            ->where('status', Booking::STATUS_PENDING)
+            ->where(function($q) use ($approvedBooking) {
+                $q->whereBetween('check_in', [$approvedBooking->check_in, $approvedBooking->check_out])
+                  ->orWhereBetween('check_out', [$approvedBooking->check_in, $approvedBooking->check_out])
+                  ->orWhere(function($q2) use ($approvedBooking) {
+                      $q2->where('check_in', '<=', $approvedBooking->check_in)
+                         ->where('check_out', '>=', $approvedBooking->check_out);
+                  });
+            })
+            ->get();
+
+        foreach ($competingRequests as $request) {
+            $request->status = Booking::STATUS_REJECTED;
+            $request->rejection_reason = 'Another booking was approved for the same dates.';
+            $request->rejected_at = now();
+            $request->save();
+
+            // Notify the rejected user
+            $this->sendNotification(
+                $request->user_id,
+                'Booking Request Rejected',
+                "Your booking request for {$approvedBooking->property->name} has been rejected as another booking was approved for the same dates.",
+                'booking',
+                $request->id
+            );
         }
     }
-    
+
     /**
-     * Send system notification to user
-     * 
-     * @param int $userId
-     * @param string $title
-     * @param string $message
-     * @return void
+     * Get pending requests count for a property
      */
-    private function sendSystemNotification($userId, $title, $message)
+    public function getPendingCount($propertyId)
     {
-        try {
-            Notification::create([
-                'user_id' => $userId,
-                'type' => 'SYSTEM',
-                'title' => $title,
-                'message' => $message,
-                'related_entity_type' => 'system',
-                'related_entity_id' => null,
-                'is_read' => false,
-                'created_at' => now(),
-                'updated_at' => now()
-            ]);
-        } catch (\Exception $e) {
-            \Log::error('Failed to send system notification: ' . $e->getMessage());
-        }
+        $count = Booking::where('property_id', $propertyId)
+            ->where('status', Booking::STATUS_PENDING)
+            ->count();
+
+        return response()->json(['count' => $count]);
     }
-    
+
     /**
-     * Send notification to multiple users
-     * 
-     * @param array $userIds
-     * @param string $type
-     * @param string $title
-     * @param string $message
-     * @param string $entityType
-     * @param int|null $entityId
-     * @return void
+     * Send notification
      */
-    private function sendBulkNotifications($userIds, $type, $title, $message, $entityType, $entityId = null)
+    private function sendNotification($userId, $title, $message, $type, $referenceId)
     {
-        try {
-            $notifications = [];
-            foreach ($userIds as $userId) {
-                $notifications[] = [
-                    'user_id' => $userId,
-                    'type' => $type,
-                    'title' => $title,
-                    'message' => $message,
-                    'related_entity_type' => $entityType,
-                    'related_entity_id' => $entityId,
-                    'is_read' => false,
-                    'created_at' => now(),
-                    'updated_at' => now()
-                ];
-            }
-            
-            if (!empty($notifications)) {
-                Notification::insert($notifications);
-            }
-        } catch (\Exception $e) {
-            \Log::error('Failed to send bulk notifications: ' . $e->getMessage());
-        }
+        Notification::create([
+            'user_id' => $userId,
+            'type' => strtoupper($type),
+            'title' => $title,
+            'message' => $message,
+            'related_entity_type' => $type,
+            'related_entity_id' => $referenceId,
+            'is_read' => false,
+        ]);
     }
 }

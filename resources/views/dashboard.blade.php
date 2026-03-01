@@ -382,16 +382,7 @@
                     </a>
                 @endif
 
-                <!-- Food Orders (for Food Providers) -->
-                @if(auth()->user()->isFoodProvider())
-                    <a href="{{ route('food.orders') }}" 
-                       @click.prevent="navigate('{{ route('food.orders') }}')"
-                       :class="currentPage === 'food' ? 'bg-[#286b7f] text-white' : 'text-gray-300 hover:bg-[#1f556b] hover:text-white'"
-                       class="group flex items-center px-3 py-3 rounded-md sidebar-transition">
-                        <i class="fas fa-utensils text-lg w-6 text-center"></i>
-                        <span class="ml-3 truncate sidebar-text">Food Orders</span>
-                    </a>
-                @endif
+        
 
                 <!-- Laundry Orders (for Laundry Providers) -->
                 @if(auth()->user()->isLaundryProvider())
@@ -532,15 +523,7 @@
 
                     <!-- Right Side -->
                     <div class="flex items-center space-x-4">
-                        <!-- Search -->
-                        <div class="hidden md:block relative">
-                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <i class="fas fa-search text-gray-400"></i>
-                            </div>
-                            <input type="text" 
-                                   placeholder="Search..." 
-                                   class="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-[#174455] focus:border-[#174455] w-64">
-                        </div>
+                 
 
                         <!-- User Menu -->
                         <div class="relative" x-data="{ userMenuOpen: false }">

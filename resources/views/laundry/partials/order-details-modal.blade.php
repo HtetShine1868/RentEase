@@ -92,19 +92,19 @@
                     <div class="space-y-2">
                         <div class="flex justify-between text-sm">
                             <span>Subtotal</span>
-                            <span x-text="`৳${(selectedOrder?.base_amount || 0).toFixed(2)}`"></span>
+                            <span x-text="`MMK {(selectedOrder?.base_amount || 0).toFixed(2)}`"></span>
                         </div>
                         <div x-show="selectedOrder?.rush_surcharge > 0" class="flex justify-between text-sm">
                             <span>Rush Surcharge</span>
-                            <span x-text="`৳${(selectedOrder?.rush_surcharge || 0).toFixed(2)}`"></span>
+                            <span x-text="`MMK {(selectedOrder?.rush_surcharge || 0).toFixed(2)}`"></span>
                         </div>
                         <div x-show="selectedOrder?.pickup_fee > 0" class="flex justify-between text-sm">
                             <span>Pickup Fee</span>
-                            <span x-text="`৳${(selectedOrder?.pickup_fee || 0).toFixed(2)}`"></span>
+                            <span x-text="`MMK {(selectedOrder?.pickup_fee || 0).toFixed(2)}`"></span>
                         </div>
                         <div class="flex justify-between font-semibold pt-2 border-t border-gray-200">
                             <span>Total</span>
-                            <span x-text="`৳${(selectedOrder?.total_amount || 0).toFixed(2)}`"></span>
+                            <span x-text="`MMK {(selectedOrder?.total_amount || 0).toFixed(2)}`"></span>
                         </div>
                     </div>
                 </div>

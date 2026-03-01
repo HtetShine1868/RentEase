@@ -99,7 +99,7 @@
                         </div>
                         <div>
                             <p class="text-gray-500">Total</p>
-                            <p class="font-bold text-[#174455]">৳{{ number_format($order->total_amount, 2) }}</p>
+                            <p class="font-bold text-[#174455]">MMK {{ number_format($order->total_amount, 2) }}</p>
                         </div>
                     </div>
                     

@@ -24,7 +24,7 @@
                         <div class="font-medium text-gray-900">{{ $payment->transaction_id }}</div>
                         
                         <div class="text-gray-500">Amount Paid:</div>
-                        <div class="font-medium text-green-600">৳{{ number_format($payment->amount, 2) }}</div>
+                        <div class="font-medium text-green-600">MMK{{ number_format($payment->amount, 2) }}</div>
                         
                         <div class="text-gray-500">Payment Method:</div>
                         <div class="font-medium text-gray-900">{{ $payment->payment_method }}</div>

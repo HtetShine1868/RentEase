@@ -91,7 +91,7 @@
                     </div>
                     <div class="flex justify-between">
                         <span class="text-gray-600">Pickup Fee</span>
-                        <span class="font-medium">৳{{ number_format($provider->laundryConfig->pickup_fee, 2) }}</span>
+                        <span class="font-medium">MMK {{ number_format($provider->laundryConfig->pickup_fee, 2) }}</span>
                     </div>
                 </div>
             </div>

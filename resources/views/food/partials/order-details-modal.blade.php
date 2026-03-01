@@ -73,7 +73,7 @@
                                     <span class="text-sm font-medium" x-text="item.name"></span>
                                     <span class="text-xs text-gray-500 ml-2" x-text="`× ${item.quantity}`"></span>
                                 </div>
-                                <span class="text-sm font-medium" x-text="`৳${(item.price * item.quantity).toFixed(2)}`"></span>
+                                <span class="text-sm font-medium" x-text="`MMK {(item.price * item.quantity).toFixed(2)}`"></span>
                             </div>
                         </template>
                     </div>
@@ -85,15 +85,15 @@
                     <div class="space-y-2">
                         <div class="flex justify-between text-sm">
                             <span>Subtotal</span>
-                            <span x-text="`৳${selectedOrder?.total_amount}`"></span>
+                            <span x-text="`MMK {selectedOrder?.total_amount}`"></span>
                         </div>
                         <div class="flex justify-between text-sm">
                             <span>Delivery Fee</span>
-                            <span>৳0.00</span>
+                            <span>MMK 40.00</span>
                         </div>
                         <div class="flex justify-between font-semibold pt-2 border-t border-gray-200">
                             <span>Total</span>
-                            <span x-text="`৳${selectedOrder?.total_amount}`"></span>
+                            <span x-text="`MMK {selectedOrder?.total_amount}`"></span>
                         </div>
                     </div>
                 </div>

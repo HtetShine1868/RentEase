@@ -547,20 +547,22 @@ class PropertyController extends Controller
         }
     }
 
-    /**
-     * Get commission rate API endpoint
-     */
-    public function getCommissionRate($type)
-    {
-        if (!in_array($type, ['HOSTEL', 'APARTMENT'])) {
-            return response()->json(['error' => 'Invalid property type'], 400);
-        }
-        
-        $commission = CommissionConfig::where('service_type', $type)->first();
-        
-        return response()->json([
-            'rate' => $commission ? $commission->rate : ($type === 'HOSTEL' ? 5.00 : 3.00),
-            'type' => $type
-        ]);
-    }
+/**
+ * Get commission rate for property type
+ */
+public function getCommissionRate($type)
+{
+    $type = strtoupper($type);
+    
+    // Get from database or use defaults
+    $config = \App\Models\CommissionConfig::where('service_type', $type)->first();
+    
+    $rate = $config ? $config->rate : ($type === 'HOSTEL' ? 5.00 : 3.00);
+    
+    return response()->json([
+        'rate' => $rate,
+        'type' => $type
+    ]);
+}
+
 }

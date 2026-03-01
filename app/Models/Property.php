@@ -88,6 +88,10 @@ class Property extends Model
     {
         return $this->hasMany(Room::class)->where('status', 'AVAILABLE');
     }
+    public function ratings()
+{
+    return $this->hasMany(PropertyRating::class, 'property_id');
+}
 
     public function reviews()
     {

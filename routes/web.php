@@ -172,14 +172,13 @@ Route::middleware('auth')->group(function () {
             Route::delete('/{id}', [RoleApplicationController::class, 'destroy'])->name('destroy');
         });
 
-        // Rental Routes
         Route::get('/rental', [RentalController::class, 'index'])->name('rental.index');
-        Route::post('/bookings/{booking}/check-in', [RentalController::class, 'checkInBooking'])->name('bookings.check-in');
-        Route::post('/bookings/{booking}/check-out', [RentalController::class, 'checkOutBooking'])->name('bookings.check-out');
-        Route::post('/bookings/extend', [RentalController::class, 'extendBooking'])->name('bookings.extend');
-        Route::get('/bookings/{booking}/manage', [BookingController::class, 'manage'])->name('bookings.manage');
         Route::get('/rental/booking/{booking}', [RentalController::class, 'showBooking'])->name('rental.booking-details');
-        Route::post('/reviews', [RentalController::class, 'submitReview'])->name('property-ratings.store');
+        Route::post('/rental/booking/{booking}/cancel', [RentalController::class, 'cancelBooking'])->name('bookings.cancel');
+
+        // Rental Request Routes
+        Route::post('/rental/apartment/{property}/request', [RentalController::class, 'submitRentalRequest'])->name('rental.apartment.request');
+        Route::post('/rental/room/{property}/{room}/request', [RentalController::class, 'submitRoomRequest'])->name('rental.room.request');
 
         Route::prefix('complaints')->name('complaints.')->group(function () {
             Route::get('/', [RentalController::class, 'complaints'])->name('index');
@@ -199,6 +198,16 @@ Route::middleware('auth')->group(function () {
             Route::get('/{property}/rooms/{room}/book', [RentalController::class, 'bookRoom'])->name('rooms.book');
             Route::post('/{property}/check-availability', [RentalController::class, 'checkAvailability'])->name('check-availability');
         });
+        // TEMPORARY TEST ROUTE - Add this right after your other routes
+Route::post('/test-booking', function(\Illuminate\Http\Request $request) {
+    dd([
+        'success' => true,
+        'message' => 'Test route works!',
+        'data' => $request->all(),
+        'method' => $request->method(),
+        'csrf_token' => $request->_token
+    ]);
+})->name('test.booking');
         
         Route::prefix('bookings')->name('bookings.')->group(function () {
             Route::post('/apartment/{property}', [BookingController::class, 'storeApartment'])->name('apartment.store');
@@ -220,13 +229,14 @@ Route::middleware(['auth', 'role:OWNER'])->group(function () {
     Route::prefix('owner')->name('owner.')->group(function () {
         Route::get('/dashboard', function () { return view('owner.pages.dashboard'); })->name('dashboard');
         
-        Route::prefix('bookings')->name('bookings.')->group(function () {
-            Route::get('/', [\App\Http\Controllers\Owner\BookingController::class, 'index'])->name('index');
-            Route::get('/{id}', [\App\Http\Controllers\Owner\BookingController::class, 'show'])->name('show');
-            Route::put('/{id}/status', [\App\Http\Controllers\Owner\BookingController::class, 'updateStatus'])->name('update-status');
-            Route::post('/{id}/reminder', [\App\Http\Controllers\Owner\BookingController::class, 'sendReminder'])->name('send-reminder');
-            Route::get('/export', [\App\Http\Controllers\Owner\BookingController::class, 'export'])->name('export');
-        });
+    Route::prefix('bookings')->name('bookings.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Owner\OwnerBookingController::class, 'index'])->name('index');
+        Route::get('/export', [\App\Http\Controllers\Owner\OwnerBookingController::class, 'export'])->name('export');
+        Route::get('/{id}', [\App\Http\Controllers\Owner\OwnerBookingController::class, 'show'])->name('show');
+        Route::post('/{id}/approve', [\App\Http\Controllers\Owner\OwnerBookingController::class, 'approve'])->name('approve');
+        Route::post('/{id}/reject', [\App\Http\Controllers\Owner\OwnerBookingController::class, 'reject'])->name('reject');
+        Route::get('/property/{propertyId}/pending-count', [\App\Http\Controllers\Owner\OwnerBookingController::class, 'getPendingCount'])->name('pending-count');
+    });
         
         Route::get('/earnings', function () { return view('owner.pages.earnings.index'); })->name('earnings.index');
         
@@ -238,7 +248,19 @@ Route::middleware(['auth', 'role:OWNER'])->group(function () {
             Route::get('/export', [ComplaintController::class, 'export'])->name('export');
             Route::get('/statistics', [ComplaintController::class, 'statistics'])->name('statistics');
         });
+         Route::prefix('reviews')->name('reviews.')->group(function () {
+            Route::get('/', [App\Http\Controllers\Owner\ReviewController::class, 'index'])->name('index');
+            Route::get('/export', [App\Http\Controllers\Owner\ReviewController::class, 'export'])->name('export');
+            Route::get('/{id}', [App\Http\Controllers\Owner\ReviewController::class, 'show'])->name('show');
+            Route::post('/{id}/reply', [App\Http\Controllers\Owner\ReviewController::class, 'reply'])->name('reply');
+            Route::put('/{id}/reply', [App\Http\Controllers\Owner\ReviewController::class, 'updateReply'])->name('update-reply');
+            Route::delete('/{id}/reply', [App\Http\Controllers\Owner\ReviewController::class, 'deleteReply'])->name('delete-reply');
+        });
         
+        // Commission API route (for AJAX)
+Route::get('/api/commission-rate/{type}', [PropertyController::class, 'getCommissionRate'])
+    ->middleware('auth');
+                
         Route::get('/notifications', function () { return view('owner.pages.notifications'); })->name('notifications');
         Route::get('/settings', function () { return view('owner.pages.settings.index'); })->name('settings.index');
         Route::get('/profile', function () { return view('owner.pages.profile'); })->name('profile');
@@ -480,17 +502,20 @@ Route::middleware(['auth', 'role:LAUNDRY'])->prefix('laundry-provider')->name('l
 Route::middleware(['auth', 'role:SUPERADMIN'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/dashboard', [App\Http\Controllers\Admin\DashboardController::class, 'index'])->name('dashboard');
     
-    Route::prefix('role-applications')->name('role-applications.')->group(function () {
-        Route::get('/', [App\Http\Controllers\Admin\RoleApplicationController::class, 'index'])->name('index');
-        Route::get('/export', [App\Http\Controllers\Admin\RoleApplicationController::class, 'export'])->name('export');
-        Route::get('/statistics', [App\Http\Controllers\Admin\RoleApplicationController::class, 'statistics'])->name('statistics');
-        Route::get('/{id}', [App\Http\Controllers\Admin\RoleApplicationController::class, 'show'])->name('show');
-        Route::get('/{id}/review', [App\Http\Controllers\Admin\RoleApplicationController::class, 'review'])->name('review');
-        Route::post('/{id}/approve', [App\Http\Controllers\Admin\RoleApplicationController::class, 'approve'])->name('approve');
-        Route::post('/{id}/reject', [App\Http\Controllers\Admin\RoleApplicationController::class, 'reject'])->name('reject');
-        Route::get('/{id}/download-document', [App\Http\Controllers\Admin\RoleApplicationController::class, 'downloadDocument'])->name('download-document');
-        Route::post('/bulk-approve', [App\Http\Controllers\Admin\RoleApplicationController::class, 'bulkApprove'])->name('bulk-approve');
-    });
+Route::prefix('role-applications')->name('role-applications.')->group(function () {
+    Route::get('/', [App\Http\Controllers\Admin\RoleApplicationController::class, 'index'])->name('index');
+    Route::get('/export', [App\Http\Controllers\Admin\RoleApplicationController::class, 'export'])->name('export');
+    Route::get('/statistics', [App\Http\Controllers\Admin\RoleApplicationController::class, 'statistics'])->name('statistics');
+    Route::get('/{id}', [App\Http\Controllers\Admin\RoleApplicationController::class, 'show'])->name('show');
+    
+    // Review routes - FIXED: Separate GET for form, POST for submission
+    Route::get('/{id}/review', [App\Http\Controllers\Admin\RoleApplicationController::class, 'review'])->name('review');
+    Route::post('/{id}/approve', [App\Http\Controllers\Admin\RoleApplicationController::class, 'approve'])->name('approve');
+    Route::post('/{id}/reject', [App\Http\Controllers\Admin\RoleApplicationController::class, 'reject'])->name('reject');
+    
+    Route::get('/{id}/download-document', [App\Http\Controllers\Admin\RoleApplicationController::class, 'downloadDocument'])->name('download-document');
+    Route::post('/bulk-approve', [App\Http\Controllers\Admin\RoleApplicationController::class, 'bulkApprove'])->name('bulk-approve');
+});
     
     Route::prefix('commissions')->name('commissions.')->group(function () {
         Route::get('/', [App\Http\Controllers\Admin\CommissionController::class, 'index'])->name('index');

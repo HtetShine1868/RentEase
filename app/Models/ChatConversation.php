@@ -11,14 +11,7 @@ class ChatConversation extends Model
 
     protected $fillable = [
         'booking_id',
-        'property_id',
-        'tenant_id',
-        'owner_id',
-        'last_message_at'
-    ];
-
-    protected $casts = [
-        'last_message_at' => 'datetime'
+        'property_id'
     ];
 
     public function booking()
@@ -31,19 +24,14 @@ class ChatConversation extends Model
         return $this->belongsTo(Property::class);
     }
 
-    public function tenant()
+    public function participants()
     {
-        return $this->belongsTo(User::class, 'tenant_id');
-    }
-
-    public function owner()
-    {
-        return $this->belongsTo(User::class, 'owner_id');
+        return $this->hasMany(ChatParticipant::class, 'conversation_id');
     }
 
     public function messages()
     {
-        return $this->hasMany(ChatMessage::class, 'conversation_id');
+        return $this->hasMany(ChatMessage::class, 'conversation_id')->orderBy('created_at', 'asc');
     }
 
     public function lastMessage()
@@ -51,16 +39,27 @@ class ChatConversation extends Model
         return $this->hasOne(ChatMessage::class, 'conversation_id')->latest();
     }
 
-    public function unreadCount($userId)
-    {
-        return $this->messages()
-            ->where('receiver_id', $userId)
-            ->where('is_read', false)
-            ->count();
-    }
-
     public function getOtherParticipant($userId)
     {
-        return $userId === $this->tenant_id ? $this->owner : $this->tenant;
+        $participant = $this->participants()
+            ->with('user')
+            ->where('user_id', '!=', $userId)
+            ->first();
+        
+        return $participant ? $participant->user : null;
+    }
+
+    public function getUnreadCount($userId)
+    {
+        $participant = $this->participants()->where('user_id', $userId)->first();
+        
+        if (!$participant || !$participant->last_read_at) {
+            return $this->messages()->where('sender_id', '!=', $userId)->count();
+        }
+
+        return $this->messages()
+            ->where('sender_id', '!=', $userId)
+            ->where('created_at', '>', $participant->last_read_at)
+            ->count();
     }
 }

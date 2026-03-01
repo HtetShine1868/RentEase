@@ -70,7 +70,7 @@
                                 Total Revenue
                             </dt>
                             <dd class="text-2xl font-semibold text-gray-900">
-                                ₹2,45,680
+                                MMK 2,45,680
                             </dd>
                             <dd class="text-xs text-green-600 mt-1">
                                 ↑ 18% from last month
@@ -116,7 +116,7 @@
                                 Avg. Order Value
                             </dt>
                             <dd class="text-2xl font-semibold text-gray-900">
-                                ₹320
+                                MMK 320
                             </dd>
                             <dd class="text-xs text-red-600 mt-1">
                                 ↓ 2% from last month

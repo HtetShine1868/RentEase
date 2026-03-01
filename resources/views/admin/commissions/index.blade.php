@@ -69,7 +69,7 @@
                                 <div>
                                     <p class="text-sm font-medium text-blue-900">Example Calculation</p>
                                     <p class="text-sm text-blue-700 mt-1">
-                                        ₹1000 booking = ₹{{ number_format(1000 * (old('HOSTEL', $commissions['HOSTEL']->rate ?? 5.00) / 100), 2) }} commission
+                                        MMK 1000 booking = ₹{{ number_format(1000 * (old('HOSTEL', $commissions['HOSTEL']->rate ?? 5.00) / 100), 2) }} commission
                                     </p>
                                 </div>
                             </div>
@@ -120,7 +120,7 @@
                                 <div>
                                     <p class="text-sm font-medium text-green-900">Example Calculation</p>
                                     <p class="text-sm text-green-700 mt-1">
-                                        ₹5000 rental = ₹{{ number_format(5000 * (old('APARTMENT', $commissions['APARTMENT']->rate ?? 3.00) / 100), 2) }} commission
+                                        MMK 5000 rental = ₹{{ number_format(5000 * (old('APARTMENT', $commissions['APARTMENT']->rate ?? 3.00) / 100), 2) }} commission
                                     </p>
                                 </div>
                             </div>
@@ -171,7 +171,7 @@
                                 <div>
                                     <p class="text-sm font-medium text-yellow-900">Example Calculation</p>
                                     <p class="text-sm text-yellow-700 mt-1">
-                                        ₹500 food order = ₹{{ number_format(500 * (old('FOOD', $commissions['FOOD']->rate ?? 8.00) / 100), 2) }} commission
+                                        MMK 500 food order = ₹{{ number_format(500 * (old('FOOD', $commissions['FOOD']->rate ?? 8.00) / 100), 2) }} commission
                                     </p>
                                 </div>
                             </div>
@@ -222,7 +222,7 @@
                                 <div>
                                     <p class="text-sm font-medium text-purple-900">Example Calculation</p>
                                     <p class="text-sm text-purple-700 mt-1">
-                                        ₹300 laundry = ₹{{ number_format(300 * (old('LAUNDRY', $commissions['LAUNDRY']->rate ?? 10.00) / 100), 2) }} commission
+                                        MMK 300 laundry = ₹{{ number_format(300 * (old('LAUNDRY', $commissions['LAUNDRY']->rate ?? 10.00) / 100), 2) }} commission
                                     </p>
                                 </div>
                             </div>

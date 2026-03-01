@@ -60,8 +60,8 @@
             </div>
             <div class="mt-4 md:mt-0">
                 <div class="text-right">
-                    <div class="text-2xl font-bold text-indigo-600">৳{{ number_format($room->total_price) }}/month</div>
-                    <div class="text-sm text-gray-500">Base: ৳{{ number_format($room->base_price) }} + {{ $room->commission_rate }}% commission</div>
+                    <div class="text-2xl font-bold text-indigo-600">MMK{{ number_format($room->total_price) }}/month</div>
+                    <div class="text-sm text-gray-500">Base: MMK{{ number_format($room->base_price) }} + {{ $room->commission_rate }}% commission</div>
                 </div>
             </div>
         </div>
@@ -173,20 +173,20 @@
                         <div class="space-y-2" id="price_summary">
                             <div class="flex justify-between text-sm">
                                 <span class="text-gray-600">Monthly Rent</span>
-                                <span class="font-medium">৳{{ number_format($room->base_price) }}</span>
+                                <span class="font-medium">MMK{{ number_format($room->base_price) }}</span>
                             </div>
                             <div class="flex justify-between text-sm">
                                 <span class="text-gray-600">Monthly Commission ({{ $room->commission_rate }}%)</span>
-                                <span class="font-medium">৳{{ number_format($room->base_price * $room->commission_rate / 100) }}</span>
+                                <span class="font-medium">MMk{{ number_format($room->base_price * $room->commission_rate / 100) }}</span>
                             </div>
                             <div class="flex justify-between text-sm">
                                 <span class="text-gray-600">Total Monthly</span>
-                                <span class="font-medium text-indigo-600">৳{{ number_format($room->total_price) }}</span>
+                                <span class="font-medium text-indigo-600">MMK{{ number_format($room->total_price) }}</span>
                             </div>
                             <div class="border-t border-gray-200 pt-2 mt-2" id="total_section" style="display: none;">
                                 <div class="flex justify-between">
                                     <span class="font-medium text-gray-900">Total for <span id="selected_months">0</span> months</span>
-                                    <span class="text-lg font-bold text-indigo-600" id="total_amount">৳0</span>
+                                    <span class="text-lg font-bold text-indigo-600" id="total_amount">MMK0</span>
                                 </div>
                             </div>
                         </div>
@@ -288,7 +288,7 @@
                                         <div class="text-sm text-gray-600">Room {{ $otherRoom->room_number }}</div>
                                     </div>
                                     <div class="text-right">
-                                        <div class="font-semibold text-indigo-600">৳{{ number_format($otherRoom->total_price) }}</div>
+                                        <div class="font-semibold text-indigo-600">MMK{{ number_format($otherRoom->total_price) }}</div>
                                         <div class="text-xs text-gray-500">per month</div>
                                     </div>
                                 </div>

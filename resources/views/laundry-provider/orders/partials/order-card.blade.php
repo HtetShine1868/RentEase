@@ -198,10 +198,7 @@
                 @endif
                 
                 {{-- Common buttons --}}
-                <button class="call-customer-btn px-3 py-2 bg-gray-100 text-gray-700 text-sm rounded-lg hover:bg-gray-200 transition-colors flex items-center"
-                        data-phone="{{ $order->user->phone ?? '' }}">
-                    <i class="fas fa-phone mr-1"></i>
-                </button>
+         
                 
                 <button class="view-details-btn px-3 py-2 bg-blue-50 text-blue-600 text-sm rounded-lg hover:bg-blue-100 transition-colors flex items-center"
                         data-id="{{ $order->id }}">

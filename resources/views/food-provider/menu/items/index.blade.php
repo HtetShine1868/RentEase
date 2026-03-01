@@ -99,7 +99,7 @@
                             Avg. Price
                         </dt>
                         <dd class="text-lg font-medium text-gray-900">
-                            ₹{{ number_format($averagePrice ?? 0, 2) }}
+                            MMK{{ number_format($averagePrice ?? 0, 2) }}
                         </dd>
                     </div>
                 </div>

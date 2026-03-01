@@ -132,7 +132,7 @@
                                             <div>
                                                 <h6 class="font-medium text-gray-900" x-text="item.name"></h6>
                                                 <div class="mt-1 text-sm">
-                                                    <span class="text-gray-900 font-semibold" x-text="`৳${item.base_price}`"></span>
+                                                    <span class="text-gray-900 font-semibold" x-text="`MMK {item.base_price}`"></span>
                                                     <span class="text-gray-500 text-xs ml-1">per item</span>
                                                 </div>
                                                     <div x-show="item.rush_surcharge_percent > 0" class="mt-1 text-xs text-orange-600">
@@ -182,12 +182,12 @@
                         
                         <div x-show="selectedProvider?.pickup_fee > 0" class="flex justify-between items-center text-sm pt-2 border-t border-indigo-200">
                             <span>Pickup Fee</span>
-                            <span x-text="`৳${selectedProvider?.pickup_fee?.toFixed(2) || '0.00'}`"></span>
+                            <span x-text="`MMK ${selectedProvider?.pickup_fee?.toFixed(2) || '0.00'}`"></span>
                         </div>
                         
                         <div class="flex justify-between items-center font-semibold pt-2 border-t border-indigo-200">
                             <span>Total Amount</span>
-                            <span x-text="`৳${cartTotal.toFixed(2)}`"></span>
+                            <span x-text="`MMK ${cartTotal.toFixed(2)}`"></span>
                         </div>
                     </div>
                 </div>

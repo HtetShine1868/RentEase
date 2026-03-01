@@ -115,12 +115,7 @@
                                             <i class="fas fa-{{ $item->is_active ? 'ban' : 'check-circle' }}"></i>
                                         </button>
                                     </form>
-                                    <form action="{{ route('laundry-provider.items.duplicate', $item->id) }}" method="POST" class="inline">
-                                        @csrf
-                                        <button type="submit" class="text-gray-600 hover:text-gray-900" title="Duplicate">
-                                            <i class="fas fa-copy"></i>
-                                        </button>
-                                    </form>
+                               
                                     <form action="{{ route('laundry-provider.items.destroy', $item->id) }}" method="POST" class="inline" 
                                           onsubmit="return confirm('Are you sure you want to delete this item?');">
                                         @csrf
